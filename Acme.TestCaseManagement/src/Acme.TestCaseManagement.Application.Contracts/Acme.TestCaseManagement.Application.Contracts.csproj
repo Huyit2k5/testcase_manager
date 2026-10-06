@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Acme.TestCaseManagement</RootNamespace>
+    <Description>Application service interfaces, DTOs and permission definitions of the Acme.TestCaseManagement ABP module.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Volo.Abp.Ddd.Application.Contracts" />
+    <PackageReference Include="Volo.Abp.Authorization" />
+    <ProjectReference Include="..\Acme.TestCaseManagement.Domain.Shared\Acme.TestCaseManagement.Domain.Shared.csproj" />
+  </ItemGroup>
+</Project>

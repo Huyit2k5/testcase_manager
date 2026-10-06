@@ -1,0 +1,33 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <!-- VersionPrefix, not Version, so that a VersionSuffix of preview.1 yields the package version 1.0.0-preview.1. -->
+    <VersionPrefix>1.0.0</VersionPrefix>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningsAsErrors>$(WarningsAsErrors);CS8600;CS8602;CS8603;CS8604;CS8618;CS8625</WarningsAsErrors>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <!-- Package metadata shared by every packable project (src/Directory.Build.props switches packing on). -->
+  <PropertyGroup Label="PackageMetadata">
+    <Authors>Acme</Authors>
+    <Company>Acme</Company>
+    <Product>Acme.TestCaseManagement</Product>
+    <Copyright>Copyright (c) Acme</Copyright>
+    <PackageTags>abp;abp-module;test-management;test-case;test-plan;traceability;quality-gate;qa</PackageTags>
+  </PropertyGroup>
+
+  <!-- Deterministic, path-independent output on build servers. -->
+  <PropertyGroup Condition="'$(CI)' == 'true' Or '$(TF_BUILD)' == 'true' Or '$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+</Project>

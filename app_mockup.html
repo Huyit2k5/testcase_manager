@@ -1,0 +1,1945 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Giao Diện Mẫu (Wireframe) - Module Quản Lý Test Case (TCM)</title>
+  <meta name="description" content="Mô phỏng tương tác giao diện người dùng (Interactive Wireframe / UI Mockup) cho Module Quản Lý Test Case chuẩn ABP Framework">
+
+  <!-- Google Fonts: Inter & Outfit & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --primary-border: #bfdbfe;
+      --accent: #7c3aed;
+      --accent-gradient: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+      
+      --bg-page: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-surface-alt: #f1f5f9;
+      --bg-card: #ffffff;
+      --bg-card-hover: #fcfdfe;
+      
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+      
+      --border-color: #e2e8f0;
+      --border-subtle: #f1f5f9;
+      
+      --status-pass-bg: #ecfdf5;
+      --status-pass-text: #059669;
+      --status-pass-border: #a7f3d0;
+      
+      --status-fail-bg: #fef2f2;
+      --status-fail-text: #dc2626;
+      --status-fail-border: #fecaca;
+      
+      --status-block-bg: #fffbeb;
+      --status-block-text: #d97706;
+      --status-block-border: #fde68a;
+      
+      --status-untested-bg: #f1f5f9;
+      --status-untested-text: #64748b;
+      --status-untested-border: #cbd5e1;
+      
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+      --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.05);
+      
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-xl: 20px;
+    }
+
+    [data-theme="dark"] {
+      --primary: #3b82f6;
+      --primary-hover: #60a5fa;
+      --primary-light: rgba(59, 130, 246, 0.15);
+      --primary-border: rgba(59, 130, 246, 0.3);
+      --accent: #a855f7;
+      --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #9333ea 100%);
+      
+      --bg-page: #0b0f19;
+      --bg-surface: #111827;
+      --bg-surface-alt: #1e293b;
+      --bg-card: #141d2e;
+      --bg-card-hover: #19243a;
+      
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-light: #64748b;
+      
+      --border-color: #1e293b;
+      --border-subtle: #172033;
+      
+      --status-pass-bg: rgba(16, 185, 129, 0.15);
+      --status-pass-text: #34d399;
+      --status-pass-border: rgba(16, 185, 129, 0.3);
+      
+      --status-fail-bg: rgba(239, 68, 68, 0.15);
+      --status-fail-text: #f87171;
+      --status-fail-border: rgba(239, 68, 68, 0.3);
+      
+      --status-block-bg: rgba(245, 158, 11, 0.15);
+      --status-block-text: #fbbf24;
+      --status-block-border: rgba(245, 158, 11, 0.3);
+      
+      --status-untested-bg: rgba(100, 116, 139, 0.15);
+      --status-untested-text: #94a3b8;
+      --status-untested-border: rgba(100, 116, 139, 0.3);
+      
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      font-size: 14px;
+      line-height: 1.5;
+      overflow-x: hidden;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    /* Top App Bar */
+    .app-header {
+      height: 60px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .app-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      text-decoration: none;
+      color: var(--text-main);
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      font-size: 1.15rem;
+    }
+
+    .logo-badge {
+      width: 32px;
+      height: 32px;
+      background: var(--accent-gradient);
+      color: white;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.95rem;
+    }
+
+    /* Project Selector Dropdown */
+    .project-selector {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--bg-surface-alt);
+      border: 1px solid var(--border-color);
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-main);
+      cursor: pointer;
+    }
+
+    .project-badge {
+      background: var(--primary);
+      color: white;
+      font-size: 0.7rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+    }
+
+    /* Search Bar */
+    .header-search {
+      position: relative;
+      width: 340px;
+    }
+
+    .header-search input {
+      width: 100%;
+      background: var(--bg-surface-alt);
+      border: 1px solid var(--border-color);
+      padding: 0.45rem 0.75rem 0.45rem 2.2rem;
+      border-radius: var(--radius-md);
+      color: var(--text-main);
+      font-size: 0.85rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .header-search input:focus {
+      border-color: var(--primary);
+      background: var(--bg-surface);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    .header-search i {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .search-hint {
+      position: absolute;
+      right: 0.6rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.7rem;
+      color: var(--text-light);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Actions in header */
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s;
+    }
+
+    .icon-btn:hover {
+      background: var(--bg-surface-alt);
+      color: var(--primary);
+      border-color: var(--primary-border);
+    }
+
+    .notification-dot {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 8px;
+      height: 8px;
+      background: #ef4444;
+      border-radius: 50%;
+      border: 2px solid var(--bg-surface);
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding-left: 0.5rem;
+      border-left: 1px solid var(--border-color);
+      cursor: pointer;
+    }
+
+    .user-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--accent-gradient);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    .user-info {
+      line-height: 1.2;
+    }
+    .user-name { font-weight: 600; font-size: 0.85rem; color: var(--text-main); }
+    .user-role { font-size: 0.72rem; color: var(--text-muted); }
+
+    /* Main App Layout */
+    .app-body {
+      display: flex;
+      min-height: calc(100vh - 60px);
+    }
+
+    /* Sub Navigation / Main Tabs Bar */
+    .main-nav-tabs {
+      height: 48px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      padding: 0 1.5rem;
+      gap: 0.5rem;
+      position: sticky;
+      top: 60px;
+      z-index: 90;
+    }
+
+    .nav-tab-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .nav-tab-item:hover {
+      background: var(--bg-surface-alt);
+      color: var(--primary);
+    }
+
+    .nav-tab-item.active {
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    .nav-tab-badge {
+      font-size: 0.72rem;
+      padding: 0.1rem 0.45rem;
+      border-radius: 999px;
+      background: var(--bg-surface-alt);
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .nav-tab-item.active .nav-tab-badge {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* Content Area */
+    .app-main {
+      flex: 1;
+      padding: 1.5rem;
+      overflow-y: auto;
+    }
+
+    /* Tab Panels */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; animation: fadeIn 0.2s ease-in-out; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Two Columns Layout for Repository (Tree + Table) */
+    .repo-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 1.25rem;
+      align-items: start;
+    }
+
+    /* Tree View Card */
+    .tree-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .tree-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .tree-title {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--text-main);
+    }
+
+    .tree-node {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.4rem 0.55rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      color: var(--text-main);
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+    }
+
+    .tree-node:hover {
+      background: var(--bg-surface-alt);
+    }
+
+    .tree-node.active {
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .tree-node i {
+      font-size: 0.85rem;
+      width: 16px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    .tree-node.active i {
+      color: var(--primary);
+    }
+
+    .tree-children {
+      padding-left: 1.25rem;
+      border-left: 1px dashed var(--border-color);
+      margin-left: 0.6rem;
+    }
+
+    .tree-count {
+      margin-left: auto;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      background: var(--bg-surface-alt);
+      padding: 0.1rem 0.4rem;
+      border-radius: 999px;
+    }
+
+    /* Main Table Container */
+    .panel-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+
+    .panel-toolbar {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-left, .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .filter-select {
+      background: var(--bg-surface-alt);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.4rem 0.75rem;
+      border-radius: var(--radius-md);
+      font-size: 0.82rem;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.45rem 0.9rem;
+      border-radius: var(--radius-md);
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--accent-gradient);
+      color: white;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+    }
+    .btn-primary:hover { opacity: 0.92; transform: translateY(-1px); }
+
+    .btn-secondary {
+      background: var(--bg-surface-alt);
+      border-color: var(--border-color);
+      color: var(--text-main);
+    }
+    .btn-secondary:hover { background: var(--border-color); }
+
+    .btn-success {
+      background: #10b981;
+      color: white;
+    }
+    .btn-success:hover { background: #059669; }
+
+    .btn-sm {
+      padding: 0.25rem 0.6rem;
+      font-size: 0.78rem;
+    }
+
+    /* Data Table */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .tcm-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.86rem;
+    }
+
+    .tcm-table th {
+      background: var(--bg-surface-alt);
+      color: var(--text-muted);
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      white-space: nowrap;
+    }
+
+    .tcm-table td {
+      padding: 0.8rem 1rem;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      vertical-align: middle;
+    }
+
+    .tcm-table tr:hover td {
+      background: var(--bg-surface-alt);
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.18rem 0.55rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .badge-p1 { background: rgba(239, 68, 68, 0.12); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .badge-p2 { background: rgba(245, 158, 11, 0.12); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-p3 { background: rgba(37, 99, 235, 0.12); color: #2563eb; border: 1px solid rgba(37, 99, 235, 0.3); }
+    .badge-p4 { background: rgba(100, 116, 139, 0.12); color: #64748b; border: 1px solid rgba(100, 116, 139, 0.3); }
+
+    .badge-status-approved { background: var(--status-pass-bg); color: var(--status-pass-text); border: 1px solid var(--status-pass-border); }
+    .badge-status-draft { background: var(--status-untested-bg); color: var(--status-untested-text); border: 1px solid var(--status-untested-border); }
+    .badge-status-review { background: var(--status-block-bg); color: var(--status-block-text); border: 1px solid var(--status-block-border); }
+
+    .badge-run-passed { background: var(--status-pass-bg); color: var(--status-pass-text); border: 1px solid var(--status-pass-border); }
+    .badge-run-failed { background: var(--status-fail-bg); color: var(--status-fail-text); border: 1px solid var(--status-fail-border); }
+    .badge-run-blocked { background: var(--status-block-bg); color: var(--status-block-text); border: 1px solid var(--status-block-border); }
+    .badge-run-untested { background: var(--status-untested-bg); color: var(--status-untested-text); border: 1px solid var(--status-untested-border); }
+
+    .tag-chip {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      padding: 0.1rem 0.4rem;
+      background: var(--bg-surface-alt);
+      color: var(--text-muted);
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+      display: inline-block;
+      margin: 0.1rem;
+    }
+
+    .version-chip {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: rgba(124, 58, 237, 0.08);
+      border: 1px solid rgba(124, 58, 237, 0.2);
+      padding: 0.1rem 0.45rem;
+      border-radius: 4px;
+    }
+
+    /* Test Run Summary Header */
+    .run-hero-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .run-hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .run-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    /* Stacked Progress Bar */
+    .stacked-progress-container {
+      margin: 1.25rem 0 0.75rem;
+    }
+
+    .stacked-progress {
+      height: 12px;
+      border-radius: 999px;
+      display: flex;
+      overflow: hidden;
+      background: var(--bg-surface-alt);
+    }
+
+    .prog-bar {
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+    .prog-pass { background: #10b981; }
+    .prog-fail { background: #ef4444; }
+    .prog-block { background: #f59e0b; }
+    .prog-untested { background: #cbd5e1; }
+
+    .progress-legend {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-top: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    /* Modal / Drawer for Execution */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-dialog {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl);
+      width: 100%;
+      max-width: 850px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-xl);
+      animation: modalSlide 0.25s ease-out;
+    }
+
+    @keyframes modalSlide {
+      from { opacity: 0; transform: scale(0.96) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .modal-header {
+      padding: 1.25rem 1.75rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      background: var(--bg-surface);
+      z-index: 10;
+    }
+
+    .modal-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .modal-body {
+      padding: 1.75rem;
+    }
+
+    .modal-footer {
+      padding: 1rem 1.75rem;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      position: sticky;
+      bottom: 0;
+      background: var(--bg-surface);
+    }
+
+    /* Execution Steps Box */
+    .step-exec-card {
+      background: var(--bg-surface-alt);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+      transition: all 0.2s;
+    }
+
+    .step-exec-card.passed {
+      border-left: 4px solid #10b981;
+    }
+    .step-exec-card.failed {
+      border-left: 4px solid #ef4444;
+    }
+    .step-exec-card.blocked {
+      border-left: 4px solid #f59e0b;
+    }
+
+    .step-exec-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+
+    .step-number-badge {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.75rem;
+      margin-right: 0.5rem;
+    }
+
+    .step-actions-btn-group {
+      display: flex;
+      gap: 0.35rem;
+    }
+
+    .btn-step {
+      padding: 0.2rem 0.55rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: 600;
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.15s;
+    }
+
+    .btn-step.pass.active { background: #10b981; color: white; border-color: #10b981; }
+    .btn-step.fail.active { background: #ef4444; color: white; border-color: #ef4444; }
+    .btn-step.block.active { background: #f59e0b; color: white; border-color: #f59e0b; }
+
+    /* Attempt History Box */
+    .attempt-box {
+      background: var(--bg-surface);
+      border: 1px dashed var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.85rem 1rem;
+      margin-top: 1.25rem;
+    }
+
+    .attempt-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .attempt-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      padding: 0.4rem 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .attempt-item:last-child { border-bottom: none; }
+
+    /* Toast Notification */
+    .toast-container {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .toast {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-left: 4px solid var(--primary);
+      box-shadow: var(--shadow-lg);
+      padding: 0.85rem 1.25rem;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      animation: toastIn 0.3s ease-out;
+    }
+
+    @keyframes toastIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* RTM View Styles */
+    .rtm-alert-box {
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-left: 4px solid #f59e0b;
+      padding: 0.9rem 1.25rem;
+      border-radius: var(--radius-md);
+      margin-bottom: 1.25rem;
+      font-size: 0.86rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    /* Sign-Off Certificate Card */
+    .signoff-certificate {
+      background: var(--bg-surface);
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-xl);
+      padding: 2.5rem;
+      max-width: 900px;
+      margin: 0 auto;
+      box-shadow: var(--shadow-md);
+      position: relative;
+    }
+
+    .certificate-watermark {
+      position: absolute;
+      right: 2.5rem;
+      top: 2rem;
+      font-size: 4rem;
+      color: rgba(16, 185, 129, 0.08);
+      transform: rotate(-15deg);
+      font-weight: 900;
+      font-family: 'Outfit', sans-serif;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top App Bar -->
+  <header class="app-header">
+    <div class="brand-section">
+      <a href="index.html" class="app-logo" title="Quay lại tài liệu kiến trúc">
+        <div class="logo-badge"><i class="fa-solid fa-list-check"></i></div>
+        <span>TCM Enterprise</span>
+      </a>
+
+      <!-- Project Selector -->
+      <div class="project-selector" title="Chọn dự án">
+        <i class="fa-solid fa-folder-open" style="color: var(--primary);"></i>
+        <span>Hệ Thống Ngân Hàng Lõi v2.4</span>
+        <span class="project-badge">BANK</span>
+        <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem; color: var(--text-muted); margin-left: 0.25rem;"></i>
+      </div>
+    </div>
+
+    <!-- Search input -->
+    <div class="header-search">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" placeholder="Tìm kiếm kịch bản, đợt chạy, bug..." id="global-search">
+      <span class="search-hint">Ctrl K</span>
+    </div>
+
+    <!-- Right Header Actions -->
+    <div class="header-actions">
+      <!-- Back to Docs -->
+      <a href="index.html" class="btn btn-secondary btn-sm" title="Mở tài liệu phân tích nghiệp vụ & kiến trúc">
+        <i class="fa-solid fa-book"></i>
+        <span>Xem Đặc Tả SRS</span>
+      </a>
+
+      <!-- Testing Concepts Guide -->
+      <a href="test_concepts.html" class="btn btn-secondary btn-sm" style="background: rgba(59, 130, 246, 0.12); color: #3b82f6; border-color: rgba(59, 130, 246, 0.3);" title="Cẩm nang giải thích thuật ngữ kiểm thử cho Developer">
+        <i class="fa-solid fa-graduation-cap"></i>
+        <span>Khái Niệm Test (Dev)</span>
+      </a>
+
+      <!-- Notification Bell -->
+      <button class="icon-btn" id="notif-btn" title="Thông báo hệ thống (2 tin mới)">
+        <i class="fa-solid fa-bell"></i>
+        <span class="notification-dot"></span>
+      </button>
+
+      <!-- Theme Switcher -->
+      <button class="icon-btn" id="theme-btn" title="Đổi giao diện Sáng / Tối">
+        <i class="fa-solid fa-moon"></i>
+      </button>
+
+      <!-- User Profile -->
+      <div class="user-profile">
+        <div class="user-avatar">NA</div>
+        <div class="user-info">
+          <div class="user-name">Nguyễn Văn A</div>
+          <div class="user-role">QA Lead (Admin)</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Navigation Tabs -->
+  <nav class="main-nav-tabs">
+    <a class="nav-tab-item active" data-tab="tab-repo">
+      <i class="fa-solid fa-folder-tree"></i>
+      <span>Thư Viện Kịch Bản</span>
+      <span class="nav-tab-badge">254</span>
+    </a>
+    <a class="nav-tab-item" data-tab="tab-runs">
+      <i class="fa-solid fa-play"></i>
+      <span>Đợt Kiểm Thử (Test Runs)</span>
+      <span class="nav-tab-badge" style="background: rgba(37,99,235,0.15); color: var(--primary);">2 Đang Chạy</span>
+    </a>
+    <a class="nav-tab-item" data-tab="tab-rtm">
+      <i class="fa-solid fa-route"></i>
+      <span>Truy Vết Yêu Cầu (RTM)</span>
+      <span class="nav-tab-badge" style="background: rgba(245,158,11,0.15); color: #d97706;">1 Cần Duyệt</span>
+    </a>
+    <a class="nav-tab-item" data-tab="tab-signoff">
+      <i class="fa-solid fa-file-signature"></i>
+      <span>Biên Bản Nghiệm Thu</span>
+      <span class="nav-tab-badge">Quality Gate</span>
+    </a>
+  </nav>
+
+  <!-- Main Work Area -->
+  <main class="app-main">
+
+    <!-- ==================== TAB 1: THƯ VIỆN TEST CASE (REPOSITORY) ==================== -->
+    <div class="tab-panel active" id="tab-repo">
+      <div class="repo-layout">
+        
+        <!-- Left Column: Module Tree -->
+        <div class="tree-card">
+          <div class="tree-header">
+            <span class="tree-title"><i class="fa-solid fa-sitemap" style="color: var(--primary); margin-right: 0.35rem;"></i> Cây Cấu Trúc Tính Năng</span>
+            <button class="btn btn-secondary btn-sm" title="Thêm Module con" style="padding: 0.15rem 0.45rem;">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
+
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.6rem; padding: 0.2rem 0.4rem; background: var(--bg-surface-alt); border-radius: 4px;">
+            <i class="fa-solid fa-circle-info"></i> Cây thư viện vĩnh cửu, không gắn Sprint
+          </div>
+
+          <div class="tree-list">
+            <div class="tree-node active" data-filter-module="all">
+              <i class="fa-solid fa-layer-group"></i>
+              <span>Tất cả Module</span>
+              <span class="tree-count">254</span>
+            </div>
+
+            <!-- Branch 1: Auth -->
+            <div class="tree-node" data-filter-module="auth">
+              <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem;"></i>
+              <i class="fa-solid fa-shield-halved" style="color: #2563eb;"></i>
+              <span>1. Xác Thực & Phân Quyền</span>
+              <span class="tree-count">48</span>
+            </div>
+            <div class="tree-children">
+              <div class="tree-node" data-filter-module="auth-login">
+                <i class="fa-regular fa-folder"></i>
+                <span>1.1 Đăng nhập & 2FA</span>
+                <span class="tree-count">22</span>
+              </div>
+              <div class="tree-node" data-filter-module="auth-biometric">
+                <i class="fa-regular fa-folder"></i>
+                <span>1.2 Sinh trắc học (FaceID/Vân tay)</span>
+                <span class="tree-count">14</span>
+              </div>
+              <div class="tree-node" data-filter-module="auth-rbac">
+                <i class="fa-regular fa-folder"></i>
+                <span>1.3 Phân quyền tài khoản</span>
+                <span class="tree-count">12</span>
+              </div>
+            </div>
+
+            <!-- Branch 2: Account & Transfer -->
+            <div class="tree-node" data-filter-module="transfer">
+              <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem;"></i>
+              <i class="fa-solid fa-money-bill-transfer" style="color: #10b981;"></i>
+              <span>2. Chuyển Tiền & Thanh Toán</span>
+              <span class="tree-count">86</span>
+            </div>
+            <div class="tree-children">
+              <div class="tree-node" data-filter-module="transfer-internal">
+                <i class="fa-regular fa-folder"></i>
+                <span>2.1 Chuyển nội bộ</span>
+                <span class="tree-count">30</span>
+              </div>
+              <div class="tree-node" data-filter-module="transfer-napas">
+                <i class="fa-regular fa-folder"></i>
+                <span>2.2 Chuyển nhanh 24/7 NAPAS</span>
+                <span class="tree-count">36</span>
+              </div>
+              <div class="tree-node" data-filter-module="transfer-qr">
+                <i class="fa-regular fa-folder"></i>
+                <span>2.3 VietQR & Quét mã</span>
+                <span class="tree-count">20</span>
+              </div>
+            </div>
+
+            <!-- Branch 3: Savings -->
+            <div class="tree-node" data-filter-module="saving">
+              <i class="fa-solid fa-piggy-bank" style="color: #f59e0b;"></i>
+              <span>3. Tiết Kiệm Trực Tuyến</span>
+              <span class="tree-count">45</span>
+            </div>
+
+            <!-- Branch 4: Cards -->
+            <div class="tree-node" data-filter-module="cards">
+              <i class="fa-solid fa-credit-card" style="color: #7c3aed;"></i>
+              <span>4. Quản Lý Thẻ & Tín Dụng</span>
+              <span class="tree-count">75</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Test Case Table -->
+        <div class="panel-card">
+          <div class="panel-toolbar">
+            <div class="toolbar-left">
+              <select class="filter-select" id="filter-priority">
+                <option value="all">Tất cả Priority</option>
+                <option value="P1">P1 - Critical</option>
+                <option value="P2">P2 - High</option>
+                <option value="P3">P3 - Medium</option>
+                <option value="P4">P4 - Low</option>
+              </select>
+
+              <select class="filter-select" id="filter-status">
+                <option value="all">Tất cả Trạng Thái</option>
+                <option value="Approved">Đã Duyệt (Approved)</option>
+                <option value="InReview">Chờ Duyệt (In Review)</option>
+                <option value="Draft">Bản Nháp (Draft)</option>
+              </select>
+
+              <select class="filter-select" id="filter-layer">
+                <option value="all">Tất cả Tầng Test</option>
+                <option value="UI">Giao diện (UI)</option>
+                <option value="API">API Backend</option>
+                <option value="Integration">Tích Hợp</option>
+              </select>
+            </div>
+
+            <div class="toolbar-right">
+              <button class="btn btn-secondary btn-sm" onclick="showToast('Mở cửa sổ Import 12 cột Excel...')">
+                <i class="fa-solid fa-file-import"></i> Import
+              </button>
+              <button class="btn btn-secondary btn-sm" onclick="showToast('Đang kết xuất 254 test cases ra Excel...')">
+                <i class="fa-solid fa-file-export"></i> Export
+              </button>
+              <button class="btn btn-primary btn-sm" onclick="openCreateTestCaseModal()">
+                <i class="fa-solid fa-plus"></i> + Soạn Test Case
+              </button>
+            </div>
+          </div>
+
+          <!-- Table View -->
+          <div class="table-responsive">
+            <table class="tcm-table">
+              <thead>
+                <tr>
+                  <th style="width: 100px;">Mã TC</th>
+                  <th>Tiêu Đề Kịch Bản</th>
+                  <th style="width: 140px;">Phân Hệ</th>
+                  <th style="width: 90px;">Độ Ưu Tiên</th>
+                  <th style="width: 80px;">Phiên Bản</th>
+                  <th style="width: 110px;">Phê Duyệt</th>
+                  <th style="width: 120px;">Tags</th>
+                  <th style="width: 110px; text-align: center;">Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody id="testcase-tbody">
+                <!-- Row 1 -->
+                <tr>
+                  <td><strong style="color: var(--primary);">BANK-001</strong></td>
+                  <td>
+                    <div style="font-weight: 600;">Đăng nhập thành công với mật khẩu và mã OTP SMS</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Automation: <code>Tests.Auth.Login_Otp_Success</code></div>
+                  </td>
+                  <td><span style="font-size: 0.8rem; color: var(--text-muted);">1.1 Đăng nhập</span></td>
+                  <td><span class="badge badge-p1">P1 Critical</span></td>
+                  <td><span class="version-chip">v2 (Đóng băng)</span></td>
+                  <td><span class="badge badge-status-approved"><i class="fa-solid fa-check"></i> Approved</span></td>
+                  <td>
+                    <span class="tag-chip">#smoke</span>
+                    <span class="tag-chip">#auth</span>
+                  </td>
+                  <td style="text-align: center;">
+                    <button class="btn btn-secondary btn-sm" title="Chạy kịch bản này" onclick="openExecutionModal('BANK-001', 'Đăng nhập thành công với mật khẩu và mã OTP SMS', 'v2')">
+                      <i class="fa-solid fa-play" style="color: #10b981;"></i>
+                    </button>
+                    <button class="btn btn-secondary btn-sm" title="Nhân bản (Clone)" onclick="showToast('Đã clone thành BANK-008 (Draft)')">
+                      <i class="fa-regular fa-copy"></i>
+                    </button>
+                  </td>
+                </tr>
+
+                <!-- Row 2 -->
+                <tr>
+                  <td><strong style="color: var(--primary);">BANK-002</strong></td>
+                  <td>
+                    <div style="font-weight: 600;">Chuyển khoản liên ngân hàng 24/7 với số tiền vượt hạn mức ngày</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Hệ thống phải chặn và báo lỗi rõ ràng mã ERR_OVER_LIMIT</div>
+                  </td>
+                  <td><span style="font-size: 0.8rem; color: var(--text-muted);">2.2 NAPAS 24/7</span></td>
+                  <td><span class="badge badge-p1">P1 Critical</span></td>
+                  <td><span class="version-chip">v1 (Đóng băng)</span></td>
+                  <td><span class="badge badge-status-approved"><i class="fa-solid fa-check"></i> Approved</span></td>
+                  <td>
+                    <span class="tag-chip">#regression</span>
+                    <span class="tag-chip">#boundary</span>
+                  </td>
+                  <td style="text-align: center;">
+                    <button class="btn btn-secondary btn-sm" title="Chạy kịch bản này" onclick="openExecutionModal('BANK-002', 'Chuyển khoản liên ngân hàng 24/7 vượt hạn mức ngày', 'v1')">
+                      <i class="fa-solid fa-play" style="color: #10b981;"></i>
+                    </button>
+                    <button class="btn btn-secondary btn-sm" title="Nhân bản (Clone)">
+                      <i class="fa-regular fa-copy"></i>
+                    </button>
+                  </td>
+                </tr>
+
+                <!-- Row 3 -->
+                <tr>
+                  <td><strong style="color: var(--primary);">BANK-003</strong></td>
+                  <td>
+                    <div style="font-weight: 600;">Đăng nhập bằng FaceID khi người dùng đổi khuôn mặt hoặc đeo kính râm</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Độ tin cậy &lt; 90% phải yêu cầu fallback về nhập mã PIN 6 số</div>
+                  </td>
+                  <td><span style="font-size: 0.8rem; color: var(--text-muted);">1.2 Sinh trắc</span></td>
+                  <td><span class="badge badge-p2">P2 High</span></td>
+                  <td><span class="version-chip">v1</span></td>
+                  <td><span class="badge badge-status-approved"><i class="fa-solid fa-check"></i> Approved</span></td>
+                  <td>
+                    <span class="tag-chip">#biometric</span>
+                    <span class="tag-chip">#mobile</span>
+                  </td>
+                  <td style="text-align: center;">
+                    <button class="btn btn-secondary btn-sm" onclick="openExecutionModal('BANK-003', 'Đăng nhập bằng FaceID khi đeo kính râm', 'v1')">
+                      <i class="fa-solid fa-play" style="color: #10b981;"></i>
+                    </button>
+                    <button class="btn btn-secondary btn-sm"><i class="fa-regular fa-copy"></i></button>
+                  </td>
+                </tr>
+
+                <!-- Row 4 -->
+                <tr>
+                  <td><strong style="color: var(--primary);">BANK-004</strong></td>
+                  <td>
+                    <div style="font-weight: 600;">Mở sổ tiết kiệm tích lũy trực tuyến kỳ hạn 12 tháng lãi suất bậc thang</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">Tính toán tiền lãi dự kiến tự động làm tròn 2 chữ số thập phân</div>
+                  </td>
+                  <td><span style="font-size: 0.8rem; color: var(--text-muted);">3. Tiết kiệm</span></td>
+                  <td><span class="badge badge-p3">P3 Medium</span></td>
+                  <td><span class="version-chip" style="background: var(--bg-surface-alt); color: var(--text-muted); border-color: var(--border-color);">v-nháp</span></td>
+                  <td><span class="badge badge-status-review"><i class="fa-solid fa-clock"></i> In Review</span></td>
+                  <td>
+                    <span class="tag-chip">#savings</span>
+                  </td>
+                  <td style="text-align: center;">
+                    <button class="btn btn-secondary btn-sm" title="Kịch bản chờ duyệt" disabled style="opacity: 0.5;">
+                      <i class="fa-solid fa-lock"></i>
+                    </button>
+                    <button class="btn btn-secondary btn-sm"><i class="fa-regular fa-copy"></i></button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="padding: 0.75rem 1.25rem; background: var(--bg-surface); border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; color: var(--text-muted);">
+            <div>Hiển thị <strong>4</strong> trong tổng số <strong>254</strong> kịch bản</div>
+            <div style="display: flex; gap: 0.35rem;">
+              <button class="btn btn-secondary btn-sm" disabled><i class="fa-solid fa-chevron-left"></i></button>
+              <button class="btn btn-primary btn-sm">1</button>
+              <button class="btn btn-secondary btn-sm">2</button>
+              <button class="btn btn-secondary btn-sm">3</button>
+              <button class="btn btn-secondary btn-sm"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 2: ĐỢT KIỂM THỬ (TEST RUNS) ==================== -->
+    <div class="tab-panel" id="tab-runs">
+      
+      <!-- Run Hero Overview Card -->
+      <div class="run-hero-card">
+        <div class="run-hero-top">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem;">
+              <span class="badge" style="background: rgba(37,99,235,0.12); color: var(--primary);">
+                <i class="fa-solid fa-flag-checkered"></i> Milestone: Sprint 14
+              </span>
+              <span class="badge" style="background: rgba(16,185,129,0.12); color: #059669;">
+                <i class="fa-solid fa-server"></i> Môi trường: STAGING
+              </span>
+              <span class="badge" style="background: rgba(124,58,237,0.12); color: #7c3aed;">
+                <i class="fa-solid fa-code-branch"></i> Build: 2026.10.05-rev42
+              </span>
+            </div>
+            <h2 class="run-title">
+              Sprint 14 - Regression Staging Kiểm Thử Phát Hành Core Banking
+            </h2>
+            <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 0.25rem;">
+              Đợt test tổng thể kiểm tra tính năng chuyển khoản 24/7 và xác thực sinh trắc học trước khi phát hành Production.
+            </p>
+          </div>
+
+          <div style="display: flex; gap: 0.6rem;">
+            <button class="btn btn-secondary" onclick="showToast('Đang tải danh sách CI/CD Automation logs...')">
+              <i class="fa-solid fa-robot"></i> Nạp Kết Quả CI/CD
+            </button>
+            <button class="btn btn-primary" onclick="checkQualityGate()">
+              <i class="fa-solid fa-lock"></i> Đóng Đợt & Ký Nghiệm Thu
+            </button>
+          </div>
+        </div>
+
+        <!-- Stacked Progress Bar -->
+        <div class="stacked-progress-container">
+          <div style="display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 0.4rem; font-size: 0.85rem;">
+            <span>Tiến độ thực thi đợt chạy: <strong>98.8%</strong> Hoàn Tất</span>
+            <span style="color: #10b981;"><i class="fa-solid fa-shield-halved"></i> Quality Gate: ĐỦ ĐIỀU KIỆN (PASS RATE 96.4%)</span>
+          </div>
+
+          <div class="stacked-progress">
+            <div class="prog-bar prog-pass" id="bar-pass" style="width: 96.4%;" title="Passed: 245 cases (96.4%)"></div>
+            <div class="prog-bar prog-fail" id="bar-fail" style="width: 1.6%;" title="Failed: 4 cases (1.6%)"></div>
+            <div class="prog-bar prog-block" id="bar-block" style="width: 0.8%;" title="Blocked: 2 cases (0.8%)"></div>
+            <div class="prog-bar prog-untested" id="bar-untested" style="width: 1.2%;" title="Untested: 3 cases (1.2%)"></div>
+          </div>
+
+          <div class="progress-legend">
+            <div class="legend-item"><span class="legend-dot" style="background: #10b981;"></span> Passed: <strong id="cnt-pass">245</strong> (96.4%)</div>
+            <div class="legend-item"><span class="legend-dot" style="background: #ef4444;"></span> Failed: <strong id="cnt-fail">4</strong> (1.6%)</div>
+            <div class="legend-item"><span class="legend-dot" style="background: #f59e0b;"></span> Blocked: <strong id="cnt-block">2</strong> (0.8%)</div>
+            <div class="legend-item"><span class="legend-dot" style="background: #cbd5e1;"></span> Untested: <strong id="cnt-untested">3</strong> (1.2%)</div>
+            <div class="legend-item" style="margin-left: auto; color: var(--text-muted);"><i class="fa-solid fa-clock-rotate-left"></i> 12 kịch bản đã qua Retest</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Test Run Items Table -->
+      <div class="panel-card">
+        <div class="panel-toolbar">
+          <div class="toolbar-left">
+            <strong style="font-family: 'Outfit'; font-size: 1rem;">Danh Sách Kịch Bản Trong Đợt Chạy (TestRunItems)</strong>
+            <span class="badge" style="background: var(--bg-surface-alt); color: var(--text-muted);">254 Items</span>
+          </div>
+          <div class="toolbar-right">
+            <select class="filter-select">
+              <option>Lọc theo Tester phụ trách</option>
+              <option>Nguyễn Văn A (Lead)</option>
+              <option>Trần Thị B (Tester)</option>
+              <option>Lê Hoàng C (Tester)</option>
+            </select>
+            <select class="filter-select">
+              <option>Tất cả trạng thái chạy</option>
+              <option>Chưa chạy (Untested)</option>
+              <option>Đã Fail (Cần Retest)</option>
+              <option>Passed</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="tcm-table">
+            <thead>
+              <tr>
+                <th style="width: 110px;">Mã TC</th>
+                <th>Tên Kịch Bản & Phiên Bản Đóng Băng</th>
+                <th style="width: 140px;">Người Được Gán</th>
+                <th style="width: 130px;">Lần Chạy (Attempts)</th>
+                <th style="width: 120px;">Trạng Thái Item</th>
+                <th style="width: 140px;">Bug Kèm Theo</th>
+                <th style="width: 140px; text-align: center;">Thực Thi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Item 1 -->
+              <tr>
+                <td><strong>BANK-001</strong></td>
+                <td>
+                  <div style="font-weight: 600;">Đăng nhập thành công với mật khẩu và mã OTP SMS</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">Phiên bản snapshot: <code>TestCaseVersion v2</code></div>
+                </td>
+                <td>
+                  <span style="font-weight: 500;">Nguyễn Văn A</span>
+                </td>
+                <td>
+                  <span class="badge" style="background: var(--bg-surface-alt); color: var(--text-muted);">Lần 1</span>
+                </td>
+                <td><span class="badge badge-run-passed"><i class="fa-solid fa-circle-check"></i> Passed</span></td>
+                <td><span style="color: var(--text-muted); font-size: 0.8rem;">--</span></td>
+                <td style="text-align: center;">
+                  <button class="btn btn-secondary btn-sm" onclick="openExecutionModal('BANK-001', 'Đăng nhập thành công OTP SMS', 'v2')">
+                    <i class="fa-solid fa-rotate-right"></i> Chạy Lại
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Item 2 (Retest Example) -->
+              <tr style="background: rgba(239, 68, 68, 0.02);">
+                <td><strong>BANK-002</strong></td>
+                <td>
+                  <div style="font-weight: 600;">Chuyển khoản liên ngân hàng 24/7 với số tiền vượt hạn mức ngày</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">Phiên bản snapshot: <code>TestCaseVersion v1</code></div>
+                </td>
+                <td>
+                  <span style="font-weight: 500;">Trần Thị B</span>
+                </td>
+                <td>
+                  <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #d97706; border: 1px solid rgba(245,158,11,0.3);">
+                    <i class="fa-solid fa-clock-rotate-left"></i> Lần 2 (Retest)
+                  </span>
+                </td>
+                <td><span class="badge badge-run-failed"><i class="fa-solid fa-circle-xmark"></i> Failed</span></td>
+                <td>
+                  <a href="#" style="color: #ef4444; font-weight: 700; text-decoration: none; font-size: 0.82rem;" title="Mở Jira Bug JIRA-102">
+                    <i class="fa-brands fa-jira"></i> JIRA-102 <span style="font-size: 0.7rem; font-weight: normal; color: var(--text-muted);">(Resolved)</span>
+                  </a>
+                </td>
+                <td style="text-align: center;">
+                  <button class="btn btn-primary btn-sm" onclick="openExecutionModal('BANK-002', 'Chuyển khoản liên ngân hàng 24/7 vượt hạn mức ngày', 'v1', 2)">
+                    <i class="fa-solid fa-play"></i> Retest Ngay
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Item 3 -->
+              <tr>
+                <td><strong>BANK-003</strong></td>
+                <td>
+                  <div style="font-weight: 600;">Đăng nhập bằng FaceID khi người dùng đổi khuôn mặt hoặc đeo kính râm</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">Phiên bản snapshot: <code>TestCaseVersion v1</code></div>
+                </td>
+                <td>
+                  <span style="font-weight: 500;">Lê Hoàng C</span>
+                </td>
+                <td>
+                  <span class="badge" style="background: var(--bg-surface-alt); color: var(--text-muted);">Lần 1</span>
+                </td>
+                <td><span class="badge badge-run-blocked"><i class="fa-solid fa-ban"></i> Blocked</span></td>
+                <td>
+                  <a href="#" style="color: #f59e0b; font-weight: 600; text-decoration: none; font-size: 0.82rem;">
+                    <i class="fa-brands fa-jira"></i> JIRA-108 (Open)
+                  </a>
+                </td>
+                <td style="text-align: center;">
+                  <button class="btn btn-secondary btn-sm" onclick="openExecutionModal('BANK-003', 'FaceID kính râm', 'v1')">
+                    <i class="fa-solid fa-play"></i> Thực Thi
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Item 4 -->
+              <tr>
+                <td><strong>BANK-007</strong></td>
+                <td>
+                  <div style="font-weight: 600;">Quét mã VietQR tĩnh tạo hóa đơn thanh toán tiền điện thoại</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">Phiên bản snapshot: <code>TestCaseVersion v1</code></div>
+                </td>
+                <td>
+                  <span style="font-weight: 500;">Trần Thị B</span>
+                </td>
+                <td>
+                  <span class="badge" style="background: var(--bg-surface-alt); color: var(--text-muted);">Chưa chạy</span>
+                </td>
+                <td><span class="badge badge-run-untested"><i class="fa-regular fa-circle"></i> Untested</span></td>
+                <td><span style="color: var(--text-muted);">--</span></td>
+                <td style="text-align: center;">
+                  <button class="btn btn-success btn-sm" onclick="openExecutionModal('BANK-007', 'Quét mã VietQR tĩnh', 'v1')">
+                    <i class="fa-solid fa-play"></i> Chạy Lần 1
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 3: TRUY VẾT YÊU CẦU (RTM) ==================== -->
+    <div class="tab-panel" id="tab-rtm">
+      <div class="rtm-alert-box">
+        <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.25rem; color: #d97706;"></i>
+        <div>
+          <strong>Cảnh Báo Thay Đổi Yêu Cầu (Impact Analysis):</strong>
+          Yêu cầu <code>US-REQ-402 (Hạn mức chuyển khoản đêm)</code> vừa được BA cập nhật nội dung trên Jira. Có <strong>2 Test Case liên quan</strong> đã tự động chuyển trạng thái <code>Needs Review</code> để QA đối soát kịch bản.
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-toolbar">
+          <div class="toolbar-left">
+            <strong style="font-family: 'Outfit'; font-size: 1.05rem;">Ma Trận Truy Vết Yêu Cầu (Requirement Traceability Matrix - RTM)</strong>
+          </div>
+          <div class="toolbar-right">
+            <button class="btn btn-secondary btn-sm" onclick="showToast('Đang kết xuất RTM ra Excel...')">
+              <i class="fa-solid fa-file-excel"></i> Xuất Báo Cáo RTM
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="tcm-table">
+            <thead>
+              <tr>
+                <th style="width: 140px;">Mã User Story / SRS</th>
+                <th style="width: 240px;">Tiêu Đề Yêu Cầu Nghiệp Vụ</th>
+                <th>Kịch Bản Kiểm Thử Liên Kết (Test Cases)</th>
+                <th style="width: 120px;">Độ Phủ (Coverage)</th>
+                <th style="width: 140px;">Trạng Thái Liên Kết</th>
+                <th style="width: 130px;">Kết Quả Test Run</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <a href="#" style="font-weight: 700; color: var(--primary); text-decoration: none;">
+                    <i class="fa-brands fa-jira"></i> US-AUTH-101
+                  </a>
+                </td>
+                <td>Đăng nhập bằng 2 yếu tố (Mật khẩu + SMS OTP)</td>
+                <td>
+                  <span class="badge" style="background: var(--bg-surface-alt); color: var(--text-main); border: 1px solid var(--border-color);">
+                    BANK-001 (v2)
+                  </span>
+                  <span class="badge" style="background: var(--bg-surface-alt); color: var(--text-main); border: 1px solid var(--border-color);">
+                    BANK-005 (v1)
+                  </span>
+                </td>
+                <td><strong style="color: #10b981;">100% Phủ</strong> (2/2 TC)</td>
+                <td><span class="badge badge-status-approved"><i class="fa-solid fa-link"></i> Đồng Bộ (Active)</span></td>
+                <td><span class="badge badge-run-passed">100% Passed</span></td>
+              </tr>
+
+              <tr style="background: rgba(245, 158, 11, 0.03);">
+                <td>
+                  <a href="#" style="font-weight: 700; color: #d97706; text-decoration: none;">
+                    <i class="fa-brands fa-jira"></i> US-REQ-402
+                  </a>
+                </td>
+                <td>
+                  <strong>Hạn mức chuyển khoản liên ngân hàng vào ban đêm</strong>
+                  <div style="font-size: 0.72rem; color: #d97706;">Vừa cập nhật: Hạ trần từ 100tr xuống 50tr từ 23h-05h</div>
+                </td>
+                <td>
+                  <span class="badge" style="background: var(--bg-surface-alt); color: var(--text-main); border: 1px solid var(--border-color);">
+                    BANK-002 (v1)
+                  </span>
+                </td>
+                <td><strong style="color: #10b981;">100% Phủ</strong> (1 TC)</td>
+                <td>
+                  <span class="badge badge-status-review">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Needs Review
+                  </span>
+                </td>
+                <td><span class="badge badge-run-failed">Failed (Cần sửa kịch bản)</span></td>
+              </tr>
+
+              <tr>
+                <td>
+                  <a href="#" style="font-weight: 700; color: var(--primary); text-decoration: none;">
+                    <i class="fa-brands fa-jira"></i> US-SAV-205
+                  </a>
+                </td>
+                <td>Mở sổ tiết kiệm trực tuyến và tất toán trước hạn</td>
+                <td>
+                  <span class="badge" style="background: var(--bg-surface-alt); color: var(--text-main); border: 1px solid var(--border-color);">
+                    BANK-004 (v1)
+                  </span>
+                </td>
+                <td><strong style="color: #10b981;">100% Phủ</strong> (1 TC)</td>
+                <td><span class="badge badge-status-approved"><i class="fa-solid fa-link"></i> Đồng Bộ (Active)</span></td>
+                <td><span class="badge badge-run-untested">Chưa kiểm thử</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 4: BIÊN BẢN NGHIỆM THU (SIGN-OFF) ==================== -->
+    <div class="tab-panel" id="tab-signoff">
+      <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <h2 style="font-family: 'Outfit'; font-size: 1.35rem; font-weight: 700;">Hồ Sơ & Biên Bản Nghiệm Thu Chất Lượng</h2>
+          <p style="color: var(--text-muted); font-size: 0.88rem;">Biên bản nghiệm thu đóng băng số liệu đợt kiểm thử theo chuẩn ISO/IEC/IEEE 29119.</p>
+        </div>
+        <div style="display: flex; gap: 0.6rem;">
+          <button class="btn btn-secondary" onclick="window.print()">
+            <i class="fa-solid fa-print"></i> In Biên Bản
+          </button>
+          <button class="btn btn-primary" onclick="showToast('Đã xuất biên bản PDF chính thức có mã băm xác thực!')">
+            <i class="fa-solid fa-file-pdf"></i> Xuất File PDF Sign-Off
+          </button>
+        </div>
+      </div>
+
+      <!-- Formal Certificate Sheet -->
+      <div class="signoff-certificate">
+        <div class="certificate-watermark">ACCEPTED</div>
+
+        <div style="border-bottom: 2px solid var(--text-main); padding-bottom: 1.25rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: flex-end;">
+          <div>
+            <div style="font-size: 0.8rem; text-transform: uppercase; font-weight: 700; color: var(--primary); letter-spacing: 1px;">
+              CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM • ĐỘC LẬP - TỰ DO - HẠNH PHÚC
+            </div>
+            <h1 style="font-family: 'Outfit'; font-size: 1.5rem; font-weight: 800; margin-top: 0.5rem; color: var(--text-main);">
+              BIÊN BẢN NGHIỆM THU KỸ THUẬT KIỂM THỬ PHẦN MỀM
+            </h1>
+            <div style="font-size: 0.85rem; color: var(--text-muted);">
+              Số biên bản: <code>BB-NT-2026/BANK-SP14</code> | Dự án: <strong>Hệ Thống Ngân Hàng Lõi v2.4</strong>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <span class="badge" style="background: #10b981; color: white; font-size: 0.9rem; padding: 0.4rem 0.8rem;">
+              <i class="fa-solid fa-circle-check"></i> QUALITY GATE PASSED
+            </span>
+          </div>
+        </div>
+
+        <!-- 1. Metadata -->
+        <h3 style="font-family: 'Outfit'; font-size: 1.05rem; margin-bottom: 0.6rem; color: var(--text-main);">1. THÔNG TIN ĐỢT KIỂM THỬ</h3>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; font-size: 0.88rem; margin-bottom: 1.5rem; background: var(--bg-surface-alt); padding: 1rem; border-radius: var(--radius-md);">
+          <div><strong>Tên Test Run:</strong> Sprint 14 - Regression Staging</div>
+          <div><strong>Mốc thời gian (Milestone):</strong> Release v2.4.0-RC</div>
+          <div><strong>Môi trường thử nghiệm:</strong> Staging Cluster (Build rev42)</div>
+          <div><strong>Thời gian hoàn tất:</strong> 05/10/2026 - 17:00</div>
+          <div><strong>Trưởng nhóm kiểm thử (QA Lead):</strong> Nguyễn Văn A</div>
+          <div><strong>Chủ sở hữu sản phẩm (Product Owner):</strong> Lê Hoàng D</div>
+        </div>
+
+        <!-- 2. Quality Metrics Table -->
+        <h3 style="font-family: 'Outfit'; font-size: 1.05rem; margin-bottom: 0.6rem; color: var(--text-main);">2. TỔNG HỢP CHỈ SỐ CHẤT LƯỢNG</h3>
+        <div class="table-container" style="margin: 0 0 1.5rem 0;">
+          <table>
+            <thead>
+              <tr>
+                <th>Hạng mục đánh giá</th>
+                <th style="text-align: center;">Số lượng</th>
+                <th style="text-align: center;">Tỷ lệ (%)</th>
+                <th>Tiêu chí Quality Gate</th>
+                <th style="text-align: center;">Kết luận</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Kịch bản Thành công (Passed)</strong></td>
+                <td style="text-align: center;">245</td>
+                <td style="text-align: center; color: #10b981; font-weight: 700;">96.46%</td>
+                <td>Yêu cầu tổng Pass Rate &ge; 95%</td>
+                <td style="text-align: center;"><span class="badge badge-run-passed">ĐẠT CHUẨN</span></td>
+              </tr>
+              <tr>
+                <td><strong>Kịch bản Thất bại (Failed)</strong></td>
+                <td style="text-align: center;">4</td>
+                <td style="text-align: center; color: #ef4444; font-weight: 700;">1.57%</td>
+                <td>Không có lỗi Blocker / Critical nào mở</td>
+                <td style="text-align: center;"><span class="badge badge-run-passed">ĐẠT CHUẨN</span></td>
+              </tr>
+              <tr>
+                <td><strong>Lỗi Chặn đường (Blocker Defect)</strong></td>
+                <td style="text-align: center;">0</td>
+                <td style="text-align: center;">0.00%</td>
+                <td>0 lỗi nghiêm trọng cấp 1</td>
+                <td style="text-align: center;"><span class="badge badge-run-passed">ĐẠT CHUẨN</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 3. Signatures -->
+        <h3 style="font-family: 'Outfit'; font-size: 1.05rem; margin-bottom: 0.6rem; color: var(--text-main);">3. XÁC NHẬN PHÊ DUYỆT BÀN GIAO SẢN PHẨM</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+          Các bên ký tên dưới đây xác nhận kết quả kiểm thử đã phản ánh trung thực trạng thái của bản dựng phần mềm. Kể từ thời điểm đóng đợt test, toàn bộ dữ liệu <code>TestRun</code> và các bản ghi <code>TestExecution</code> được <strong>khóa bất biến (Locked)</strong> để phục vụ công tác kiểm toán nội bộ.
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem; margin-top: 2rem; text-align: center;">
+          <div style="padding: 1.5rem; border: 1px dashed var(--border-color); border-radius: var(--radius-lg);">
+            <div style="font-weight: 700; font-size: 0.9rem; text-transform: uppercase;">ĐẠI DIỆN ĐỘI KIỂM THỬ (QA LEAD)</div>
+            <div style="margin: 2.5rem 0 1rem; font-family: 'Outfit'; font-size: 1.3rem; color: var(--primary); font-weight: 700;">
+              Nguyễn Văn A
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-muted);">Đã ký số: 05/10/2026 17:15:30 (Khóa công khai SHA-256)</div>
+          </div>
+
+          <div style="padding: 1.5rem; border: 1px dashed var(--border-color); border-radius: var(--radius-lg);">
+            <div style="font-weight: 700; font-size: 0.9rem; text-transform: uppercase;">ĐẠI DIỆN NGHIỆP VỤ (PRODUCT OWNER)</div>
+            <div style="margin: 2.5rem 0 1rem; font-family: 'Outfit'; font-size: 1.3rem; color: #7c3aed; font-weight: 700;">
+              Lê Hoàng D
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-muted);">Đã ký số: 05/10/2026 17:22:10 (Khóa công khai SHA-256)</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ==================== MODAL: THỰC THI KIỂM THỬ (EXECUTION RUNNER) ==================== -->
+  <div class="modal-overlay" id="exec-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-play" style="color: var(--primary);"></i>
+          <span>Thực Thi Kịch Bản: <strong id="modal-tc-code" style="color: var(--primary);">BANK-002</strong></span>
+          <span class="version-chip" id="modal-tc-version">v1 (Bản Chụp Bất Biến)</span>
+        </div>
+        <button class="icon-btn" onclick="closeExecutionModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="modal-body">
+        <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 0.5rem;" id="modal-tc-title">
+          Chuyển khoản liên ngân hàng 24/7 với số tiền vượt hạn mức ngày
+        </h4>
+        
+        <div style="background: var(--bg-surface-alt); padding: 0.75rem 1rem; border-radius: var(--radius-md); font-size: 0.82rem; margin-bottom: 1.25rem;">
+          <div><strong>Tiền điều kiện (Preconditions):</strong> Tài khoản nguồn có số dư khả dụng 100.000.000đ; hạn mức chuyển khoản quy định là 50.000.000đ/ngày.</div>
+          <div style="margin-top: 0.35rem;"><strong>Dữ liệu test (Test Data):</strong> STK nhận: 0011002345678 (Vietcombank) | Số tiền nhập: 60.000.000đ.</div>
+        </div>
+
+        <h5 style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 0.75rem;">
+          Các Bước Kiểm Thử Chi Tiết (Đóng Băng Từ Snapshot):
+        </h5>
+
+        <!-- Step 1 -->
+        <div class="step-exec-card passed" id="step-card-1">
+          <div class="step-exec-header">
+            <div>
+              <span class="step-number-badge">1</span>
+              <strong>Đăng nhập ứng dụng Mobile Banking & chọn "Chuyển tiền 24/7"</strong>
+            </div>
+            <div class="step-actions-btn-group">
+              <button class="btn-step pass active" onclick="setStepStatus(1, 'pass')">Pass</button>
+              <button class="btn-step fail" onclick="setStepStatus(1, 'fail')">Fail</button>
+              <button class="btn-step block" onclick="setStepStatus(1, 'block')">Block</button>
+            </div>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); margin-left: 2rem;">
+            Kết quả mong đợi: Màn hình hiển thị form chuyển tiền gồm ngân hàng nhận, số tài khoản và số tiền.
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step-exec-card passed" id="step-card-2">
+          <div class="step-exec-header">
+            <div>
+              <span class="step-number-badge">2</span>
+              <strong>Nhập số tài khoản Vietcombank và kiểm tra tự động truy vấn tên chủ tài khoản</strong>
+            </div>
+            <div class="step-actions-btn-group">
+              <button class="btn-step pass active" onclick="setStepStatus(2, 'pass')">Pass</button>
+              <button class="btn-step fail" onclick="setStepStatus(2, 'fail')">Fail</button>
+              <button class="btn-step block" onclick="setStepStatus(2, 'block')">Block</button>
+            </div>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); margin-left: 2rem;">
+            Kết quả mong đợi: Hệ thống gọi NAPAS trả về đúng tên NGUYEN VAN THUONG trong vòng &lt; 2 giây.
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step-exec-card failed" id="step-card-3">
+          <div class="step-exec-header">
+            <div>
+              <span class="step-number-badge">3</span>
+              <strong>Nhập số tiền 60.000.000đ và bấm nút "Tiếp tục"</strong>
+            </div>
+            <div class="step-actions-btn-group">
+              <button class="btn-step pass" onclick="setStepStatus(3, 'pass')">Pass</button>
+              <button class="btn-step fail active" onclick="setStepStatus(3, 'fail')">Fail</button>
+              <button class="btn-step block" onclick="setStepStatus(3, 'block')">Block</button>
+            </div>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); margin-left: 2rem;">
+            Kết quả mong đợi: Ứng dụng hiển thị thông báo lỗi popup: "Giao dịch vượt hạn mức ngày (50.000.000đ)".
+          </div>
+
+          <!-- Failed Step Detail / Defect Section -->
+          <div style="margin-top: 0.75rem; margin-left: 2rem; background: var(--bg-surface); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);" id="defect-box-step3">
+            <div style="color: #ef4444; font-weight: 700; font-size: 0.8rem; margin-bottom: 0.35rem;">
+              <i class="fa-solid fa-bug"></i> Kết quả thực tế & Gắn liên kết lỗi:
+            </div>
+            <input type="text" value="Ứng dụng bị đơ trắng màn hình (Crash) thay vì hiện popup cảnh báo vượt hạn mức" style="width: 100%; background: var(--bg-surface-alt); border: 1px solid var(--border-color); padding: 0.35rem 0.6rem; border-radius: 4px; font-size: 0.82rem; color: var(--text-main); margin-bottom: 0.45rem;">
+            
+            <div style="display: flex; gap: 0.5rem; align-items: center; font-size: 0.78rem;">
+              <span class="badge" style="background: rgba(239, 68, 68, 0.12); color: #dc2626;">
+                <i class="fa-brands fa-jira"></i> JIRA-102 (Đang gắn)
+              </span>
+              <span class="badge" style="background: rgba(239, 68, 68, 0.12); color: #dc2626;">
+                Severity: Blocker
+              </span>
+              <button class="btn btn-secondary btn-sm" style="padding: 0.15rem 0.4rem; font-size: 0.72rem;" onclick="showToast('Đã trích xuất các bước sang form Jira...')">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Mở Jira Bug
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Multi-attempt execution history -->
+        <div class="attempt-box">
+          <div class="attempt-title">
+            <i class="fa-solid fa-clock-rotate-left" style="color: var(--primary);"></i>
+            Lịch Sử Các Lần Thực Thi (Multi-Attempt History - Không Bị Ghi Đè)
+          </div>
+
+          <div class="attempt-item">
+            <div>
+              <strong>Lần chạy 1 (Attempt #1)</strong> - 09:30 05/10/2026 bởi <em>Trần Thị B</em>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Kết quả: Bị crash ứng dụng lúc nhập 60tr. Tạo bug JIRA-102.</div>
+            </div>
+            <span class="badge badge-run-failed">Failed</span>
+          </div>
+
+          <div class="attempt-item" style="background: var(--primary-light); padding: 0.4rem 0.6rem; border-radius: 4px;">
+            <div>
+              <strong>Lần chạy 2 (Attempt #2 - Retest hiện tại)</strong> - Đang thực hiện
+              <div style="font-size: 0.75rem; color: var(--primary);">Sau khi Dev deploy bản vá bug JIRA-102</div>
+            </div>
+            <span class="badge badge-run-passed" id="modal-current-attempt-status">Passed (Dự kiến)</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeExecutionModal()">Hủy Bỏ</button>
+        <button class="btn btn-success" onclick="submitExecution('Passed')">
+          <i class="fa-solid fa-check"></i> Xác Nhận Retest Pass
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Interactive JavaScript logic -->
+  <script>
+    // Tab Switching
+    const tabLinks = document.querySelectorAll('.nav-tab-item');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+
+    tabLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = link.getAttribute('data-tab');
+
+        tabLinks.forEach(l => l.classList.remove('active'));
+        tabPanels.forEach(p => p.classList.remove('active'));
+
+        link.classList.add('active');
+        document.getElementById(targetId).classList.add('active');
+      });
+    });
+
+    // Theme Toggle
+    const themeBtn = document.getElementById('theme-btn');
+    themeBtn.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      themeBtn.innerHTML = next === 'dark' ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-moon"></i>';
+      showToast(`Đã chuyển sang ${next === 'dark' ? 'Giao diện Tối (Dark)' : 'Giao diện Sáng (Light)'}`);
+    });
+
+    // Toast notification function
+    function showToast(message) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = `<i class="fa-solid fa-circle-check" style="color: #10b981;"></i> <span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // Modal Execution logic
+    function openExecutionModal(code, title, version, attempt = 1) {
+      document.getElementById('modal-tc-code').textContent = code;
+      document.getElementById('modal-tc-title').textContent = title;
+      document.getElementById('modal-tc-version').textContent = version + ' (Snapshot Đóng Băng)';
+      document.getElementById('exec-modal').classList.add('open');
+    }
+
+    function closeExecutionModal() {
+      document.getElementById('exec-modal').classList.remove('open');
+    }
+
+    function setStepStatus(stepNum, status) {
+      const card = document.getElementById(`step-card-${stepNum}`);
+      card.classList.remove('passed', 'failed', 'blocked');
+      if (status === 'pass') card.classList.add('passed');
+      if (status === 'fail') card.classList.add('failed');
+      if (status === 'block') card.classList.add('blocked');
+
+      const btns = card.querySelectorAll('.btn-step');
+      btns.forEach(b => b.classList.remove('active'));
+      card.querySelector(`.btn-step.${status}`).classList.add('active');
+
+      if (stepNum === 3) {
+        const defectBox = document.getElementById('defect-box-step3');
+        if (status === 'fail') {
+          defectBox.style.display = 'block';
+        } else {
+          defectBox.style.display = 'none';
+        }
+      }
+    }
+
+    function submitExecution(status) {
+      closeExecutionModal();
+      showToast('Đã lưu kết quả thực thi Lần 2 (Retest: Passed). Không ghi đè lịch sử cũ!');
+      
+      // Update UI stats
+      document.getElementById('bar-pass').style.width = '97.2%';
+      document.getElementById('bar-fail').style.width = '1.2%';
+      document.getElementById('cnt-pass').textContent = '247';
+      document.getElementById('cnt-fail').textContent = '3';
+    }
+
+    function checkQualityGate() {
+      showToast('Quality Gate: 100% P1 Passed, 0 Blocker. Đã đủ điều kiện đóng Test Run!');
+      setTimeout(() => {
+        // Switch to signoff tab
+        tabLinks.forEach(l => l.classList.remove('active'));
+        tabPanels.forEach(p => p.classList.remove('active'));
+        document.querySelector('[data-tab="tab-signoff"]').classList.add('active');
+        document.getElementById('tab-signoff').classList.add('active');
+      }, 700);
+    }
+
+    function openCreateTestCaseModal() {
+      showToast('Mở form soạn thảo Test Case mới (Hỗ trợ AI Semantic Kernel)');
+    }
+
+    // Tree Node filter interactivity
+    const treeNodes = document.querySelectorAll('.tree-node');
+    treeNodes.forEach(node => {
+      node.addEventListener('click', () => {
+        treeNodes.forEach(n => n.classList.remove('active'));
+        node.classList.add('active');
+        showToast(`Đang lọc kịch bản theo phân hệ: ${node.querySelector('span').textContent}`);
+      });
+    });
+  </script>
+</body>
+</html>

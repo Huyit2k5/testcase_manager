@@ -1,0 +1,2858 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Khảo Sát Nghiệp Vụ & Thiết Kế Module Quản Lý Test Case (TCM) | Chuẩn ABP Framework</title>
+  <meta name="description" content="Tài liệu phân tích nghiệp vụ chuyên sâu và thiết kế Reusable Module Quản lý Test Case trên nền tảng ABP Framework (.NET / C#)">
+  
+  <!-- Google Fonts: Inter & Outfit & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Mermaid.js for Diagrams -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --primary-border: #bfdbfe;
+      --accent: #8b5cf6;
+      --accent-gradient: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+      
+      --bg-page: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-surface-alt: #f1f5f9;
+      --bg-card: #ffffff;
+      --bg-card-hover: #fcfdfe;
+      
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+      
+      --border-color: #e2e8f0;
+      --border-subtle: #f1f5f9;
+      
+      --badge-success-bg: #ecfdf5;
+      --badge-success-text: #059669;
+      --badge-danger-bg: #fef2f2;
+      --badge-danger-text: #dc2626;
+      --badge-warning-bg: #fffbeb;
+      --badge-warning-text: #d97706;
+      --badge-info-bg: #eff6ff;
+      --badge-info-text: #2563eb;
+      
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+      
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      
+      --sidebar-width: 320px;
+    }
+
+    [data-theme="dark"] {
+      --primary: #3b82f6;
+      --primary-hover: #60a5fa;
+      --primary-light: rgba(59, 130, 246, 0.15);
+      --primary-border: rgba(59, 130, 246, 0.3);
+      --accent: #a855f7;
+      --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #9333ea 100%);
+      
+      --bg-page: #0b0f19;
+      --bg-surface: #111827;
+      --bg-surface-alt: #1e293b;
+      --bg-card: #141d2e;
+      --bg-card-hover: #19243a;
+      
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-light: #64748b;
+      
+      --border-color: #1e293b;
+      --border-subtle: #172033;
+      
+      --badge-success-bg: rgba(16, 185, 129, 0.15);
+      --badge-success-text: #34d399;
+      --badge-danger-bg: rgba(239, 68, 68, 0.15);
+      --badge-danger-text: #f87171;
+      --badge-warning-bg: rgba(245, 158, 11, 0.15);
+      --badge-warning-text: #fbbf24;
+      --badge-info-bg: rgba(59, 130, 246, 0.15);
+      --badge-info-text: #60a5fa;
+      
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3);
+      --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.4);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      line-height: 1.65;
+      font-size: 15px;
+      transition: background-color 0.25s ease, color 0.25s ease;
+      overflow-x: hidden;
+    }
+
+    #progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: var(--accent-gradient);
+      width: 0%;
+      z-index: 9999;
+      transition: width 0.1s ease-out;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      background-color: rgba(255, 255, 255, 0.88);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 2rem;
+      transition: background-color 0.25s ease;
+    }
+
+    [data-theme="dark"] .topbar {
+      background-color: rgba(17, 24, 39, 0.88);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: var(--text-main);
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 1.15rem;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--accent-gradient);
+      color: white;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+    }
+
+    .brand-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.15rem 0.6rem;
+      border-radius: 999px;
+      background: var(--primary-light);
+      color: var(--primary);
+      border: 1px solid var(--primary-border);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .btn-action {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.5rem 0.9rem;
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      transition: all 0.2s ease;
+    }
+
+    .btn-action:hover {
+      background: var(--bg-surface-alt);
+      border-color: var(--text-muted);
+    }
+
+    .btn-primary {
+      background: var(--accent-gradient);
+      color: white;
+      border: none;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    }
+
+    .btn-primary:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+    }
+
+    .app-container {
+      display: flex;
+      max-width: 1600px;
+      margin: 0 auto;
+      min-height: calc(100vh - 60px);
+    }
+
+    .sidebar {
+      width: var(--sidebar-width);
+      position: sticky;
+      top: 60px;
+      height: calc(100vh - 60px);
+      overflow-y: auto;
+      padding: 1.75rem 1.25rem 2.5rem;
+      border-right: 1px solid var(--border-color);
+      background-color: var(--bg-surface);
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-color) transparent;
+      flex-shrink: 0;
+    }
+
+    .sidebar-section-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin: 1.2rem 0 0.5rem;
+      padding-left: 0.5rem;
+    }
+
+    .nav-list { list-style: none; margin-bottom: 1rem; }
+    .nav-item { margin-bottom: 0.2rem; }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.45rem 0.65rem;
+      border-radius: var(--radius-md);
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.84rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .nav-link i { font-size: 0.88rem; width: 18px; text-align: center; }
+
+    .nav-link:hover {
+      background-color: var(--bg-surface-alt);
+      color: var(--primary);
+    }
+
+    .nav-link.active {
+      background-color: var(--primary-light);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .content-area {
+      flex: 1;
+      padding: 2.5rem 3.5rem 5rem;
+      max-width: 1150px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 1024px) {
+      .sidebar { display: none; }
+      .content-area { padding: 1.5rem; }
+    }
+
+    .hero-banner {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(124, 58, 237, 0.08) 100%);
+      border: 1px solid var(--primary-border);
+      border-radius: var(--radius-xl);
+      padding: 2.5rem;
+      margin-bottom: 3rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .hero-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.25rem;
+      font-weight: 800;
+      line-height: 1.25;
+      color: var(--text-main);
+      margin-bottom: 1rem;
+      letter-spacing: -0.5px;
+    }
+
+    .hero-desc {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 850px;
+      line-height: 1.65;
+    }
+
+    .hero-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+      margin-top: 1.75rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .metric-box { display: flex; flex-direction: column; }
+    .metric-value {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.65rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .metric-label { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+
+    section { margin-bottom: 3.5rem; scroll-margin-top: 80px; }
+
+    .section-header {
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .section-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.55rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .section-number {
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      line-height: 32px;
+      text-align: center;
+      background: var(--primary-light);
+      color: var(--primary);
+      border-radius: var(--radius-md);
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    p { margin-bottom: 1rem; color: var(--text-main); }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.25rem;
+      margin: 1.5rem 0;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.25s ease;
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-md);
+      border-color: var(--primary-border);
+      transform: translateY(-2px);
+    }
+
+    .card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .card-icon.blue { background: #eff6ff; color: #2563eb; }
+    .card-icon.purple { background: #f5f3ff; color: #7c3aed; }
+    .card-icon.green { background: #ecfdf5; color: #059669; }
+    .card-icon.amber { background: #fffbeb; color: #d97706; }
+    .card-icon.rose { background: #fff1f2; color: #e11d48; }
+
+    [data-theme="dark"] .card-icon.blue { background: rgba(37, 99, 235, 0.2); }
+    [data-theme="dark"] .card-icon.purple { background: rgba(124, 58, 237, 0.2); }
+    [data-theme="dark"] .card-icon.green { background: rgba(5, 150, 105, 0.2); }
+    [data-theme="dark"] .card-icon.amber { background: rgba(217, 119, 6, 0.2); }
+    [data-theme="dark"] .card-icon.rose { background: rgba(225, 29, 72, 0.2); }
+
+    .card-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.12rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--text-main);
+    }
+
+    .card-desc {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      background: var(--bg-surface);
+      box-shadow: var(--shadow-sm);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background-color: var(--bg-surface-alt);
+      color: var(--text-main);
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      padding: 0.85rem 1.15rem;
+      border-bottom: 1px solid var(--border-color);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 0.85rem 1.15rem;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      vertical-align: top;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background-color: var(--bg-surface-alt); }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.2rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .badge-success { background: var(--badge-success-bg); color: var(--badge-success-text); }
+    .badge-danger { background: var(--badge-danger-bg); color: var(--badge-danger-text); }
+    .badge-warning { background: var(--badge-warning-bg); color: var(--badge-warning-text); }
+    .badge-info { background: var(--badge-info-bg); color: var(--badge-info-text); }
+
+    .phase-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 4px;
+      display: inline-block;
+      text-align: center;
+      min-width: 48px;
+    }
+    .phase-1 { background: rgba(37, 99, 235, 0.12); color: #2563eb; border: 1px solid rgba(37, 99, 235, 0.3); }
+    .phase-2 { background: rgba(16, 185, 129, 0.12); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .phase-3 { background: rgba(139, 92, 246, 0.12); color: #7c3aed; border: 1px solid rgba(139, 92, 246, 0.3); }
+
+    .callout {
+      border-left: 4px solid var(--primary);
+      background: var(--primary-light);
+      padding: 1.25rem 1.5rem;
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      margin: 1.5rem 0;
+    }
+
+    .callout-title {
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 0.35rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .diagram-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      margin: 1.5rem 0;
+      text-align: center;
+      overflow-x: auto;
+    }
+
+    .diagram-caption {
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    pre code {
+      display: block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.86rem;
+      padding: 1rem 1.25rem;
+      background: var(--bg-surface-alt);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      color: var(--text-main);
+      overflow-x: auto;
+      line-height: 1.55;
+    }
+
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85em;
+      padding: 0.15em 0.45em;
+      background: var(--bg-surface-alt);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      color: var(--primary);
+    }
+
+    /* Timeline Component */
+    .timeline {
+      position: relative;
+      padding-left: 2rem;
+      margin: 1.5rem 0;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 6px;
+      bottom: 6px;
+      width: 2px;
+      background: var(--border-color);
+    }
+    .timeline-item {
+      position: relative;
+      margin-bottom: 1.25rem;
+    }
+    .timeline-dot {
+      position: absolute;
+      left: -2rem;
+      top: 3px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--bg-surface);
+      border: 3px solid var(--primary);
+    }
+    .timeline-dot.success { border-color: #10b981; }
+    .timeline-dot.warning { border-color: #f59e0b; }
+    .timeline-dot.info { border-color: #3b82f6; }
+    .timeline-dot.danger { border-color: #ef4444; }
+    .timeline-time {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .timeline-content {
+      background: var(--bg-surface-alt);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.75rem 1rem;
+      margin-top: 0.25rem;
+      font-size: 0.9rem;
+    }
+
+    /* SWOT Grid */
+    .swot-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.25rem;
+      margin: 1.5rem 0;
+    }
+    @media (max-width: 768px) {
+      .swot-grid { grid-template-columns: 1fr; }
+    }
+    .swot-card {
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+    }
+    .swot-card.strengths { border-top: 4px solid #10b981; }
+    .swot-card.weaknesses { border-top: 4px solid #f59e0b; }
+    .swot-card.opportunities { border-top: 4px solid #3b82f6; }
+    .swot-card.threats { border-top: 4px solid #ef4444; }
+    .swot-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+    .swot-card.strengths .swot-header { color: #10b981; }
+    .swot-card.weaknesses .swot-header { color: #f59e0b; }
+    .swot-card.opportunities .swot-header { color: #3b82f6; }
+    .swot-card.threats .swot-header { color: #ef4444; }
+
+    /* Sign-off Sheet Mockup */
+    .signoff-sheet {
+      background: var(--bg-surface);
+      border: 2px dashed var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      margin: 1.5rem 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      color: var(--text-main);
+    }
+
+    #back-to-top {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: var(--shadow-lg);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+      z-index: 999;
+    }
+
+    #back-to-top.show { opacity: 1; pointer-events: auto; }
+    #back-to-top:hover { background: var(--primary-hover); transform: translateY(-2px); }
+
+    footer {
+      border-top: 1px solid var(--border-color);
+      padding: 2.5rem 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      background: var(--bg-surface);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Progress Bar -->
+  <div id="progress-bar"></div>
+
+  <!-- Top Navbar -->
+  <header class="topbar">
+    <a href="#" class="brand">
+      <div class="brand-icon">
+        <i class="fa-solid fa-list-check"></i>
+      </div>
+      <div>
+        <span>TCM Architecture Spec</span>
+        <span class="brand-badge">ABP Reusable Module</span>
+      </div>
+    </a>
+
+    <div class="topbar-actions">
+      <a href="test_concepts.html" class="btn-action" style="background: rgba(59, 130, 246, 0.15); color: #2563eb; border-color: rgba(59, 130, 246, 0.3); text-decoration: none; font-weight: 600;" title="Mở cẩm nang giải thích khái niệm kiểm thử cho Lập trình viên">
+        <i class="fa-solid fa-graduation-cap"></i>
+        <span>Khái Niệm Test (Cho Dev)</span>
+      </a>
+      <a href="app_mockup.html" class="btn-action" style="background: rgba(16, 185, 129, 0.15); color: #059669; border-color: rgba(16, 185, 129, 0.3); text-decoration: none; font-weight: 600;" title="Mở bản mô phỏng giao diện tương tác">
+        <i class="fa-solid fa-desktop"></i>
+        <span>Giao Diện Mẫu (Wireframe)</span>
+      </a>
+      <button class="btn-action" id="theme-toggle" title="Đổi giao diện Sáng / Tối">
+        <i class="fa-solid fa-moon"></i>
+        <span id="theme-text">Giao diện Tối</span>
+      </button>
+      <button class="btn-action btn-primary" onclick="window.print()">
+        <i class="fa-solid fa-print"></i>
+        <span>In / Xuất PDF</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="app-container">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-section-title">Mục lục phân tích</div>
+      <ul class="nav-list">
+        <li class="nav-item">
+          <a href="#boi-canh-mvp" class="nav-link active">
+            <i class="fa-solid fa-bullseye"></i> 1. Thực trạng & MVP
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#doi-tuong-raci" class="nav-link">
+            <i class="fa-solid fa-users-gear"></i> 2. Phân Quyền & RACI
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#quy-trinh-chuan" class="nav-link">
+            <i class="fa-solid fa-diagram-project"></i> 3. Quy Trình & Vòng Đời
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#erd-mo-hinh-du-lieu" class="nav-link">
+            <i class="fa-solid fa-database"></i> 4. Mô Hình ERD Chuẩn Hóa
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#danh-muc-use-case" class="nav-link">
+            <i class="fa-solid fa-list-check"></i> 5. Danh Mục Use Case (27)
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#quy-tac-nghiep-vu" class="nav-link">
+            <i class="fa-solid fa-scale-unbalanced"></i> 6. Quy Tắc Nghiệp Vụ
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#bao-cao-kpi" class="nav-link">
+            <i class="fa-solid fa-chart-pie"></i> 7. Báo Cáo & KPIs
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#he-thong-thong-bao" class="nav-link">
+            <i class="fa-solid fa-bell"></i> 8. Thông Báo & Cảnh Báo
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#quan-ly-attachment" class="nav-link">
+            <i class="fa-solid fa-paperclip"></i> 9. Quản Lý File Đính Kèm
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#lich-su-kiem-toan" class="nav-link">
+            <i class="fa-solid fa-clock-rotate-left"></i> 10. Lịch Sử & Kiểm Toán
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#import-export" class="nav-link">
+            <i class="fa-solid fa-file-excel"></i> 11. Import / Export Dữ Liệu
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#so-sanh-thi-truong" class="nav-link">
+            <i class="fa-solid fa-scale-balanced"></i> 12. Benchmark Thị Trường
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#xu-huong-ai" class="nav-link">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> 13. Tích Hợp AI Trợ Lý
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#kien-truc-abp-module" class="nav-link">
+            <i class="fa-solid fa-cubes"></i> 14. Kỹ Thuật ABP Module
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#bang-thuat-ngu" class="nav-link">
+            <i class="fa-solid fa-book-bookmark"></i> Phụ Lục: Bảng Thuật Ngữ
+          </a>
+        </li>
+      </ul>
+
+      <div class="sidebar-section-title">Thông số Module</div>
+      <div style="font-size: 0.8rem; color: var(--text-muted); padding: 0 0.5rem; line-height: 1.6;">
+        <div><strong>Module:</strong> Acme.TestCaseManagement</div>
+        <div><strong>Nền tảng:</strong> ABP Framework (.NET 8/9)</div>
+        <div><strong>Kiểu module:</strong> Application Module (Plug & Play)</div>
+        <div><strong>ORM:</strong> EF Core (15 DbSets)</div>
+        <div><strong>Use Cases:</strong> 27 Use Cases / 3 Pha</div>
+        <div><strong>Trạng thái:</strong> Hoàn chỉnh & Chuẩn hóa</div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="content-area">
+
+      <!-- Hero Header -->
+      <div class="hero-banner">
+        <div class="hero-meta">
+          <span class="badge badge-info"><i class="fa-solid fa-shield-halved"></i> Enterprise QA Standard</span>
+          <span class="badge" style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6;"><i class="fa-brands fa-microsoft"></i> ABP Framework Reusable Module</span>
+          <span class="badge badge-success"><i class="fa-solid fa-circle-check"></i> Đã chuẩn hóa triệt để kiến trúc</span>
+        </div>
+        <h1 class="hero-title">Tài Liệu Nghiệp Vụ & Thiết Kế Kiến Trúc<br>Module Quản Lý Test Case (TCM)</h1>
+        <p class="hero-desc">
+          Chuẩn hóa quy trình kiểm thử, tách biệt kho thư viện tài sản vĩnh cửu khỏi đợt thực thi Sprint, 
+          lưu vết lịch sử chạy đa lần (không ghi đè), đóng băng phiên bản kịch bản kiểm thử (TestCaseVersion) 
+          và thiết kế đóng gói độc lập theo chuẩn ABP Framework.
+        </p>
+        
+        <div class="hero-metrics">
+          <div class="metric-box">
+            <div class="metric-value">03 Pha</div>
+            <div class="metric-label">Lộ trình MVP rõ ràng</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-value">15 DbSets</div>
+            <div class="metric-label">Thực thể hoàn chỉnh</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-value">27 Use Cases</div>
+            <div class="metric-label">Đầy đủ 6 nhóm phân loại</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-value">100% History</div>
+            <div class="metric-label">Không ghi đè kết quả Retest</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-value">Decoupled</div>
+            <div class="metric-label">Độc lập User & CSDL</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 1: Thực trạng, Động lực & MVP -->
+      <section id="boi-canh-mvp">
+        <div class="section-header">
+          <h2 class="section-title"><span class="section-number">1</span> Bối Cảnh Dự Án, Động Lực Tự Xây Dựng & Phân Kỳ MVP</h2>
+        </div>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 1.5rem 0 0.75rem;">1.1. Thực trạng & Điểm đau (Pain Points) thực tế của đội ngũ</h3>
+        <p>Trong các dự án phần mềm doanh nghiệp, hoạt động kiểm thử thường đối mặt với các nút thắt cổ chai lớn:</p>
+
+        <div class="grid-2">
+          <div class="card" style="border-left: 4px solid #ef4444;">
+            <div class="card-icon rose"><i class="fa-solid fa-copy"></i></div>
+            <h4 class="card-title">Phân Mảnh & Nhân Bản Excel Bừa Bãi</h4>
+            <p class="card-desc">
+              Mỗi đợt Release hoặc Sprint lại nhân bản một file Excel mới. Khi yêu cầu thay đổi, kịch bản gốc trong sheet mẫu không được cập nhật; ngược lại, các đợt test cũ bị mất dấu theo dõi.
+            </p>
+          </div>
+
+          <div class="card" style="border-left: 4px solid #f59e0b;">
+            <div class="card-icon amber"><i class="fa-solid fa-clock-rotate-left"></i></div>
+            <h4 class="card-title">Ghi Đè Kết Quả (Retest Overwrite)</h4>
+            <p class="card-desc">
+              Khi chạy lần 1 bị <code>Failed</code> &rarr; Dev sửa &rarr; Tester test lại và sửa trạng thái thành <code>Passed</code>. Bằng chứng, log lỗi và thời gian của lần chạy đầu tiên bị xóa sạch, không đo được độ bất ổn định (Flaky rate).
+            </p>
+          </div>
+
+          <div class="card" style="border-left: 4px solid #8b5cf6;">
+            <div class="card-icon purple"><i class="fa-solid fa-code-compare"></i></div>
+            <h4 class="card-title">Lệch Pha Nội Dung Phiên Bản (Version Drift)</h4>
+            <p class="card-desc">
+              Sửa test case giữa chừng làm thay đổi các bước của đợt Test Run cũ đang thực hiện hoặc đã đóng, khiến biên bản nghiệm thu (Sign-off) bị sai khác so với thực tế lúc test.
+            </p>
+          </div>
+
+          <div class="card" style="border-left: 4px solid #3b82f6;">
+            <div class="card-icon blue"><i class="fa-solid fa-eye-slash"></i></div>
+            <h4 class="card-title">Mù Mờ Tiến Độ Nghiệm Thu Release</h4>
+            <p class="card-desc">
+              PO và PM không có Dashboard trực quan thời gian thực, không biết hôm nay đã chạy bao nhiêu case, còn nghẽn (Block) ở đâu để kịp thời điều phối nguồn lực.
+            </p>
+          </div>
+        </div>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 2rem 0 0.75rem;">1.2. Tại sao tự xây dựng Module trên ABP thay vì dùng SaaS (TestRail, Zephyr, Qase)?</h3>
+        <ul style="padding-left: 1.5rem; font-size: 0.95rem; line-height: 1.8; color: var(--text-main);">
+          <li><strong>Chủ quyền dữ liệu & Tuân thủ On-Premise/Private Cloud:</strong> Các dự án ngân hàng, tài chính, khối nhà nước bắt buộc lưu trữ dữ liệu tại máy chủ nội bộ, nghiêm cấm tải kịch bản nghiệp vụ và bug lên các nền tảng SaaS Cloud nước ngoài.</li>
+          <li><strong>Tối ưu chi phí bản quyền lâu dài:</strong> Chi phí TestRail (~$37/user/tháng) hoặc Zephyr cho team 30–50 người tiêu tốn hàng chục nghìn USD mỗi năm. Việc đóng gói thành 1 module ABP dùng chung cho toàn bộ hệ sinh thái của công ty giúp tiết kiệm 100% chi phí này.</li>
+          <li><strong>Tích hợp sâu vào hệ sinh thái ABP nội bộ:</strong> Dùng chung hệ thống phân quyền (Permission), Single Sign-On (SSO), Audit Logging, và quy trình phê duyệt sẵn có của doanh nghiệp.</li>
+          <li><strong>Khả năng tùy biến linh hoạt:</strong> Tự do tích hợp luồng webhook nội bộ, server automation test riêng, hoặc kết nối hệ thống Task nội bộ mà không phụ thuộc API bên ngoài.</li>
+        </ul>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 2rem 0 0.75rem;">1.3. Phân kỳ phạm vi rõ ràng (MVP Scoping)</h3>
+        
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 140px;">Giai đoạn</th>
+                <th style="width: 260px;">Mục tiêu cốt lõi</th>
+                <th>Phạm vi chức năng cụ thể</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="phase-badge phase-1">Pha 1 (MVP)</span></td>
+                <td><strong>Đủ để đội ngũ QA thay thế hoàn toàn Excel trong 1 dự án cụ thể.</strong></td>
+                <td>
+                  • Cây thư viện Module &rarr; Test Case (không gán Sprint vào cây thư viện).<br>
+                  • Soạn thảo Test Case (Priority, Kind, Layer, Tags, Steps).<br>
+                  • Vòng đời phê duyệt: Draft &rarr; In Review &rarr; Approved / Rejected.<br>
+                  • Snapshot phiên bản (TestCaseVersion) khi chạy test.<br>
+                  • Tạo Test Plan / Test Run gắn Milestone/Sprint.<br>
+                  • Ghi nhận kết quả theo nhiều lần chạy (TestExecution History: Run 1 Fail, Run 2 Pass).<br>
+                  • Báo cáo tiến độ Pass/Fail thời gian thực & Biên bản nghiệm thu (Sign-Off).
+                </td>
+              </tr>
+              <tr>
+                <td><span class="phase-badge phase-2">Pha 2</span></td>
+                <td><strong>Mở rộng cho nhiều dự án & tự động hóa tích hợp.</strong></td>
+                <td>
+                  • Nhập/xuất dữ liệu Excel/CSV tương thích mẫu cũ.<br>
+                  • Liên kết Bug Defect hai chiều sang Jira/GitHub/Redmine qua Webhook.<br>
+                  • Báo cáo Ma trận truy vết yêu cầu (Requirement Traceability Matrix - RTM).<br>
+                  • Realtime sync tiến độ đợt test bằng SignalR Hub & In-app/Email Notifications.
+                </td>
+              </tr>
+              <tr>
+                <td><span class="phase-badge phase-3">Pha 3</span></td>
+                <td><strong>Hợp nhất tự động hóa CI/CD & AI Trợ Lý.</strong></td>
+                <td>
+                  • REST API nạp kết quả tự động từ Playwright/Cypress/JUnit XML qua <code>AutomationId</code>.<br>
+                  • Tích hợp AI (Semantic Kernel) hỗ trợ sinh kịch bản từ User Story / AC.<br>
+                  • AI phát hiện test trùng lặp qua Vector Embedding & Smart Regression Selection.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Section 2: RACI & Permissions -->
+      <section id="doi-tuong-raci">
+        <div class="section-header">
+          <h2 class="section-title"><span class="section-number">2</span> Các Đối Tượng Nghiệp Vụ & Phân Quyền (Actors & Permissions)</h2>
+        </div>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 1.5rem 0 0.75rem;">2.1. Ma trận trách nhiệm RACI chuẩn hóa</h3>
+        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+          <code>R: Responsible (Thực hiện)</code> | <code>A: Accountable (Chịu trách nhiệm chính)</code> | <code>C: Consulted (Tham vấn)</code> | <code>I: Informed (Nhận thông tin)</code>
+        </p>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Hoạt động nghiệp vụ</th>
+                <th style="text-align: center;">QA Lead / Manager</th>
+                <th style="text-align: center;">QA Tester</th>
+                <th style="text-align: center;">Developer</th>
+                <th style="text-align: center;">Product Owner / BA</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1. Thiết kế & Soạn thảo Test Case</td>
+                <td style="text-align: center;"><span class="badge badge-warning">A</span></td>
+                <td style="text-align: center;"><span class="badge badge-success">R</span></td>
+                <td style="text-align: center;"><span class="badge badge-info">C</span></td>
+                <td style="text-align: center;"><span class="badge badge-info">C</span></td>
+              </tr>
+              <tr>
+                <td>2. Thẩm định & Duyệt (Approve/Reject)</td>
+                <td style="text-align: center;"><span class="badge badge-warning">A / R</span></td>
+                <td style="text-align: center;"><span class="badge" style="background: var(--bg-surface-alt); color: var(--text-muted);">I</span></td>
+                <td style="text-align: center;"><span class="badge" style="background: var(--bg-surface-alt); color: var(--text-muted);">I</span></td>
+                <td style="text-align: center;"><span class="badge badge-info">C</span></td>
+              </tr>
+              <tr>
+                <td>3. Lập Test Plan & Test Run (gắn Sprint)</td>
+                <td style="text-align: center;"><span class="badge badge-warning">A / R</span></td>
+                <td style="text-align: center;"><span class="badge" style="background: var(--bg-surface-alt); color: var(--text-muted);">I</span></td>
+                <td style="text-align: center;"><span class="badge" style="background: var(--bg-surface-alt); color: var(--text-muted);">I</span></td>
+                <td style="text-align: center;"><span class="badge" style="background: var(--bg-surface-alt); color: var(--text-muted);">I</span></td>
+              </tr>
+              <tr>
+                <td>4. Phân công & Thực thi Test Run</td>
+                <td style="text-align: center;"><span class="badge badge-warning">A</span></td>
+                <td style="text-align: center;"><span class="badge badge-success">R</span></td>
+                <td style="text-align: center;"><span class="badge" style="background: var(--bg-surface-alt); color: var(--text-muted);">I</span></td>
+                <td style="text-align: center;"><span class="badge" style="background: var(--bg-surface-alt); color: var(--text-muted);">I</span></td>
+              </tr>
+              <tr>
+                <td>5. Đóng Test Run & Ký nghiệm thu</td>
+                <td style="text-align: center;"><span class="badge badge-warning">A / R</span></td>
+                <td style="text-align: center;"><span class="badge badge-info">C</span></td>
+                <td style="text-align: center;"><span class="badge" style="background: var(--bg-surface-alt); color: var(--text-muted);">I</span></td>
+                <td style="text-align: center;"><span class="badge badge-warning">A</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 2rem 0 0.75rem;">2.2. Danh mục Quyền hạn (ABP Permissions) độc lập của Module</h3>
+        <p>Module tự đăng ký nhóm quyền riêng biệt <code>TestCaseManagement</code> vào hệ thống phân quyền ABP:</p>
+        
+        <div class="grid-2">
+          <div class="card">
+            <h4 class="card-title"><i class="fa-solid fa-folder-tree" style="color: var(--primary);"></i> Dự án & Thư viện Test Case</h4>
+            <ul style="padding-left: 1.25rem; font-size: 0.9rem; color: var(--text-muted); line-height: 1.8;">
+              <li><code>TestCaseManagement.Projects.Manage</code>: Tạo/sửa cấu hình dự án, Quality Gate</li>
+              <li><code>TestCaseManagement.TestCases.Create</code>: Soạn thảo kịch bản Draft</li>
+              <li><code>TestCaseManagement.TestCases.Edit</code>: Chỉnh sửa kịch bản đang mở</li>
+              <li><code>TestCaseManagement.TestCases.Delete</code>: Xóa bản nháp (Draft)</li>
+              <li><code>TestCaseManagement.TestCases.Approve</code>: <strong>Phê duyệt hoặc Từ chối kịch bản (QA Lead)</strong></li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h4 class="card-title"><i class="fa-solid fa-play" style="color: #059669;"></i> Kế hoạch, Đợt Test & Báo cáo</h4>
+            <ul style="padding-left: 1.25rem; font-size: 0.9rem; color: var(--text-muted); line-height: 1.8;">
+              <li><code>TestCaseManagement.TestPlans.Create/Edit/Delete</code>: Quản lý kế hoạch test</li>
+              <li><code>TestCaseManagement.TestRuns.Create</code>: Tạo đợt chạy test gắn Milestone</li>
+              <li><code>TestCaseManagement.TestRuns.Execute</code>: <strong>Chạy test & ghi nhận kết quả (Tester)</strong></li>
+              <li><code>TestCaseManagement.TestRuns.Close</code>: <strong>Khóa đợt test & ký nghiệm thu (QA Lead)</strong></li>
+              <li><code>TestCaseManagement.Reports.View / Export</code>: Xem Dashboard, xuất PDF/Excel</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 3: Quy Trình Nghiệp Vụ Chuẩn Xác -->
+      <section id="quy-trinh-chuan">
+        <div class="section-header">
+          <h2 class="section-title"><span class="section-number">3</span> Thiết Kế Quy Trình Nghiệp Vụ Chuẩn Xác</h2>
+        </div>
+
+        <div class="callout">
+          <div class="callout-title"><i class="fa-solid fa-triangle-exclamation"></i> Nguyên Tắc Vàng Tách Rời: Kho Thư Viện vs. Đợt Thực Thi</div>
+          <p style="margin: 0; font-size: 0.93rem;">
+            <strong>Cây Thư Viện Kịch Bản (Test Repository):</strong> Đại diện cho tài sản vĩnh cửu theo cấu trúc tính năng của phần mềm: <code>Dự án &rarr; Phân hệ (Module) &rarr; Nhóm chức năng (Suite) &rarr; Test Case</code>. Tuyệt đối <strong>KHÔNG</strong> đưa Sprint/Milestone vào cây thư viện vì kịch bản phải được tái sử dụng liên tục qua nhiều Sprint và bản Release.<br>
+            <strong>Kế Hoạch & Đợt Chạy (Test Plan / Test Run):</strong> Là ngữ cảnh thực thi theo thời gian. Sprint, Milestone, Môi trường kiểm thử (Staging, Prod), Build Version chỉ thuộc về <code>TestPlan</code> và <code>TestRun</code>.
+          </p>
+        </div>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 1.75rem 0 0.75rem;">
+          3.1. Vòng Đời Phê Duyệt & Cơ Chế Đóng Băng Phiên Bản (TestCaseVersion)
+        </h3>
+
+        <div class="diagram-card">
+          <div class="mermaid">
+flowchart LR
+    Draft["1. Draft (Nháp)"] --> InReview["2. In Review (Chờ duyệt)"]
+    InReview -->|QA Lead Từ chối| Rejected["Rejected (Yêu cầu sửa)"]
+    Rejected --> Draft
+    InReview -->|QA Lead Duyệt| Approved["3. Approved (Sẵn sàng)"]
+    Approved -->|Tạo bản chụp bất biến| VersionRecord["TestCaseVersion N (Đóng băng)"]
+    Approved -->|Yêu cầu sửa đổi| Draft
+    Approved --> Deprecated["4. Deprecated (Hết hạn)"]
+          </div>
+          <div class="diagram-caption">Sơ đồ 1: Vòng đời phê duyệt kịch bản và cơ chế sinh snapshot TestCaseVersion</div>
+        </div>
+
+        <p style="font-size: 0.93rem; color: var(--text-muted);">
+          <strong>Cơ chế bảo vệ tính toàn vẹn:</strong> Khi Test Case được duyệt (Approved), hệ thống tự động sinh bản chụp <code>TestCaseVersion</code> (v1, v2,...). Khi tạo Test Run, mỗi <code>TestRunItem</code> được gán cố định với <code>TestCaseVersionId</code> tại thời điểm đó. Sau này nếu Test Case gốc bị sửa ở trạng thái Draft, kết quả và biên bản nghiệm thu của đợt Test Run cũ vẫn <strong>giữ nguyên 100% nội dung các bước ban đầu</strong>.
+        </p>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 2rem 0 0.75rem;">
+          3.2. Thực Thi Đa Lần Không Ghi Đè (Multi-Attempt Execution History)
+        </h3>
+
+        <div class="diagram-card">
+          <div class="mermaid">
+flowchart TD
+    RunItem["Hạng mục trong Test Run (TestRunItem)"] --> Run1["Lần chạy 1: Failed (09:30)"]
+    Run1 --> LogBug["Gắn liên kết Bug JIRA-101"]
+    LogBug --> DevFix["Developer sửa lỗi & Deploy bản vá"]
+    DevFix --> Run2["Lần chạy 2: Retest - Passed (15:45)"]
+    Run2 --> UpdateItemStatus["Cập nhật trạng thái tổng thể của Item: Passed"]
+          </div>
+          <div class="diagram-caption">Sơ đồ 2: Cơ chế lưu vết lịch sử chạy lỗi nhiều lần (Không ghi đè kết quả)</div>
+        </div>
+
+        <p style="font-size: 0.93rem; color: var(--text-muted);">
+          Một <code>TestRunItem</code> chứa danh sách 1..N lần thực thi (<code>TestExecution</code>). Lần chạy 1 bị Fail sẽ được lưu giữ vĩnh viễn cùng hình ảnh lỗi và link Bug. Lần chạy 2 (Retest) Pass sẽ ghi nhận riêng biệt. Nhờ vậy, QA Manager luôn biết chính xác lịch sử sửa lỗi và độ ổn định của chức năng (Flaky rate).
+        </p>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 2rem 0 0.75rem;">
+          3.3. Luồng Quản Lý Yêu Cầu Thay Đổi & Phân Tích Tác Động (Requirement Change / Impact Analysis)
+        </h3>
+
+        <div class="diagram-card">
+          <div class="mermaid">
+flowchart TD
+    ReqUpdate["PO / BA cập nhật User Story / SRS"] --> Trigger["Hệ thống quét liên kết Requirement ⟷ TestCase"]
+    Trigger --> MarkOutdated["Đổi trạng thái liên kết: Needs Review / Outdated"]
+    MarkOutdated --> NotifyQA["Bắn thông báo tới QA Lead & Tác giả Test Case"]
+    NotifyQA --> ImpactReview{"QA thẩm định mức độ ảnh hưởng"}
+    ImpactReview -- Kịch bản không đổi --> KeepApproved["Xác nhận giữ nguyên phiên bản hiện tại"]
+    ImpactReview -- Cần sửa đổi --> CreateDraft["Tạo bản nháp mới từ phiên bản hiện tại (Draft)"]
+    CreateDraft --> UpdateSteps["Sửa đổi tiền điều kiện, các bước, kết quả mong đợi"]
+    UpdateSteps --> SubmitReview["Gửi phê duyệt lại ➔ Sinh TestCaseVersion mới"]
+          </div>
+          <div class="diagram-caption">Sơ đồ 3: Quy trình tự động cảnh báo và đối soát khi User Story thay đổi</div>
+        </div>
+
+        <p style="font-size: 0.93rem; color: var(--text-muted);">
+          Khi User Story thay đổi, trạng thái liên kết <code>TestCaseRequirement.LinkStatus</code> chuyển thành <code>NeedsReview</code>. Test Case gốc không bị tự động sửa, nhưng Dashboard của QA Lead sẽ hiện cảnh báo *"Có Test Case cần đối soát lại do yêu cầu thay đổi"*. Khi duyệt bản sửa đổi, hệ thống sinh ra <code>TestCaseVersion</code> mới (từ v1 lên v2) cho các Test Run tiếp theo.
+        </p>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 2rem 0 0.75rem;">
+          3.4. Luồng Vòng Đời Lỗi & Đồng Bộ Hai Chiều Với Issue Tracker (Two-Way Defect Sync)
+        </h3>
+
+        <div class="diagram-card">
+          <div class="mermaid">
+flowchart LR
+    subgraph TCM_System["Hệ Thống Test Case Management"]
+        FailStep["Tester ghi nhận: Failed"] --> PopForm["Tự động trích xuất Steps to Reproduce"]
+        PopForm --> CallJira["Gọi REST API Jira tạo Bug Issue"]
+        ReceiveKey["Gắn Bug Key (JIRA-102) vào TestExecution"]
+        WebhookCatch["Nhận Webhook từ Jira khi Issue chuyển 'Resolved'"]
+        MarkRetest["Đổi trạng thái TestRunItem: Ready for Retest"]
+        NotifyTester["Bắn thông báo cho Tester vào kiểm thử lại"]
+        RetestRun["Thực thi Lần 2 (Retest) ➔ Passed"]
+    end
+
+    subgraph Jira_System["Hệ Thống Quản Lý Lỗi (Jira / GitHub)"]
+        CreateIssue["Issue JIRA-102 được tạo mới (Open)"]
+        DevFix["Developer sửa lỗi & chuyển status sang 'Resolved'"]
+        TriggerWebhook["Jira Webhook bắn event status_changed sang TCM"]
+    end
+
+    CallJira --> CreateIssue
+    CreateIssue --> ReceiveKey
+    DevFix --> TriggerWebhook
+    TriggerWebhook --> WebhookCatch
+    WebhookCatch --> MarkRetest
+    MarkRetest --> NotifyTester
+    NotifyTester --> RetestRun
+          </div>
+          <div class="diagram-caption">Sơ đồ 4: Vòng đời xử lý lỗi hai chiều giữa TCM và Jira/GitHub Issues</div>
+        </div>
+
+        <p style="font-size: 0.93rem; color: var(--text-muted);">
+          Khi Tester bấm <code>Failed</code>, form tạo bug tự động điền sẵn các bước tái hiện (Steps to Reproduce) và gọi API tạo bug trên Jira. Khi Developer chuyển bug sang <code>Resolved</code>, webhook của Jira bắn về ABP Module, tự động đổi trạng thái <code>TestRunItem</code> thành <code>Ready for Retest</code> và gửi notification tới Tester.
+        </p>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 2rem 0 0.75rem;">
+          3.5. Luồng Tự Động Hóa Thu Thập Kết Quả Kiểm Thử Từ CI/CD (Automation Ingestion)
+        </h3>
+
+        <div class="diagram-card">
+          <div class="mermaid">
+flowchart TD
+    GitPush["Developer / QA push code lên GitHub / GitLab"] --> CIPipeline["CI/CD Pipeline chạy Test Suite tự động"]
+    CIPipeline --> GenReport["Sinh file báo cáo JUnit XML / JSON chứa Test Method Name"]
+    GenReport --> CallTcmApi["CLI / Webhook gọi API: POST /api/tcm/test-runs/{id}/ingest-results"]
+    
+    subgraph TCM_Backend["ABP TCM Backend Processing"]
+        ParseReport["Background Worker phân tích file XML/JSON"]
+        MatchAutoId{"Khớp AutomationId với TestCase trong Run?"}
+        MatchAutoId -- Có khớp --> CreateAutoExec["Tạo bản ghi TestExecution: ExecutionSource = CI_Pipeline"]
+        MatchAutoId -- Không khớp --> LogUnmapped["Lưu vào danh sách Unmapped Tests để QA đối chiếu sau"]
+        CreateAutoExec --> UpdateRunProgress["Tự động cập nhật Pass Rate trên Dashboard của Test Run"]
+    end
+    
+    CallTcmApi --> ParseReport
+          </div>
+          <div class="diagram-caption">Sơ đồ 5: Luồng tự động nạp kết quả kiểm thử từ Playwright/Cypress qua CI/CD</div>
+        </div>
+
+        <p style="font-size: 0.93rem; color: var(--text-muted);">
+          Mỗi test case tự động được ánh xạ qua <code>AutomationId</code> (ví dụ: <code>Namespace.ClassName.MethodName</code>). Khi pipeline CI/CD chạy xong, kết quả được đẩy về REST API của TCM, tự động sinh lượt chạy <code>TestExecution</code> với <code>ExecutionSource = CI_Pipeline</code>. Quản lý có thể xem kết quả kiểm thử tự động và thủ công trên cùng một Dashboard duy nhất.
+        </p>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 2rem 0 0.75rem;">
+          3.6. Luồng Tiêu Chí Nghiệm Thu & Khóa Đợt Test (Quality Gate & Sign-Off Lockdown)
+        </h3>
+
+        <div class="diagram-card">
+          <div class="mermaid">
+flowchart TD
+    AllTested["100% TestRunItem đã hoàn tất thực thi"] --> CheckGate{"Kiểm tra Tiêu chuẩn Chất lượng (Quality Gate)"}
+    
+    CheckGate -- "P1 Pass < 100% HOẶC còn Bug Blocker mở" --> GateFail["CẢNH BÁO: Không đạt tiêu chuẩn Release (No-Go)"]
+    GateFail --> ActionPlan["Tạo danh sách các điểm nghẽn gửi họp khẩn với PO/Dev"]
+    
+    CheckGate -- "100% P1 Pass & Pass Rate >= 95% & Không còn Blocker" --> GatePass["ĐẠT CHUẨN (Go for Release)"]
+    GatePass --> LockRun["QA Lead thực hiện 'Close / Archive Test Run'"]
+    LockRun --> FreezeData["ĐÓNG BĂNG DỮ LIỆU: Khóa quyền chỉnh sửa toàn bộ kết quả của Run"]
+    FreezeData --> GenSignOff["Xuất Biên bản Nghiệm thu Kiểm thử (PDF / Excel Sign-off Report)"]
+    GenSignOff --> PO_Sign["Product Owner & QA Lead ký duyệt bàn giao"]
+          </div>
+          <div class="diagram-caption">Sơ đồ 6: Kiểm soát phát hành qua Quality Gate và đóng băng dữ liệu kiểm toán</div>
+        </div>
+
+        <p style="font-size: 0.93rem; color: var(--text-muted);">
+          Chỉ khi đạt các ngưỡng chất lượng (Quality Gate) quy định, QA Lead mới tiến hành đóng đợt test (<code>Close / Archive</code>). Khi đó, toàn bộ dữ liệu của Test Run sẽ bị <strong>khóa bất biến</strong>, không một ai có thể sửa đổi kết quả nữa, đảm bảo tính pháp lý và độ tin cậy tuyệt đối cho biên bản nghiệm thu (Sign-Off Report).
+        </p>
+      </section>
+
+      <!-- Section 4: ERD Chuẩn Hóa -->
+      <section id="erd-mo-hinh-du-lieu">
+        <div class="section-header">
+          <h2 class="section-title"><span class="section-number">4</span> Mô Hình Dữ Liệu Thực Thể Chuẩn Hóa (Domain ERD)</h2>
+        </div>
+
+        <p>Mô hình ERD đã được chuẩn hóa với đầy đủ 14 thực thể miền, khắc phục toàn bộ các lỗi mâu thuẫn kiến trúc:</p>
+
+        <div class="diagram-card">
+          <div class="mermaid">
+erDiagram
+    PROJECT ||--o{ MODULE : "tổ chức theo cây tính năng"
+    PROJECT ||--o{ MILESTONE : "quản lý mốc thời gian"
+    PROJECT ||--o{ TEST_PLAN : "lập kế hoạch"
+    PROJECT ||--o{ REQUIREMENT : "theo dõi yêu cầu"
+    
+    MODULE ||--o{ MODULE : "hỗ trợ module cha - con"
+    MODULE ||--o{ TEST_CASE : "chứa các kịch bản"
+    
+    REQUIREMENT ||--o{ TEST_CASE_REQUIREMENT : "liên kết"
+    TEST_CASE ||--o{ TEST_CASE_REQUIREMENT : "liên kết"
+    
+    TEST_CASE ||--o{ TEST_CASE_VERSION : "lịch sử phiên bản snapshot"
+    TEST_CASE_VERSION ||--o{ TEST_STEP_SNAPSHOT : "các bước đóng băng"
+    TEST_CASE ||--o{ TEST_STEP : "các bước hiện tại"
+    
+    MILESTONE ||--o{ TEST_PLAN : "thuộc milestone"
+    TEST_PLAN ||--o{ TEST_RUN : "chứa các đợt chạy"
+    
+    TEST_RUN ||--o{ TEST_RUN_ITEM : "danh sách case cần test"
+    TEST_CASE ||--o{ TEST_RUN_ITEM : "tham chiếu case"
+    TEST_CASE_VERSION ||--o{ TEST_RUN_ITEM : "chốt phiên bản test"
+    
+    TEST_RUN_ITEM ||--o{ TEST_EXECUTION : "lịch sử các lần chạy 1..N"
+    TEST_EXECUTION ||--o{ TEST_STEP_RESULT : "kết quả từng bước"
+    TEST_EXECUTION ||--o{ DEFECT_LINK : "liên kết lỗi phát sinh"
+          </div>
+          <div class="diagram-caption">Sơ đồ 7: Mô hình quan hệ thực thể (ERD) hoàn chỉnh và chuẩn hóa</div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h4 class="card-title"><i class="fa-solid fa-list-ol" style="color: var(--primary);"></i> Phân Tách Thuộc Tính Rõ Ràng</h4>
+            <ul style="padding-left: 1.25rem; font-size: 0.88rem; color: var(--text-muted); line-height: 1.7;">
+              <li><strong>Priority (P1-P4):</strong> Mức độ ưu tiên chạy của Test Case. <em>(Tuyệt đối không để Severity ở Test Case!)</em></li>
+              <li><strong>Kind:</strong> Functional, NonFunctional, Security, Performance, Usability.</li>
+              <li><strong>Layer:</strong> UI, API, Integration, Database.</li>
+              <li><strong>Tags:</strong> <code>#smoke</code>, <code>#regression</code>, <code>#boundary</code>, <code>#checkout</code>.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h4 class="card-title"><i class="fa-solid fa-bug" style="color: #ef4444;"></i> DefectLink & Severity Lỗi</h4>
+            <ul style="padding-left: 1.25rem; font-size: 0.88rem; color: var(--text-muted); line-height: 1.7;">
+              <li><strong>Gắn trực tiếp vào TestExecution:</strong> Lỗi được sinh ra từ chính lần chạy thất bại cụ thể.</li>
+              <li><strong>Severity (Mức độ nghiêm trọng của lỗi):</strong> Blocker, Critical, Major, Minor, Trivial.</li>
+              <li><strong>Liên kết ngoài:</strong> Lưu thông tin hệ thống (Jira/GitHub), Bug Key và URL.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="callout" style="border-left-color: #8b5cf6; background: rgba(139, 92, 246, 0.08);">
+          <div class="callout-title" style="color: #8b5cf6;"><i class="fa-solid fa-user-lock"></i> Chuẩn Định Danh Người Dùng (Decoupled User Identity trong ABP)</div>
+          <p style="margin: 0; font-size: 0.92rem; color: var(--text-main);">
+            Để module có thể cắm vào bất kỳ ứng dụng nào mà không gây lỗi khóa ngoại CSDL, thực thể chỉ lưu các ID logic: 
+            <code>Guid? CreatorId</code>, <code>Guid? AssignedToUserId</code>, <code>Guid? ReviewerUserId</code>, <code>Guid? ExecutedByUserId</code>. 
+            Không tạo ràng buộc Foreign Key cứng tới bảng <code>AppUser</code> của Host. Thông tin tên/avatar được giải quyết linh hoạt qua ABP <code>IExternalUserLookupServiceProvider</code>.
+          </p>
+        </div>
+      </section>
+
+      <!-- Section 5: Danh Mục Use Case Chi Tiết -->
+      <section id="danh-muc-use-case">
+        <div class="section-header">
+          <h2 class="section-title"><span class="section-number">5</span> Danh Mục Use Case Chi Tiết (Use Case Catalog)</h2>
+        </div>
+        <p>Danh sách 27 Use Case đầy đủ phân bổ qua 6 nhóm nghiệp vụ giúp đội ngũ phát triển định hình rõ từng API endpoint và màn hình UI:</p>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 1.5rem 0 0.75rem;">5.1. Nhóm Quản lý Dự án & Cây Thư Viện</h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 80px;">Mã UC</th>
+                <th style="width: 220px;">Tên Use Case</th>
+                <th style="width: 140px;">Actor chính</th>
+                <th>Mô tả nghiệp vụ</th>
+                <th style="width: 80px; text-align: center;">Pha</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>UC-01</code></td>
+                <td><strong>Tạo / Sửa / Xóa Dự án</strong></td>
+                <td>QA Lead</td>
+                <td>Khởi tạo dự án mới với mã Code dùng làm prefix. Chỉ Archive (xóa mềm), không xóa cứng khi đã có TestCase.</td>
+                <td style="text-align: center;"><span class="phase-badge phase-1">Pha 1</span></td>
+              </tr>
+              <tr>
+                <td><code>UC-02</code></td>
+                <td><strong>Quản lý cây Module / Suite</strong></td>
+                <td>QA Lead, Tester</td>
+                <td>Tạo, đổi tên, kéo thả (drag-drop), xóa nút cây. Hỗ trợ N cấp lồng nhau. Xóa nút cha tự động di chuyển con lên 1 cấp.</td>
+                <td style="text-align: center;"><span class="phase-badge phase-1">Pha 1</span></td>
+              </tr>
+              <tr>
+                <td><code>UC-03</code></td>
+                <td><strong>Quản lý Milestone</strong></td>
+                <td>QA Lead</td>
+                <td>Tạo Sprint/Release milestone gắn với Project. Dùng để gán vào TestPlan khi lập kế hoạch đợt test.</td>
+                <td style="text-align: center;"><span class="phase-badge phase-1">Pha 1</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 2rem 0 0.75rem;">5.2. Nhóm Soạn Thảo & Phê Duyệt Test Case</h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 80px;">Mã UC</th>
+                <th style="width: 220px;">Tên Use Case</th>
+                <th style="width: 140px;">Actor chính</th>
+                <th>Mô tả nghiệp vụ</th>
+                <th style="width: 80px; text-align: center;">Pha</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>UC-04</code></td>
+                <td><strong>Soạn thảo Test Case</strong></td>
+                <td>Tester</td>
+                <td>Tạo mới hoặc chỉnh sửa TC gồm: Title, Preconditions, Postconditions, Priority, Kind, Layer, Tags, và Steps. Mặc định: Draft.</td>
+                <td style="text-align: center;"><span class="phase-badge phase-1">Pha 1</span></td>
+              </tr>
+              <tr>
+                <td><code>UC-05</code></td>
+                <td><strong>Nhân bản Test Case (Clone)</strong></td>
+                <td>Tester</td>
+                <td>Sao chép một TC thành bản Draft mới, kế thừa toàn bộ nội dung và Steps để phục vụ tạo nhanh kịch bản tương tự.</td>
+                <td style="text-align: center;"><span class="phase-badge phase-1">Pha 1</span></td>
+              </tr>
+              <tr>
+                <td><code>UC-06</code></td>
+                <td><strong>Gửi duyệt (Submit Review)</strong></td>
+                <td>Tester</td>
+                <td>Chuyển trạng thái từ Draft &rarr; InReview. Hệ thống gửi notification tới QA Lead phụ trách dự án.</td>
+                <td style="text-align: center;"><span class="phase-badge phase-1">Pha 1</span></td>
+              </tr>
+              <tr>
+                <td><code>UC-07</code></td>
+                <td><strong>Phê duyệt / Từ chối TC</strong></td>
+                <td>QA Lead</td>
+                <td>Duyệt (Approved): Hệ thống tự sinh snapshot TestCaseVersion. Từ chối (Rejected): Bắt buộc nhập ReviewComments, TC quay về Draft.</td>
+                <td style="text-align: center;"><span class="phase-badge phase-1">Pha 1</span></td>
+              </tr>
+              <tr>
+                <td><code>UC-08</code></td>
+                <td><strong>Deprecate Test Case</strong></td>
+                <td>QA Lead</td>
+                <td>Đánh dấu TC hết hạn. TC vẫn hiển thị trong thư viện (greyed out) nhưng bị khóa không cho thêm vào TestRun mới.</td>
+                <td style="text-align: center;"><span class="phase-badge phase-1">Pha 1</span></td>
+              </tr>
+              <tr>
+                <td><code>UC-09</code></td>
+                <td><strong>Xem lịch sử phiên bản</strong></td>
+                <td>Tester, QA Lead</td>
+                <td>Xem danh sách tất cả TestCaseVersion, so sánh diff trực quan giữa 2 phiên bản (hiển thị thay đổi Steps, Preconditions...).</td>
+                <td style="text-align: center;"><span class="phase-badge phase-1">Pha 1</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 2rem 0 0.75rem;">5.3. Nhóm Lập Kế Hoạch & Thực Thi Test</h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 80px;">Mã UC</th>
+                <th style="width: 220px;">Tên Use Case</th>
+                <th style="width: 140px;">Actor chính</th>
+                <th>Mô tả nghiệp vụ</th>
+                <th style="width: 80px; text-align: center;">Pha</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>UC-10</code></td>
+                <td><strong>Tạo Test Plan</strong></td>
+                <td>QA Lead</td>
+                <td>Tạo kế hoạch test cho 1 Release/Sprint. Gắn Milestone, xác định phạm vi, mục tiêu và môi trường.</td>
+                <td style="text-align: center;"><span class="phase-badge phase-1">Pha 1</span></td>
+              </tr>
+              <tr>
+                <td><code>UC-11</code></td>
+                <td><strong>Tạo Test Run trong Plan</strong></td>
+                <td>QA Lead</td>
+                <td>Tạo đợt chạy cụ thể (ví dụ: "Smoke Test Staging", "Regression Prod"). Chọn Environment, ExecutionType.</td>
+                <td style="text-align: center;"><span class="phase-badge phase-1">Pha 1</span></td>
+              </tr>
+              <tr>
+                <td><code>UC-12</code></td>
+                <td><strong>Thêm TC vào Test Run</strong></td>
+                <td>QA Lead, Tester</td>
+                <td>Chọn TC từ cây thư viện (filter theo Module, Priority, Tags). Hệ thống tự động gắn TestCaseVersion mới nhất đã Approved.</td>
+                <td style="text-align: center;"><span class="phase-badge phase-1">Pha 1</span></td>
+              </tr>
+              <tr>
+                <td><code>UC-13</code></td>
+                <td><strong>Phân công Tester (Assign)</strong></td>
+                <td>QA Lead</td>
+                <td>Gán Assignee cho từng item hoặc gán hàng loạt (bulk assign) theo module hoặc theo tag.</td>
+                <td style="text-align: center;"><span class="phase-badge phase-1">Pha 1</span></td>
+              </tr>
+              <tr>
+                <td><code>UC-14</code></td>
+                <td><strong>Thực thi & Ghi nhận kết quả</strong></td>
+                <td>Tester</td>
+                <td>Xem từng bước từ snapshot TestCaseVersion, tick Pass/Fail/Block/Skip theo bước, đính kèm screenshot, tạo TestExecution mới.</td>
+                <td style="text-align: center;"><span class="phase-badge phase-1">Pha 1</span></td>
+              </tr>
+              <tr>
+                <td><code>UC-15</code></td>
+                <td><strong>Retest (Chạy lại sau sửa)</strong></td>
+                <td>Tester</td>
+                <td>Tạo lần chạy mới (AttemptNumber +1) cho cùng TestRunItem sau khi Dev sửa bug. Lần chạy cũ giữ nguyên 100%.</td>
+                <td style="text-align: center;"><span class="phase-badge phase-1">Pha 1</span></td>
+              </tr>
+              <tr>
+                <td><code>UC-16</code></td>
+                <td><strong>Khóa đợt Run & Quality Gate</strong></td>
+                <td>QA Lead</td>
+                <td>Kiểm tra Quality Gate &rarr; Đóng Run &rarr; Khóa dữ liệu bất biến. Cảnh báo No-Go nếu chưa đạt tiêu chí nghiệm thu.</td>
+                <td style="text-align: center;"><span class="phase-badge phase-1">Pha 1</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 2rem 0 0.75rem;">5.4. Nhóm Quản Lý Lỗi & Tích Hợp</h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 80px;">Mã UC</th>
+                <th style="width: 220px;">Tên Use Case</th>
+                <th style="width: 140px;">Actor chính</th>
+                <th>Mô tả nghiệp vụ</th>
+                <th style="width: 80px; text-align: center;">Pha</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>UC-17</code></td>
+                <td><strong>Gắn Bug khi Test Failed</strong></td>
+                <td>Tester</td>
+                <td>Khi Failed, tự động copy Steps-to-reproduce vào form tạo bug. Gắn DefectLink vào TestExecution cụ thể.</td>
+                <td style="text-align: center;"><span class="phase-badge phase-1">Pha 1</span></td>
+              </tr>
+              <tr>
+                <td><code>UC-18</code></td>
+                <td><strong>Đồng bộ Bug 2 chiều (Webhook)</strong></td>
+                <td>Hệ thống</td>
+                <td>Nhận webhook từ Jira/GitHub khi bug Resolved &rarr; Tự động chuyển Item sang ReadyForRetest &rarr; Notify Tester.</td>
+                <td style="text-align: center;"><span class="phase-badge phase-2">Pha 2</span></td>
+              </tr>
+              <tr>
+                <td><code>UC-19</code></td>
+                <td><strong>Liên kết Requirement ⟷ TC</strong></td>
+                <td>Tester, BA</td>
+                <td>Gắn 1 TC với 1+ Requirement. Cung cấp Ma trận truy vết yêu cầu (Requirement Traceability Matrix - RTM).</td>
+                <td style="text-align: center;"><span class="phase-badge phase-2">Pha 2</span></td>
+              </tr>
+              <tr>
+                <td><code>UC-20</code></td>
+                <td><strong>Cảnh báo Impact khi Req đổi</strong></td>
+                <td>Hệ thống</td>
+                <td>Khi Requirement đổi sang Changed &rarr; Đổi LinkStatus TC sang NeedsReview &rarr; Gửi notification tới QA Lead.</td>
+                <td style="text-align: center;"><span class="phase-badge phase-2">Pha 2</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 2rem 0 0.75rem;">5.5. Nhóm Báo Cáo & Xuất Dữ Liệu</h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 80px;">Mã UC</th>
+                <th style="width: 220px;">Tên Use Case</th>
+                <th style="width: 140px;">Actor chính</th>
+                <th>Mô tả nghiệp vụ</th>
+                <th style="width: 80px; text-align: center;">Pha</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>UC-21</code></td>
+                <td><strong>Xem Dashboard Realtime</strong></td>
+                <td>QA Lead, PM, PO</td>
+                <td>Xem tổng quan Pass/Fail/Block/Skip rate, Burndown chart, Defect density theo phân hệ thời gian thực.</td>
+                <td style="text-align: center;"><span class="phase-badge phase-1">Pha 1</span></td>
+              </tr>
+              <tr>
+                <td><code>UC-22</code></td>
+                <td><strong>Xuất Biên bản Nghiệm thu</strong></td>
+                <td>QA Lead</td>
+                <td>Xuất PDF/Excel Sign-Off Report: thông tin Run, kết quả chi tiết, danh sách Bug, phần ký duyệt QA Lead & PO.</td>
+                <td style="text-align: center;"><span class="phase-badge phase-1">Pha 1</span></td>
+              </tr>
+              <tr>
+                <td><code>UC-23</code></td>
+                <td><strong>Import TC từ Excel</strong></td>
+                <td>Tester</td>
+                <td>Upload file Excel theo template chuẩn 12 cột. Hệ thống validate từng dòng &rarr; Tạo TC Draft hàng loạt.</td>
+                <td style="text-align: center;"><span class="phase-badge phase-2">Pha 2</span></td>
+              </tr>
+              <tr>
+                <td><code>UC-24</code></td>
+                <td><strong>Export TC ra Excel / CSV</strong></td>
+                <td>Tester</td>
+                <td>Xuất danh sách kịch bản (kèm bộ lọc) ra file Excel/CSV tương thích template import để sao lưu/bàn giao.</td>
+                <td style="text-align: center;"><span class="phase-badge phase-2">Pha 2</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 2rem 0 0.75rem;">5.6. Nhóm Tự Động Hóa & Trí Tuệ Nhân Tạo (AI)</h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 80px;">Mã UC</th>
+                <th style="width: 220px;">Tên Use Case</th>
+                <th style="width: 140px;">Actor chính</th>
+                <th>Mô tả nghiệp vụ</th>
+                <th style="width: 80px; text-align: center;">Pha</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>UC-25</code></td>
+                <td><strong>Nạp kết quả CI/CD tự động</strong></td>
+                <td>Hệ thống (API)</td>
+                <td>API <code>POST /api/tcm/test-runs/{id}/ingest-results</code> nhận JUnit XML/JSON, map <code>AutomationId</code> &rarr; Tạo TestExecution tự động.</td>
+                <td style="text-align: center;"><span class="phase-badge phase-3">Pha 3</span></td>
+              </tr>
+              <tr>
+                <td><code>UC-26</code></td>
+                <td><strong>AI sinh kịch bản từ Story</strong></td>
+                <td>Tester</td>
+                <td>Nhập User Story & AC &rarr; Semantic Kernel sinh kịch bản Draft đầy đủ Happy Path, Negative Path và Edge Cases.</td>
+                <td style="text-align: center;"><span class="phase-badge phase-3">Pha 3</span></td>
+              </tr>
+              <tr>
+                <td><code>UC-27</code></td>
+                <td><strong>AI phát hiện TC trùng lặp</strong></td>
+                <td>Hệ thống</td>
+                <td>Dùng Vector Embedding so sánh ngữ nghĩa &rarr; Cảnh báo khi phát hiện kịch bản có độ tương đồng &gt; 85%.</td>
+                <td style="text-align: center;"><span class="phase-badge phase-3">Pha 3</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Section 6: Quy Tắc Nghiệp Vụ Chuẩn Hóa -->
+      <section id="quy-tac-nghiep-vu">
+        <div class="section-header">
+          <h2 class="section-title"><span class="section-number">6</span> Quy Tắc Nghiệp Vụ Chuẩn Hóa (Business Rules Catalog)</h2>
+        </div>
+        <p>Hệ thống quy tắc bất di bất dịch đảm bảo tính toàn vẹn dữ liệu, chống sai sót vận hành và bảo vệ số liệu kiểm toán:</p>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; margin: 1.25rem 0 0.5rem; color: var(--primary);">
+          6.1. Quy tắc về Test Case (BR-TC)
+        </h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 110px;">Mã</th>
+                <th style="width: 380px;">Quy tắc nghiệp vụ</th>
+                <th>Hành động hệ thống khi vi phạm</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>BR-TC-01</code></td>
+                <td>Test Case phải có ít nhất 1 bước kiểm thử (TestStep).</td>
+                <td>Chặn Submit for Review nếu Steps rỗng. Trả validation error.</td>
+              </tr>
+              <tr>
+                <td><code>BR-TC-02</code></td>
+                <td>Mã <code>Code</code> tự sinh theo format <code>{ProjectCode}-{AutoIncrement}</code> (vd: <code>BANK-001</code>).</td>
+                <td>Hệ thống tự tăng qua Sequence DB, cấm người dùng sửa tay.</td>
+              </tr>
+              <tr>
+                <td><code>BR-TC-03</code></td>
+                <td>Mã <code>Code</code> phải duy nhất (Unique) trong toàn bộ Project.</td>
+                <td>Unique constraint trong CSDL, ném <code>BusinessException</code> nếu trùng.</td>
+              </tr>
+              <tr>
+                <td><code>BR-TC-04</code></td>
+                <td>Test Case ở trạng thái <code>InReview</code> không được chỉnh sửa nội dung.</td>
+                <td>Khóa giao diện form soạn thảo. API trả HTTP 403 Forbidden.</td>
+              </tr>
+              <tr>
+                <td><code>BR-TC-05</code></td>
+                <td>Test Case <code>Approved</code> chỉ được chuyển về Draft để sửa, hoặc Deprecated. Cấm xóa.</td>
+                <td>Ẩn nút Delete. Chỉ cho phép hành động "Tạo bản nháp chỉnh sửa".</td>
+              </tr>
+              <tr>
+                <td><code>BR-TC-06</code></td>
+                <td>Chỉ Test Case có trạng thái <code>Approved</code> mới được thêm vào Test Run.</td>
+                <td>Bộ lọc thêm case chỉ hiển thị case Approved. Chặn API nếu gửi case Draft.</td>
+              </tr>
+              <tr>
+                <td><code>BR-TC-07</code></td>
+                <td>Khi Approved, hệ thống <strong>tự động</strong> sinh TestCaseVersion mới và tăng <code>ActiveVersionNumber</code>.</td>
+                <td>Thực hiện trong Domain Service <code>TestCaseManager.ApproveAsync()</code>.</td>
+              </tr>
+              <tr>
+                <td><code>BR-TC-08</code></td>
+                <td><code>Severity</code> <strong>KHÔNG</strong> tồn tại trong Test Case. Severity chỉ thuộc DefectLink.</td>
+                <td>Không khai báo trường Severity trong Entity TestCase.</td>
+              </tr>
+              <tr>
+                <td><code>BR-TC-09</code></td>
+                <td>Cây thư viện Test Case <strong>KHÔNG</strong> chứa Sprint / Milestone.</td>
+                <td>Entity Module không có trường <code>MilestoneId</code>.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; margin: 2rem 0 0.5rem; color: #7c3aed;">
+          6.2. Quy tắc về TestCaseVersion (Bất Biến)
+        </h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 110px;">Mã</th>
+                <th style="width: 380px;">Quy tắc nghiệp vụ</th>
+                <th>Hành động hệ thống khi vi phạm</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>BR-VER-01</code></td>
+                <td>TestCaseVersion là bản chụp bất biến (Immutable Snapshot). Sau khi tạo cấm sửa đổi.</td>
+                <td>Không cung cấp API Update. Entity không có public setter cho dữ liệu.</td>
+              </tr>
+              <tr>
+                <td><code>BR-VER-02</code></td>
+                <td>Chứa đầy đủ snapshot: Title, Preconditions, Priority, Kind, Layer, Tags và toàn bộ Steps.</td>
+                <td>Snapshot JSON hóa ngay lúc phê duyệt, kiểm tra null trước khi insert.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; margin: 2rem 0 0.5rem; color: #059669;">
+          6.3. Quy tắc về Test Plan / Test Run / Execution (BR-RUN)
+        </h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 110px;">Mã</th>
+                <th style="width: 380px;">Quy tắc nghiệp vụ</th>
+                <th>Hành động hệ thống khi vi phạm</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>BR-RUN-01</code></td>
+                <td>TestRunItem bắt buộc phải liên kết tới <code>TestCaseVersionId</code>. Không được null.</td>
+                <td>Foreign Key NOT NULL. Tự động lấy ActiveVersion lúc thêm vào Run.</td>
+              </tr>
+              <tr>
+                <td><code>BR-RUN-02</code></td>
+                <td>Khi Test Run ở trạng thái <code>Completed/Archived</code>: cấm thực thi, cấm sửa kết quả.</td>
+                <td>Khóa toàn bộ quyền thao tác. Trả lỗi "Test Run is locked for audit".</td>
+              </tr>
+              <tr>
+                <td><code>BR-RUN-03</code></td>
+                <td>Mỗi TestExecution có <code>AttemptNumber</code> tự tăng (1, 2, 3...). Không xóa lần cũ.</td>
+                <td>Tự động tính <code>MAX(AttemptNumber) + 1</code>. Cấm API xóa execution.</td>
+              </tr>
+              <tr>
+                <td><code>BR-RUN-04</code></td>
+                <td><code>CurrentStatus</code> của Item luôn phản ánh kết quả lần chạy cuối cùng.</td>
+                <td>Domain Event cập nhật <code>TestRunItem.CurrentStatus = LatestExecution.Status</code>.</td>
+              </tr>
+              <tr>
+                <td><code>BR-RUN-05</code></td>
+                <td>Quality Gate: Chỉ cho phép Close Run khi đạt tiêu chí cấu hình (100% P1 Pass, 0 Blocker).</td>
+                <td>Cảnh báo No-Go nếu chưa đạt. Yêu cầu nhập lý do Override nếu cố đóng.</td>
+              </tr>
+              <tr>
+                <td><code>BR-RUN-06</code></td>
+                <td>Milestone chỉ thuộc về TestPlan/TestRun, không thuộc cây thư viện.</td>
+                <td>TestPlan lưu <code>MilestoneId</code>; cây Module độc lập với thời gian.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; margin: 2rem 0 0.5rem; color: #d97706;">
+          6.4. Quy tắc về Module Cây Thư Viện & File Đính Kèm (BR-MOD & BR-ATT)
+        </h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 110px;">Mã</th>
+                <th style="width: 380px;">Quy tắc nghiệp vụ</th>
+                <th>Hành động hệ thống khi vi phạm</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>BR-MOD-01</code></td>
+                <td>Cây phân cấp Module hỗ trợ tối đa <strong>5 cấp</strong> lồng nhau.</td>
+                <td>Kiểm tra độ sâu nút cây khi tạo hoặc kéo thả. Trả lỗi nếu vượt quá 5.</td>
+              </tr>
+              <tr>
+                <td><code>BR-MOD-02</code></td>
+                <td>Không được xóa Module nếu còn chứa Test Case hoặc Module con.</td>
+                <td>Kiểm tra <code>HasChildren</code> / <code>HasTestCases</code>. Chặn xóa nếu còn dữ liệu.</td>
+              </tr>
+              <tr>
+                <td><code>BR-ATT-01</code></td>
+                <td>Chỉ chấp nhận file: hình ảnh, video MP4/WebM, PDF, CSV, text log, HAR.</td>
+                <td>Kiểm tra Magic Byte và Content-Type khi upload. Chặn file thực thi (.exe, .bat).</td>
+              </tr>
+              <tr>
+                <td><code>BR-ATT-02</code></td>
+                <td>Giới hạn dung lượng mỗi file tối đa <strong>10 MB</strong>.</td>
+                <td>Kiểm tra kích thước trước khi stream lưu trữ. Trả HTTP 413 Payload Too Large.</td>
+              </tr>
+              <tr>
+                <td><code>BR-ATT-03</code></td>
+                <td>Mỗi TestExecution tối đa 20 file; mỗi TestCase tối đa 10 file.</td>
+                <td>Đếm số lượng file hiện có trước khi cho phép tải thêm.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Section 7: Báo Cáo & KPIs -->
+      <section id="bao-cao-kpi">
+        <div class="section-header">
+          <h2 class="section-title"><span class="section-number">7</span> Đặc Tả Báo Cáo, KPIs & Dashboard (Reports & Metrics)</h2>
+        </div>
+        <p>Hệ thống chỉ số đo lường hiệu suất kiểm thử và các mẫu báo cáo chuẩn hóa cho quản trị dự án:</p>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 1.5rem 0 0.75rem;">7.1. Danh sách 10 KPIs Cốt Lõi</h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 40px;">#</th>
+                <th style="width: 180px;">Chỉ số KPI</th>
+                <th style="width: 320px;">Công thức tính</th>
+                <th>Ý nghĩa quản trị</th>
+                <th style="width: 140px;">Hiển thị</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td><strong>Pass Rate (%)</strong></td>
+                <td><code>(Passed Items / Total Items) × 100</code></td>
+                <td>Tỷ lệ kiểm thử thành công tổng thể của đợt chạy</td>
+                <td>Dashboard chính</td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td><strong>Fail Rate (%)</strong></td>
+                <td><code>(Failed Items / Total Items) × 100</code></td>
+                <td>Tỷ lệ phát hiện lỗi chức năng</td>
+                <td>Dashboard chính</td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td><strong>Block Rate (%)</strong></td>
+                <td><code>(Blocked Items / Total Items) × 100</code></td>
+                <td>Tỷ lệ bị nghẽn do môi trường hoặc lỗi chặn đường</td>
+                <td>Dashboard chính</td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td><strong>Untested Rate (%)</strong></td>
+                <td><code>(Untested Items / Total Items) × 100</code></td>
+                <td>Khối lượng công việc còn tồn đọng cần hoàn tất</td>
+                <td>Dashboard chính</td>
+              </tr>
+              <tr>
+                <td>5</td>
+                <td><strong>Defect Density</strong></td>
+                <td><code>Tổng DefectLinks / Tổng TestRunItems</code></td>
+                <td>Mật độ lỗi trên mỗi kịch bản kiểm thử theo module</td>
+                <td>Heatmap phân hệ</td>
+              </tr>
+              <tr>
+                <td>6</td>
+                <td><strong>Flaky Rate (%)</strong></td>
+                <td><code>(Items có &ge;2 lần chạy khác kết quả / Total) × 100</code></td>
+                <td>Độ bất ổn định của chức năng phần mềm</td>
+                <td>Báo cáo chất lượng</td>
+              </tr>
+              <tr>
+                <td>7</td>
+                <td><strong>Execution Velocity</strong></td>
+                <td><code>Tổng executions hoàn thành / Số ngày test</code></td>
+                <td>Tốc độ thực thi trung bình của đội QA (cases/ngày)</td>
+                <td>Test Run Overview</td>
+              </tr>
+              <tr>
+                <td>8</td>
+                <td><strong>Requirement Coverage</strong></td>
+                <td><code>(Req có &ge;1 TC linked / Tổng Req) × 100</code></td>
+                <td>Mức độ bao phủ kịch bản đối với yêu cầu nghiệp vụ</td>
+                <td>Báo cáo RTM</td>
+              </tr>
+              <tr>
+                <td>9</td>
+                <td><strong>Retest Rate (%)</strong></td>
+                <td><code>(Items có AttemptNumber &ge; 2 / Total) × 100</code></td>
+                <td>Tỷ lệ kịch bản phải chạy lại sau khi sửa lỗi</td>
+                <td>Báo cáo chất lượng</td>
+              </tr>
+              <tr>
+                <td>10</td>
+                <td><strong>Avg Resolution Time</strong></td>
+                <td><code>AVG(RetestPass.Time - FailRun1.Time)</code></td>
+                <td>Thời gian trung bình từ lúc báo lỗi đến khi retest pass</td>
+                <td>Báo cáo quản lý</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 2rem 0 0.75rem;">7.2. Danh Sách 8 Mẫu Báo Cáo Chuyên Biệt</h3>
+        <div class="grid-2">
+          <div class="card">
+            <h4 class="card-title"><code>RPT-01</code> Dashboard Realtime Test Run</h4>
+            <p class="card-desc">Biểu đồ Doughnut Pass/Fail/Block/Skip cập nhật tức thời qua SignalR Hub, danh sách việc chưa chạy theo tester.</p>
+          </div>
+          <div class="card">
+            <h4 class="card-title"><code>RPT-02</code> Burndown Chart Đợt Test</h4>
+            <p class="card-desc">Biểu đồ số case Untested giảm dần theo ngày, so sánh giữa đường tiến độ lý tưởng và đường thực tế.</p>
+          </div>
+          <div class="card">
+            <h4 class="card-title"><code>RPT-03</code> Biên Bản Nghiệm Thu (Sign-Off)</h4>
+            <p class="card-desc">Báo cáo tổng kết chính thức phục vụ ký duyệt bàn giao, xuất bản ra định dạng PDF hoặc file Excel có chữ ký.</p>
+          </div>
+          <div class="card">
+            <h4 class="card-title"><code>RPT-04</code> Breakdown TC Theo Module</h4>
+            <p class="card-desc">Bảng phân tích mật độ kịch bản, số lượng Draft/Approved/Deprecated cho từng nút trên cây thư viện.</p>
+          </div>
+          <div class="card">
+            <h4 class="card-title"><code>RPT-05</code> Defect Density Heatmap</h4>
+            <p class="card-desc">Bản đồ nhiệt chỉ rõ phân hệ nào đang tập trung nhiều lỗi nghiêm trọng nhất để tăng cường nguồn lực Dev.</p>
+          </div>
+          <div class="card">
+            <h4 class="card-title"><code>RPT-06</code> Ma Trận Truy Vết (RTM)</h4>
+            <p class="card-desc">Bảng ánh xạ 3 chiều: Requirement &rarr; Test Case &rarr; Kết quả TestRun, chứng minh độ phủ kiểm thử.</p>
+          </div>
+        </div>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 2rem 0 0.75rem;">7.3. Mẫu Biên Bản Nghiệm Thu Kiểm Thử (Sign-Off Report Template)</h3>
+        <div class="signoff-sheet">
+================================================================================
+                    BIÊN BẢN NGHIỆM THU CHẤT LƯỢNG KIỂM THỬ
+================================================================================
+1. THÔNG TIN ĐỢT TEST:
+   - Tên Test Run:       Sprint 14 - Regression Staging
+   - Thuộc Kế hoạch:     Core Banking Release v2.4
+   - Mốc thời gian:      Milestone: Release 2.4.0-RC
+   - Môi trường chạy:    Staging (Build: 2026.10.05-rev42)
+   - Thời gian:          Từ 01/10/2026 đến 05/10/2026
+
+2. TỔNG HỢP KẾT QUẢ:
+   ┌──────────────┬──────────────┬──────────────┐
+   │ Trạng thái   │   Số lượng   │    Tỷ lệ     │
+   ├──────────────┼──────────────┼──────────────┤
+   │ PASSED       │     245      │    96.46%    │
+   │ FAILED       │       4      │     1.57%    │
+   │ BLOCKED      │       2      │     0.79%    │
+   │ SKIPPED      │       3      │     1.18%    │
+   ├──────────────┼──────────────┼──────────────┤
+   │ TỔNG CỘNG    │     254      │   100.00%    │
+   └──────────────┴──────────────┴──────────────┘
+   QUALITY GATE: [ PASSED ] (P1 Pass: 100%, Blocker: 0)
+
+3. DANH SÁCH LỖI CÒN TỒN ĐỌNG (DEFECTS):
+   - BUG-204 [Major]: Timeout khi tải danh sách giao dịch > 10.000 dòng (Open)
+   - BUG-209 [Minor]: Lệch căn lề avatar người dùng trên màn hình Safari (Open)
+
+4. KÝ DUYỆT BÀN GIAO:
+   QA Lead: ______________________     Product Owner: ______________________
+   Ngày:    ___ / ___ / 2026           Ngày:          ___ / ___ / 2026
+================================================================================
+        </div>
+      </section>
+
+      <!-- Section 8: Hệ Thống Thông Báo -->
+      <section id="he-thong-thong-bao">
+        <div class="section-header">
+          <h2 class="section-title"><span class="section-number">8</span> Hệ Thống Thông Báo & Cảnh Báo (Notification Strategy)</h2>
+        </div>
+        <p>Chiến lược thông báo đa kênh đảm bảo luồng cộng tác mượt mà giữa QA Tester, QA Lead, Dev và Product Owner:</p>
+
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-icon blue"><i class="fa-solid fa-bell"></i></div>
+            <h4 class="card-title">In-App Realtime</h4>
+            <p class="card-desc">Sử dụng ABP <code>INotificationPublisher</code> kết hợp SignalR Hub để hiển thị popup chuông thông báo ngay trong ứng dụng.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon amber"><i class="fa-solid fa-envelope"></i></div>
+            <h4 class="card-title">Email Notification</h4>
+            <p class="card-desc">Sử dụng ABP <code>IEmailSender</code> với Background Worker gửi email thông báo khi có yêu cầu phê duyệt hoặc lỗi nghiêm trọng.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon purple"><i class="fa-solid fa-network-wired"></i></div>
+            <h4 class="card-title">Outgoing Webhooks</h4>
+            <p class="card-desc">Tự động đẩy payload JSON tới kênh Slack, Microsoft Teams hoặc hệ thống quản trị nội bộ khi đợt test hoàn tất.</p>
+          </div>
+        </div>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 1.75rem 0 0.75rem;">8.1. Ma Trận Sự Kiện Thông Báo (NTF-01 đến NTF-09)</h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 70px;">Mã</th>
+                <th style="width: 280px;">Sự kiện (Domain Event)</th>
+                <th style="width: 180px;">Người nhận</th>
+                <th style="width: 130px;">Kênh</th>
+                <th style="width: 60px; text-align: center;">Pha</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>NTF-01</code></td>
+                <td>Test Case được gửi duyệt (Draft &rarr; InReview)</td>
+                <td>QA Lead dự án</td>
+                <td>In-App</td>
+                <td style="text-align: center;"><span class="phase-badge phase-1">P1</span></td>
+              </tr>
+              <tr>
+                <td><code>NTF-02</code></td>
+                <td>Test Case bị từ chối (InReview &rarr; Rejected)</td>
+                <td>Tester tác giả</td>
+                <td>In-App + Email</td>
+                <td style="text-align: center;"><span class="phase-badge phase-1">P1</span></td>
+              </tr>
+              <tr>
+                <td><code>NTF-03</code></td>
+                <td>Test Case được duyệt (Approved) + Version mới</td>
+                <td>Tester tác giả</td>
+                <td>In-App</td>
+                <td style="text-align: center;"><span class="phase-badge phase-1">P1</span></td>
+              </tr>
+              <tr>
+                <td><code>NTF-04</code></td>
+                <td>Được phân công TestRunItem mới</td>
+                <td>Tester được gán</td>
+                <td>In-App</td>
+                <td style="text-align: center;"><span class="phase-badge phase-1">P1</span></td>
+              </tr>
+              <tr>
+                <td><code>NTF-05</code></td>
+                <td>Bug Jira đổi Resolved &rarr; Ready for Retest</td>
+                <td>Tester phát hiện lỗi</td>
+                <td>In-App + Email</td>
+                <td style="text-align: center;"><span class="phase-badge phase-2">P2</span></td>
+              </tr>
+              <tr>
+                <td><code>NTF-06</code></td>
+                <td>Requirement thay đổi &rarr; TC cần đối soát lại</td>
+                <td>QA Lead & Tác giả TC</td>
+                <td>In-App + Email</td>
+                <td style="text-align: center;"><span class="phase-badge phase-2">P2</span></td>
+              </tr>
+              <tr>
+                <td><code>NTF-07</code></td>
+                <td>Test Run sắp đến Due Date mà còn Untested</td>
+                <td>Các Tester còn việc</td>
+                <td>In-App + Email</td>
+                <td style="text-align: center;"><span class="phase-badge phase-2">P2</span></td>
+              </tr>
+              <tr>
+                <td><code>NTF-08</code></td>
+                <td>Quality Gate thất bại khi cố gắng đóng Run</td>
+                <td>PM, PO, QA Lead</td>
+                <td>In-App + Email</td>
+                <td style="text-align: center;"><span class="phase-badge phase-1">P1</span></td>
+              </tr>
+              <tr>
+                <td><code>NTF-09</code></td>
+                <td>Test Run đóng thành công (Completed/Archived)</td>
+                <td>Toàn bộ thành viên Run</td>
+                <td>In-App + Webhook</td>
+                <td style="text-align: center;"><span class="phase-badge phase-1">P1</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Section 9: Quản Lý File Đính Kèm -->
+      <section id="quan-ly-attachment">
+        <div class="section-header">
+          <h2 class="section-title"><span class="section-number">9</span> Quản Lý File Đính Kèm (Attachment Management)</h2>
+        </div>
+        <p>Chiến lược lưu trữ hình ảnh chứng cứ lỗi, log file và tài liệu kiểm thử với khả năng mở rộng đa nền tảng:</p>
+
+        <div class="grid-3">
+          <div class="card">
+            <h4 class="card-title"><i class="fa-solid fa-hard-drive" style="color: var(--primary);"></i> On-Premise Storage</h4>
+            <p class="card-desc">Lưu trực tiếp trên Local File System hoặc MinIO Server nội bộ chuẩn tương thích S3, bảo vệ dữ liệu tuyệt đối.</p>
+          </div>
+          <div class="card">
+            <h4 class="card-title"><i class="fa-brands fa-microsoft" style="color: #059669;"></i> Azure Blob Storage</h4>
+            <p class="card-desc">Tích hợp native gói <code>Volo.Abp.BlobStoring.Azure</code> cho các hệ thống doanh nghiệp trên đám mây Microsoft.</p>
+          </div>
+          <div class="card">
+            <h4 class="card-title"><i class="fa-brands fa-aws" style="color: #d97706;"></i> Amazon S3</h4>
+            <p class="card-desc">Sử dụng gói <code>Volo.Abp.BlobStoring.Aws</code> cho các cụm triển khai hạ tầng đám mây AWS với độ trễ thấp.</p>
+          </div>
+        </div>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 1.75rem 0 0.75rem;">9.1. Cấu Trúc Phân Cấp Thư Mục Lưu Trữ Blob</h3>
+        <pre><code>/tcm-attachments/
+├── {TenantId}/
+│   ├── test-cases/{TestCaseId}/
+│   │   └── {Guid}_{OriginalFileName}
+│   ├── test-executions/{TestExecutionId}/
+│   │   └── {Guid}_{OriginalFileName}
+│   └── defect-links/{DefectLinkId}/
+│       └── {Guid}_{OriginalFileName}</code></pre>
+
+        <p style="font-size: 0.92rem; color: var(--text-muted); margin-top: 1rem;">
+          <strong>Chính sách dọn dẹp (Retention Policy):</strong> Khi entity cha bị xóa mềm (Soft-deleted), file vật lý không bị xóa ngay. Background Worker chạy định kỳ hàng tuần sẽ tự động dọn dẹp các tệp tin của entity đã xóa mềm quá 90 ngày.
+        </p>
+      </section>
+
+      <!-- Section 10: Lịch Sử & Kiểm Toán -->
+      <section id="lich-su-kiem-toan">
+        <div class="section-header">
+          <h2 class="section-title"><span class="section-number">10</span> Lịch Sử Thao Tác & Kiểm Toán (Audit Trail)</h2>
+        </div>
+        <p>Tuân thủ tiêu chuẩn kiểm toán quốc tế, lưu vết toàn bộ thay đổi của kịch bản kiểm thử và kết quả thực thi:</p>
+
+        <div class="grid-2">
+          <div>
+            <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; margin-bottom: 0.75rem;">10.1. Mức Độ Lưu Trữ Kiểm Toán (Retention)</h3>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Hành động nghiệp vụ</th>
+                    <th>Dữ liệu ghi vết</th>
+                    <th style="width: 100px;">Thời hạn</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Tạo / Sửa / Xóa Test Case</td>
+                    <td>Old value &rarr; New value qua <code>EntityChange</code></td>
+                    <td>Vĩnh viễn</td>
+                  </tr>
+                  <tr>
+                    <td>Phê duyệt / Từ chối TC</td>
+                    <td>Reviewer, Thời gian, Comments, Version</td>
+                    <td>Vĩnh viễn</td>
+                  </tr>
+                  <tr>
+                    <td>Tạo TestExecution</td>
+                    <td>Tester, AttemptNumber, Thời gian, Status</td>
+                    <td>Vĩnh viễn</td>
+                  </tr>
+                  <tr>
+                    <td>Đóng / Khóa Test Run</td>
+                    <td>QA Lead, Kết quả Quality Gate</td>
+                    <td>Vĩnh viễn</td>
+                  </tr>
+                  <tr>
+                    <td>Thay đổi phân công</td>
+                    <td>Assignee cũ &rarr; Assignee mới</td>
+                    <td>1 năm</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; margin-bottom: 0.75rem;">10.2. Mô Phỏng Timeline Lịch Sử Test Case</h3>
+            <div class="timeline">
+              <div class="timeline-item">
+                <div class="timeline-dot info"></div>
+                <div class="timeline-time">10:30 - 05/10/2026</div>
+                <div class="timeline-content">
+                  <strong>Nguyễn Văn A</strong> tạo mới Test Case ở trạng thái <code>Draft</code>.
+                </div>
+              </div>
+              <div class="timeline-item">
+                <div class="timeline-dot warning"></div>
+                <div class="timeline-time">11:15 - 05/10/2026</div>
+                <div class="timeline-content">
+                  <strong>Nguyễn Văn A</strong> gửi duyệt kịch bản (<code>Draft &rarr; InReview</code>).
+                </div>
+              </div>
+              <div class="timeline-item">
+                <div class="timeline-dot danger"></div>
+                <div class="timeline-time">13:40 - 05/10/2026</div>
+                <div class="timeline-content">
+                  <strong>Trần Thị B (Lead)</strong> từ chối: <em>"Bổ sung bước kiểm tra mã lỗi 401 khi token hết hạn"</em>.
+                </div>
+              </div>
+              <div class="timeline-item">
+                <div class="timeline-dot success"></div>
+                <div class="timeline-time">15:20 - 05/10/2026</div>
+                <div class="timeline-content">
+                  <strong>Trần Thị B (Lead)</strong> phê duyệt &rarr; Hệ thống tự động sinh <code>TestCaseVersion v1</code>.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 11: Import / Export Dữ Liệu -->
+      <section id="import-export">
+        <div class="section-header">
+          <h2 class="section-title"><span class="section-number">11</span> Import / Export Dữ Liệu Chi Tiết</h2>
+        </div>
+        <p>Hỗ trợ chuyển đổi nhanh chóng dữ liệu cũ từ Excel sang hệ thống và xuất báo cáo nghiệm thu:</p>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 1.5rem 0 0.75rem;">11.1. Template Nhập Liệu Excel Chuẩn (12 Cột)</h3>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 50px;">Cột</th>
+                <th style="width: 150px;">Tên Header</th>
+                <th style="width: 90px; text-align: center;">Bắt buộc</th>
+                <th style="width: 110px;">Kiểu</th>
+                <th>Ví dụ & Mô tả chi tiết</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>A</code></td>
+                <td><strong>Module Path</strong></td>
+                <td style="text-align: center;"><span class="badge badge-danger">Có</span></td>
+                <td>string</td>
+                <td><code>Auth/Login</code> - Cây thư viện, tự động tạo nhánh nếu chưa có</td>
+              </tr>
+              <tr>
+                <td><code>B</code></td>
+                <td><strong>Title</strong></td>
+                <td style="text-align: center;"><span class="badge badge-danger">Có</span></td>
+                <td>string</td>
+                <td><code>Đăng nhập thành công với tài khoản quản trị</code></td>
+              </tr>
+              <tr>
+                <td><code>C</code></td>
+                <td><strong>Description</strong></td>
+                <td style="text-align: center;">Không</td>
+                <td>string</td>
+                <td>Mô tả tổng quát mục đích của kịch bản kiểm thử</td>
+              </tr>
+              <tr>
+                <td><code>D</code></td>
+                <td><strong>Preconditions</strong></td>
+                <td style="text-align: center;">Không</td>
+                <td>string</td>
+                <td><code>Tài khoản admin đã kích hoạt 2FA, internet ổn định</code></td>
+              </tr>
+              <tr>
+                <td><code>E</code></td>
+                <td><strong>Priority</strong></td>
+                <td style="text-align: center;"><span class="badge badge-danger">Có</span></td>
+                <td>enum</td>
+                <td><code>P1</code>, <code>P2</code>, <code>P3</code>, <code>P4</code></td>
+              </tr>
+              <tr>
+                <td><code>F</code></td>
+                <td><strong>Kind</strong></td>
+                <td style="text-align: center;">Không</td>
+                <td>enum</td>
+                <td><code>Functional</code>, <code>Security</code>, <code>Performance</code></td>
+              </tr>
+              <tr>
+                <td><code>G</code></td>
+                <td><strong>Layer</strong></td>
+                <td style="text-align: center;">Không</td>
+                <td>enum</td>
+                <td><code>UI</code>, <code>API</code>, <code>Integration</code>, <code>Database</code></td>
+              </tr>
+              <tr>
+                <td><code>H</code></td>
+                <td><strong>Tags</strong></td>
+                <td style="text-align: center;">Không</td>
+                <td>string</td>
+                <td><code>#smoke, #regression, #auth</code></td>
+              </tr>
+              <tr>
+                <td><code>I</code></td>
+                <td><strong>Step 1 - Action</strong></td>
+                <td style="text-align: center;"><span class="badge badge-danger">Có</span></td>
+                <td>string</td>
+                <td><code>Mở trang đăng nhập /login và nhập user admin</code></td>
+              </tr>
+              <tr>
+                <td><code>J</code></td>
+                <td><strong>Step 1 - Expected</strong></td>
+                <td style="text-align: center;"><span class="badge badge-danger">Có</span></td>
+                <td>string</td>
+                <td><code>Hiển thị form đăng nhập và input password</code></td>
+              </tr>
+              <tr>
+                <td><code>K</code></td>
+                <td><strong>Step 1 - Test Data</strong></td>
+                <td style="text-align: center;">Không</td>
+                <td>string</td>
+                <td><code>admin@bank.com / P@ssw0rd123</code></td>
+              </tr>
+              <tr>
+                <td><code>L-...</code></td>
+                <td><strong>Step N</strong></td>
+                <td style="text-align: center;">Không</td>
+                <td>string</td>
+                <td>Lặp lại 3 cột Action / Expected / Test Data cho các bước kế tiếp</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 2rem 0 0.75rem;">11.2. Quy Trình Xử Lý Import 4 Bước An Toàn</h3>
+        <div class="grid-2">
+          <div class="card">
+            <h4 class="card-title">1. Upload & Background Parsing</h4>
+            <p class="card-desc">User tải file lên &rarr; ABP Background Worker phân tích cú pháp Excel bằng ClosedXML hoặc MiniExcel tốc độ cao.</p>
+          </div>
+          <div class="card">
+            <h4 class="card-title">2. Validate Dữ Liệu Từng Dòng</h4>
+            <p class="card-desc">Kiểm tra hợp lệ Enum, Module Path, độ dài chuỗi và điều kiện có ít nhất 1 Step. Không để dữ liệu rác lọt vào DB.</p>
+          </div>
+          <div class="card">
+            <h4 class="card-title">3. Khởi Tạo Bản Ghi Draft</h4>
+            <p class="card-desc">Các dòng hợp lệ được insert dưới dạng Test Case <code>Draft</code>, tự sinh mã Code chuẩn theo sequence dự án.</p>
+          </div>
+          <div class="card">
+            <h4 class="card-title">4. Trả Báo Cáo Lỗi Chi Tiết</h4>
+            <p class="card-desc">Nếu có dòng lỗi, hệ thống xuất file Excel phản hồi ghi rõ từng dòng bị lỗi ở cột nào để người dùng chỉnh sửa và tải lại.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 12: Benchmark & Lợi Thế (Market Benchmark) -->
+      <section id="so-sanh-thi-truong">
+        <div class="section-header">
+          <h2 class="section-title"><span class="section-number">12</span> Đánh Giá So Sánh Thị Trường & Lợi Thế Cạnh Tranh</h2>
+        </div>
+        <p>Bảng phân tích so sánh chi tiết giữa module tự xây dựng và các giải pháp hàng đầu thị trường:</p>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Tiêu chí so sánh</th>
+                <th>TestRail</th>
+                <th>Xray / Zephyr</th>
+                <th>Qase.io</th>
+                <th style="color: var(--primary);">Module ABP (Tự xây)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Mô hình</strong></td>
+                <td>SaaS / On-premise</td>
+                <td>Jira Plugin</td>
+                <td>Cloud SaaS</td>
+                <td><strong>On-Premise Reusable Module</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Chi phí bản quyền</strong></td>
+                <td>~$37 / user / tháng</td>
+                <td>Theo bậc user Jira</td>
+                <td>Từ $20 / user / tháng</td>
+                <td><strong>0đ - Miễn phí trọn đời</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Chủ quyền dữ liệu</strong></td>
+                <td>Bị ràng buộc cloud</td>
+                <td>Nằm trong Jira</td>
+                <td>Server quốc tế</td>
+                <td><strong>100% CSDL nội bộ doanh nghiệp</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Tích hợp hệ sinh thái</strong></td>
+                <td>API mở, cần custom</td>
+                <td>Chỉ xoay quanh Jira</td>
+                <td>API mở</td>
+                <td><strong>Native ABP (SSO, Auth, Audit, Perms)</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Version Snapshot</strong></td>
+                <td>Có</td>
+                <td>Hạn chế</td>
+                <td>Có</td>
+                <td><strong>Bất biến (TestCaseVersion)</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Lịch sử chạy đa lần</strong></td>
+                <td>Có</td>
+                <td>Hạn chế</td>
+                <td>Có</td>
+                <td><strong>TestExecution 1..N (Không ghi đè)</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Automation CI/CD</strong></td>
+                <td>Rất tốt qua CLI</td>
+                <td>Tốt qua Jira pipeline</td>
+                <td>Rất tốt</td>
+                <td><strong>REST API + Ingestion Worker</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Khả năng tùy biến</strong></td>
+                <td>Rất hạn chế</td>
+                <td>Khó tùy biến</td>
+                <td>Không thể sửa code</td>
+                <td><strong>Toàn quyền 100% mã nguồn C#</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 2rem 0 0.75rem;">12.1. Ma Trận Phân Tích SWOT Chiến Lược</h3>
+        <div class="swot-grid">
+          <div class="swot-card strengths">
+            <div class="swot-header"><i class="fa-solid fa-bolt"></i> Điểm Mạnh (Strengths)</div>
+            <ul style="padding-left: 1.25rem; font-size: 0.9rem; line-height: 1.7; color: var(--text-muted);">
+              <li>Chủ quyền dữ liệu 100%, bảo mật On-Premise tuyệt đối cho ngân hàng.</li>
+              <li>Tiết kiệm hàng chục nghìn USD tiền license SaaS hàng năm.</li>
+              <li>Tích hợp nguyên bản hệ sinh thái ABP (Identity, Audit, Localization).</li>
+              <li>Cắm vào bất kỳ Host App nào chỉ trong vài dòng code cấu hình.</li>
+            </ul>
+          </div>
+
+          <div class="swot-card weaknesses">
+            <div class="swot-header"><i class="fa-solid fa-triangle-exclamation"></i> Điểm Yếu (Weaknesses)</div>
+            <ul style="padding-left: 1.25rem; font-size: 0.9rem; line-height: 1.7; color: var(--text-muted);">
+              <li>Đòi hỏi đội ngũ Dev có kinh nghiệm vững về ABP Framework & DDD.</li>
+              <li>Thời gian phát triển MVP ban đầu khoảng 2 - 3 tháng.</li>
+              <li>Cần đầu tư công sức thiết kế trải nghiệm người dùng (UX/UI).</li>
+            </ul>
+          </div>
+
+          <div class="swot-card opportunities">
+            <div class="swot-header"><i class="fa-solid fa-chart-line"></i> Cơ Hội (Opportunities)</div>
+            <ul style="padding-left: 1.25rem; font-size: 0.9rem; line-height: 1.7; color: var(--text-muted);">
+              <li>Đóng gói thành NuGet package dùng chung cho toàn bộ dự án công ty.</li>
+              <li>Tích hợp Semantic Kernel AI tạo sự khác biệt vượt trội so với SaaS cũ.</li>
+              <li>Dễ dàng nâng cấp thành microservice độc lập khi quy mô mở rộng.</li>
+            </ul>
+          </div>
+
+          <div class="swot-card threats">
+            <div class="swot-header"><i class="fa-solid fa-shield-halved"></i> Thách Thức (Threats)</div>
+            <ul style="padding-left: 1.25rem; font-size: 0.9rem; line-height: 1.7; color: var(--text-muted);">
+              <li>Nguy cơ phình to phạm vi (Scope Creep) nếu không bám sát lộ trình MVP.</li>
+              <li>Tester quen dùng Excel cũ có thể ngại chuyển đổi sang quy trình mới.</li>
+              <li>Chi phí bảo trì lâu dài nếu thiết kế thiếu tính bao đóng (Decoupled).</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 13: Xu Hướng AI -->
+      <section id="xu-huong-ai">
+        <div class="section-header">
+          <h2 class="section-title"><span class="section-number">13</span> Xu Hướng Trí Tuệ Nhân Tạo (AI) Trong Quản Lý Kiểm Thử</h2>
+        </div>
+
+        <div class="grid-3">
+          <div class="card">
+            <div class="card-icon purple"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+            <h4 class="card-title">1. Sinh Kịch Bản Từ User Story</h4>
+            <p class="card-desc">
+              Tích hợp Microsoft Semantic Kernel trong ABP AppService để phân tích Acceptance Criteria, tự động sinh đầy đủ Happy Path, Negative Path và các trường hợp biên.
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon blue"><i class="fa-solid fa-clone"></i></div>
+            <h4 class="card-title">2. Quét Trùng Lặp Qua Vector</h4>
+            <p class="card-desc">
+              Sử dụng Vector Embedding để so sánh ngữ nghĩa giữa hàng ngàn test case, phát hiện trùng lặp hoặc xung đột kịch bản giữa các nhóm tester khác nhau (&gt; 85% tương đồng).
+            </p>
+          </div>
+
+          <div class="card">
+            <div class="card-icon green"><i class="fa-solid fa-bullseye"></i></div>
+            <h4 class="card-title">3. Smart Regression Selection</h4>
+            <p class="card-desc">
+              Dựa trên Git commit diff, lịch sử lỗi và mức độ rủi ro, AI đề xuất tập hợp test case tối ưu cần chạy, giảm 60% thời gian chạy hồi quy mà vẫn bao phủ vùng nguy cơ cao.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 14: Kỹ Thuật ABP Module -->
+      <section id="kien-truc-abp-module">
+        <div class="section-header">
+          <h2 class="section-title"><span class="section-number">14</span> Thiết Kế Kỹ Thuật Chuẩn ABP Reusable Module</h2>
+        </div>
+
+        <p>
+          Module Quản lý Test Case được thiết kế tách rời hoàn toàn theo chuẩn <strong>ABP Application Module</strong>. 
+          Một Ứng dụng Chủ (Host App) bất kỳ chỉ cần khai báo phụ thuộc <code>[DependsOn]</code>, ánh xạ DbContext là có thể sử dụng ngay:
+        </p>
+
+        <div class="diagram-card">
+          <div class="mermaid">
+flowchart TD
+    subgraph HostApp["Ứng Dụng Bất Kỳ Của Bạn (Host Application / Main System)"]
+        HostUI["Host Web UI (Blazor / Angular / MVC / React)"]
+        HostAPI["Host HttpApi Host"]
+        HostDbContext["HostDbContext (EF Core)"]
+    end
+
+    subgraph TcmModule["Module Độc Lập: Acme.TestCaseManagement"]
+        direction TB
+        TcmContracts["Acme.Tcm.Application.Contracts\n(DTOs, Service Interfaces, Permissions)"]
+        TcmApp["Acme.Tcm.Application\n(AppServices, AutoMapper Profiles)"]
+        TcmDomain["Acme.Tcm.Domain & Domain.Shared\n(AggregateRoots, Specs, Localization)"]
+        TcmEF["Acme.Tcm.EntityFrameworkCore\n(ConfigureTestCaseManagement() Extension)"]
+        TcmHttpApi["Acme.Tcm.HttpApi\n(REST API Controllers /api/tcm/...)"]
+        TcmWeb["Acme.Tcm.Web / UI Components\n(Pages, MenuContributor)"]
+    end
+
+    HostUI -- "1. [DependsOn(TcmWebModule)]" --> TcmWeb
+    HostAPI -- "2. [DependsOn(TcmHttpApiModule)]" --> TcmHttpApi
+    HostAPI -- "3. [DependsOn(TcmApplicationModule)]" --> TcmApp
+    HostDbContext -- "4. builder.ConfigureTestCaseManagement()" --> TcmEF
+    TcmApp --> TcmContracts
+    TcmApp --> TcmDomain
+    TcmEF --> TcmDomain
+          </div>
+          <div class="diagram-caption">Sơ đồ 8: Mô hình cắm - chạy (Plug-and-Play) giữa Ứng dụng Chủ và Module Quản lý Test Case</div>
+        </div>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 1.5rem 0 0.75rem;">
+          14.1. Hai Mô Hình Triển Khai Cơ Sở Dữ Liệu (Deployment Topologies)
+        </h3>
+        <p>Module hỗ trợ linh hoạt 2 kịch bản tùy theo kiến trúc của Ứng dụng Chủ (Host App):</p>
+
+        <div class="grid-2">
+          <div class="card">
+            <h4 class="card-title"><i class="fa-solid fa-database" style="color: var(--primary);"></i> 1. Chung CSDL với Host App (Monolith / Shared DB)</h4>
+            <p class="card-desc">
+              Toàn bộ bảng của module nằm chung database với Host App nhưng có tiền tố riêng (mặc định <code>Tcm*</code>) 
+              hoặc schema riêng (<code>tcm.TcmTestCases</code>), cấu hình thông qua <code>builder.ConfigureTestCaseManagement()</code>.
+            </p>
+          </div>
+
+          <div class="card">
+            <h4 class="card-title"><i class="fa-solid fa-server" style="color: #059669;"></i> 2. Tách CSDL Độc Lập (Dedicated Database)</h4>
+            <p class="card-desc">
+              Nhờ cơ chế <code>[ConnectionStringName("TestCaseManagement")]</code> của ABP, module có thể kết nối sang một Database độc lập, 
+              không làm phình to DB chính của Host App và sẵn sàng tách thành Microservice khi cần.
+            </p>
+          </div>
+        </div>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 2rem 0 0.75rem;">
+          14.2. Danh Sách Đầy Đủ 15 DbSets Trong <code>ITestCaseManagementDbContext</code>
+        </h3>
+
+        <pre><code>namespace Acme.TestCaseManagement.EntityFrameworkCore
+{
+    public interface ITestCaseManagementDbContext : IEfCoreDbContext
+    {
+        DbSet&lt;Project&gt; Projects { get; set; }
+        DbSet&lt;Module&gt; Modules { get; set; }
+        DbSet&lt;Milestone&gt; Milestones { get; set; }
+        DbSet&lt;Requirement&gt; Requirements { get; set; }
+        DbSet&lt;TestCaseRequirement&gt; TestCaseRequirements { get; set; }
+        
+        DbSet&lt;TestCase&gt; TestCases { get; set; }
+        DbSet&lt;TestStep&gt; TestSteps { get; set; }
+        DbSet&lt;TestCaseVersion&gt; TestCaseVersions { get; set; }
+        
+        DbSet&lt;TestPlan&gt; TestPlans { get; set; }
+        DbSet&lt;TestRun&gt; TestRuns { get; set; }
+        DbSet&lt;TestRunItem&gt; TestRunItems { get; set; }
+        DbSet&lt;TestExecution&gt; TestExecutions { get; set; }
+        DbSet&lt;TestStepResult&gt; TestStepResults { get; set; }
+        DbSet&lt;DefectLink&gt; DefectLinks { get; set; }
+        
+        DbSet&lt;Attachment&gt; Attachments { get; set; }
+    }
+}</code></pre>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 2rem 0 0.75rem;">
+          14.3. Hướng Dẫn Tích Hợp Vào HostDbContext (Chính Xác 100% Chuẩn ABP)
+        </h3>
+
+        <p>Host App cần kế thừa interface và khai báo thuộc tính <code>[ReplaceDbContext]</code> để ABP Dependency Injection ánh xạ chuẩn xác:</p>
+
+        <pre><code>using Acme.TestCaseManagement.EntityFrameworkCore;
+using Volo.Abp.Data;
+using Volo.Abp.EntityFrameworkCore;
+
+// 1. Chỉ định thay thế DbContext cho interface của Module
+[ReplaceDbContext(typeof(ITestCaseManagementDbContext))]
+[ConnectionStringName("Default")]
+public class MyHostAppDbContext : AbpDbContext&lt;MyHostAppDbContext&gt;, ITestCaseManagementDbContext
+{
+    // Các DbSet nghiệp vụ của Host App...
+
+    // 2. Khai báo đầy đủ 15 DbSet của Module TestCaseManagement:
+    public DbSet&lt;Project&gt; Projects { get; set; }
+    public DbSet&lt;Module&gt; Modules { get; set; }
+    public DbSet&lt;Milestone&gt; Milestones { get; set; }
+    public DbSet&lt;Requirement&gt; Requirements { get; set; }
+    public DbSet&lt;TestCaseRequirement&gt; TestCaseRequirements { get; set; }
+    public DbSet&lt;TestCase&gt; TestCases { get; set; }
+    public DbSet&lt;TestStep&gt; TestSteps { get; set; }
+    public DbSet&lt;TestCaseVersion&gt; TestCaseVersions { get; set; }
+    public DbSet&lt;TestPlan&gt; TestPlans { get; set; }
+    public DbSet&lt;TestRun&gt; TestRuns { get; set; }
+    public DbSet&lt;TestRunItem&gt; TestRunItems { get; set; }
+    public DbSet&lt;TestExecution&gt; TestExecutions { get; set; }
+    public DbSet&lt;TestStepResult&gt; TestStepResults { get; set; }
+    public DbSet&lt;DefectLink&gt; DefectLinks { get; set; }
+    public DbSet&lt;Attachment&gt; Attachments { get; set; }
+
+    public MyHostAppDbContext(DbContextOptions&lt;MyHostAppDbContext&gt; options) : base(options) { }
+
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
+        
+        // 3. Cấu hình bảng cho Module TestCaseManagement:
+        builder.ConfigureTestCaseManagement(options =>
+        {
+            options.TablePrefix = "Tcm"; // Tùy biến tiền tố bảng
+            options.Schema = null;       // Tùy biến Schema
+        });
+    }
+}</code></pre>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 2rem 0 0.75rem;">
+          14.4. Phân Chia Gói Giao Diện UI Chuẩn Xác (Không Đánh Đồng Các Công Nghệ)
+        </h3>
+
+        <div class="grid-3">
+          <div class="card">
+            <h4 class="card-title"><code>Acme.Tcm.Web</code></h4>
+            <p class="card-desc">
+              Dành riêng cho Host App sử dụng <strong>ASP.NET Core MVC / Razor Pages</strong>. Chứa Page Models, Views và MenuContributor gắn thanh Sidebar.
+            </p>
+          </div>
+
+          <div class="card">
+            <h4 class="card-title"><code>Acme.Tcm.Blazor</code></h4>
+            <p class="card-desc">
+              Dành riêng cho Host App sử dụng <strong>Blazor Server / Blazor WebAssembly</strong>. Chứa Razor Components và Navigation menu tương ứng.
+            </p>
+          </div>
+
+          <div class="card">
+            <h4 class="card-title"><code>@acme/tcm</code> (NPM Package)</h4>
+            <p class="card-desc">
+              Dành cho Host App sử dụng <strong>Angular hoặc React SPA</strong>. Cung cấp Components, Routing Module và API Proxies gọi về <code>Acme.Tcm.HttpApi</code>.
+            </p>
+          </div>
+        </div>
+
+        <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; margin: 2rem 0 0.75rem;">
+          14.5. Cấu Trúc Thư Mục Solution Hoàn Chỉnh
+        </h3>
+
+        <div style="background: var(--bg-surface-alt); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; line-height: 1.6; color: var(--text-main); margin-bottom: 2rem; overflow-x: auto;">
+<div><strong>Acme.TestCaseManagement/</strong></div>
+<div>├── <strong>src/</strong></div>
+<div>│   ├── <strong>Acme.Tcm.Domain.Shared/</strong>          <span style="color: var(--text-muted);">(Enums, Localization vi.json/en.json, ErrorCodes)</span></div>
+<div>│   ├── <strong>Acme.Tcm.Domain/</strong>                 <span style="color: var(--text-muted);">(Projects, Requirements, TestCases, TestPlans, Attachments)</span></div>
+<div>│   ├── <strong>Acme.Tcm.Application.Contracts/</strong> <span style="color: var(--text-muted);">(DTOs, ITestCaseAppService, Permissions)</span></div>
+<div>│   ├── <strong>Acme.Tcm.Application/</strong>           <span style="color: var(--text-muted);">(TestCaseAppService, TestRunAppService, AutoMapper)</span></div>
+<div>│   ├── <strong>Acme.Tcm.EntityFrameworkCore/</strong>   <span style="color: var(--text-muted);">(ITestCaseManagementDbContext, 15 DbSets, Repositories)</span></div>
+<div>│   ├── <strong>Acme.Tcm.HttpApi/</strong>               <span style="color: var(--text-muted);">(REST API Controllers /api/tcm/...)</span></div>
+<div>│   ├── <strong>Acme.Tcm.HttpApi.Client/</strong>        <span style="color: var(--text-muted);">(C# Client Proxies cho Microservices)</span></div>
+<div>│   └── <strong>Acme.Tcm.Web/</strong>                   <span style="color: var(--text-muted);">(Razor Pages & MenuContributor)</span></div>
+<div>└── <strong>test/</strong></div>
+<div>    ├── <strong>Acme.Tcm.Domain.Tests/</strong></div>
+<div>    ├── <strong>Acme.Tcm.Application.Tests/</strong></div>
+<div>    └── <strong>Acme.Tcm.HttpApi.Tests/</strong></div>
+        </div>
+      </section>
+
+      <!-- Section 15 / Phụ lục: Bảng Thuật Ngữ -->
+      <section id="bang-thuat-ngu">
+        <div class="section-header">
+          <h2 class="section-title"><span class="section-number"><i class="fa-solid fa-book-bookmark" style="font-size: 1rem;"></i></span> Phụ Lục: Bảng Thuật Ngữ Nghiệp Vụ (Glossary)</h2>
+        </div>
+        <p>Bảng đối chiếu 20 thuật ngữ kiểm thử doanh nghiệp và kiến trúc ABP Domain-Driven Design:</p>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 180px;">Thuật ngữ</th>
+                <th style="width: 180px;">Tiếng Việt</th>
+                <th>Định nghĩa chuẩn hóa</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Test Case (TC)</strong></td>
+                <td>Kịch bản kiểm thử</td>
+                <td>Tập hợp các bước thực hiện kèm dữ liệu test và kết quả mong đợi, dùng để kiểm tra 1 tính năng cụ thể.</td>
+              </tr>
+              <tr>
+                <td><strong>Test Step</strong></td>
+                <td>Bước kiểm thử</td>
+                <td>Một hành động đơn lẻ trong kịch bản, gồm Action, Test Data, Expected Result.</td>
+              </tr>
+              <tr>
+                <td><strong>Test Suite / Module</strong></td>
+                <td>Nhóm kịch bản / Phân hệ</td>
+                <td>Nút trong cây thư viện, dùng để nhóm các TC theo tính năng hoặc phân hệ phần mềm.</td>
+              </tr>
+              <tr>
+                <td><strong>Test Plan</strong></td>
+                <td>Kế hoạch kiểm thử</td>
+                <td>Kế hoạch tổng thể cho 1 Release hoặc Sprint, gắn Milestone, mô tả phạm vi.</td>
+              </tr>
+              <tr>
+                <td><strong>Test Run</strong></td>
+                <td>Đợt chạy kiểm thử</td>
+                <td>Một đợt thực thi cụ thể thuộc Test Plan, với Environment và danh sách TC cần chạy.</td>
+              </tr>
+              <tr>
+                <td><strong>Test Run Item</strong></td>
+                <td>Hạng mục trong đợt test</td>
+                <td>Một TC cụ thể nằm trong 1 Test Run, gắn với phiên bản (TestCaseVersion) và tester được phân công.</td>
+              </tr>
+              <tr>
+                <td><strong>Test Execution</strong></td>
+                <td>Lần thực thi</td>
+                <td>Một lần chạy cụ thể của một TestRunItem. Một item có thể có nhiều lần chạy (Attempt 1, 2, 3...).</td>
+              </tr>
+              <tr>
+                <td><strong>TestCaseVersion</strong></td>
+                <td>Phiên bản kịch bản (Snapshot)</td>
+                <td>Bản chụp bất biến (immutable) toàn bộ nội dung TC tại thời điểm được duyệt. Đảm bảo kết quả test không bị ảnh hưởng khi TC gốc thay đổi.</td>
+              </tr>
+              <tr>
+                <td><strong>Milestone</strong></td>
+                <td>Mốc thời gian</td>
+                <td>Sprint, Release hoặc giai đoạn dự án. Thuộc Project, gắn vào TestPlan (KHÔNG nằm trong cây thư viện TC).</td>
+              </tr>
+              <tr>
+                <td><strong>Requirement</strong></td>
+                <td>Yêu cầu phần mềm</td>
+                <td>User Story hoặc đặc tả yêu cầu, dùng để truy vết liên kết giữa yêu cầu và TC (RTM).</td>
+              </tr>
+              <tr>
+                <td><strong>RTM</strong></td>
+                <td>Ma trận truy vết yêu cầu</td>
+                <td>Requirement Traceability Matrix — Bảng ánh xạ Requirement ⟷ Test Case ⟷ Execution Result.</td>
+              </tr>
+              <tr>
+                <td><strong>Quality Gate</strong></td>
+                <td>Cổng chất lượng</td>
+                <td>Bộ ngưỡng tiêu chuẩn (Pass Rate &ge; 95%, 0 Blocker...) phải đạt trước khi đóng Test Run.</td>
+              </tr>
+              <tr>
+                <td><strong>Sign-Off Report</strong></td>
+                <td>Biên bản nghiệm thu</td>
+                <td>Tài liệu chính thức xác nhận kết quả kiểm thử, có chữ ký QA Lead và Product Owner.</td>
+              </tr>
+              <tr>
+                <td><strong>Flaky Test</strong></td>
+                <td>Kịch bản bất ổn</td>
+                <td>Test Case cho kết quả không nhất quán (lúc Pass lúc Fail) với cùng điều kiện kiểm thử.</td>
+              </tr>
+              <tr>
+                <td><strong>Defect Link</strong></td>
+                <td>Liên kết lỗi</td>
+                <td>Bản ghi liên kết giữa một lần chạy test (TestExecution) với bug trên Jira, GitHub, Redmine.</td>
+              </tr>
+              <tr>
+                <td><strong>Severity</strong></td>
+                <td>Mức độ nghiêm trọng</td>
+                <td>Thuộc tính đánh giá độ nguy hiểm của Bug/Defect (Blocker &rarr; Trivial). <em>KHÔNG thuộc Test Case.</em></td>
+              </tr>
+              <tr>
+                <td><strong>Priority</strong></td>
+                <td>Mức độ ưu tiên</td>
+                <td>Thứ tự ưu tiên chạy test (P1 Critical &rarr; P4 Low). Thuộc Test Case.</td>
+              </tr>
+              <tr>
+                <td><strong>Automation ID</strong></td>
+                <td>Mã ánh xạ tự động</td>
+                <td>Chuỗi định danh (vd: <code>Namespace.Class.Method</code>) dùng để ánh xạ kết quả CI/CD với TC trong hệ thống.</td>
+              </tr>
+              <tr>
+                <td><strong>ABP Module</strong></td>
+                <td>Module ABP</td>
+                <td>Gói phần mềm độc lập theo chuẩn ABP Framework, có thể cắm (plug) vào bất kỳ ứng dụng ABP nào.</td>
+              </tr>
+              <tr>
+                <td><strong>Reusable Module</strong></td>
+                <td>Module tái sử dụng</td>
+                <td>Module được thiết kế bao đóng để dùng chung cho nhiều ứng dụng (Host App) mà không cần sửa mã nguồn.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Back to Top Button -->
+  <button id="back-to-top" title="Lên đầu trang">
+    <i class="fa-solid fa-arrow-up"></i>
+  </button>
+
+  <!-- Footer -->
+  <footer>
+    <div style="max-width: 1200px; margin: 0 auto; padding: 0 1.5rem;">
+      <p style="margin-bottom: 0.5rem; font-weight: 600; color: var(--text-main);">
+        Báo Cáo Khảo Sát Nghiệp Vụ & Thiết Kế Module Quản Lý Test Case (TCM)
+      </p>
+      <p style="font-size: 0.82rem; margin: 0;">
+        Kiến trúc ABP Framework Reusable Module • Chuẩn hóa Domain-Driven Design (DDD) • 100% Đồng bộ tài liệu kỹ thuật
+      </p>
+    </div>
+  </footer>
+
+  <!-- Scripts: Theme Toggle, ScrollSpy, Reading Progress, Mermaid Init -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      mermaid.initialize({
+        startOnLoad: true,
+        theme: document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "default",
+        securityLevel: 'loose',
+        flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' }
+      });
+    });
+
+    const themeToggleBtn = document.getElementById("theme-toggle");
+    const themeText = document.getElementById("theme-text");
+    const themeIcon = themeToggleBtn.querySelector("i");
+
+    function setTheme(theme) {
+      document.documentElement.setAttribute("data-theme", theme);
+      if (theme === "dark") {
+        themeIcon.className = "fa-solid fa-sun";
+        themeText.textContent = "Giao diện Sáng";
+        localStorage.setItem("tcm_doc_theme", "dark");
+      } else {
+        themeIcon.className = "fa-solid fa-moon";
+        themeText.textContent = "Giao diện Tối";
+        localStorage.setItem("tcm_doc_theme", "light");
+      }
+    }
+
+    const savedTheme = localStorage.getItem("tcm_doc_theme") || "light";
+    setTheme(savedTheme);
+
+    themeToggleBtn.addEventListener("click", () => {
+      const currentTheme = document.documentElement.getAttribute("data-theme");
+      const nextTheme = currentTheme === "dark" ? "light" : "dark";
+      setTheme(nextTheme);
+      location.reload();
+    });
+
+    const progressBar = document.getElementById("progress-bar");
+    const backToTopBtn = document.getElementById("back-to-top");
+    const navLinks = document.querySelectorAll(".nav-link");
+    const sections = document.querySelectorAll("section");
+
+    window.addEventListener("scroll", () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const scrollPercent = (scrollTop / docHeight) * 100;
+      progressBar.style.width = scrollPercent + "%";
+
+      if (scrollTop > 350) {
+        backToTopBtn.classList.add("show");
+      } else {
+        backToTopBtn.classList.remove("show");
+      }
+
+      let currentSectionId = "";
+      sections.forEach((section) => {
+        const sectionTop = section.offsetTop - 120;
+        if (scrollTop >= sectionTop) {
+          currentSectionId = section.getAttribute("id");
+        }
+      });
+
+      navLinks.forEach((link) => {
+        link.classList.remove("active");
+        if (link.getAttribute("href") === "#" + currentSectionId) {
+          link.classList.add("active");
+        }
+      });
+    });
+
+    backToTopBtn.addEventListener("click", () => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,2770 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cẩm Nang Khái Niệm Kiểm Thử (QA/QC) Cho Lập Trình Viên | Test Case Management Guide</title>
+  <meta name="description" content="Hướng dẫn toàn diện về các thuật ngữ kiểm thử phần mềm (Test Case, Test Plan, Test Suite, Test Run, Execution, RTM, Flaky Test...) từ góc nhìn Developer và Database Architect.">
+
+  <!-- Google Fonts: Inter & Outfit & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    :root {
+      --primary: #3b82f6;
+      --primary-hover: #60a5fa;
+      --primary-light: rgba(59, 130, 246, 0.12);
+      --primary-border: rgba(59, 130, 246, 0.3);
+      --accent: #8b5cf6;
+      --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
+      --accent-gradient-subtle: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+      
+      --bg-page: #0b0f19;
+      --bg-surface: #111827;
+      --bg-surface-alt: #1e293b;
+      --bg-card: #131c2e;
+      --bg-card-hover: #18243c;
+      --bg-glass: rgba(17, 24, 39, 0.85);
+      
+      --text-main: #f3f4f6;
+      --text-muted: #94a3b8;
+      --text-light: #64748b;
+      
+      --border-color: #1e293b;
+      --border-subtle: #243247;
+      --border-highlight: rgba(59, 130, 246, 0.4);
+      
+      --badge-success-bg: rgba(16, 185, 129, 0.18);
+      --badge-success-text: #34d399;
+      --badge-danger-bg: rgba(239, 68, 68, 0.18);
+      --badge-danger-text: #f87171;
+      --badge-warning-bg: rgba(245, 158, 11, 0.18);
+      --badge-warning-text: #fbbf24;
+      --badge-info-bg: rgba(59, 130, 246, 0.18);
+      --badge-info-text: #60a5fa;
+      --badge-purple-bg: rgba(139, 92, 246, 0.18);
+      --badge-purple-text: #c084fc;
+      
+      --code-bg: #0d131f;
+      --code-border: #1f2d44;
+      
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.25);
+      --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.35);
+      --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.45);
+      --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.6);
+      
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+    }
+
+    [data-theme="light"] {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --primary-border: #bfdbfe;
+      --accent: #7c3aed;
+      --accent-gradient: linear-gradient(135deg, #2563eb 0%, #7c3aed 50%, #db2777 100%);
+      --accent-gradient-subtle: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(124, 58, 237, 0.08) 100%);
+      
+      --bg-page: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-surface-alt: #f1f5f9;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f8fafc;
+      --bg-glass: rgba(255, 255, 255, 0.9);
+      
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-light: #94a3b8;
+      
+      --border-color: #e2e8f0;
+      --border-subtle: #f1f5f9;
+      --border-highlight: #bfdbfe;
+      
+      --badge-success-bg: #ecfdf5;
+      --badge-success-text: #059669;
+      --badge-danger-bg: #fef2f2;
+      --badge-danger-text: #dc2626;
+      --badge-warning-bg: #fffbeb;
+      --badge-warning-text: #d97706;
+      --badge-info-bg: #eff6ff;
+      --badge-info-text: #2563eb;
+      --badge-purple-bg: #f5f3ff;
+      --badge-purple-text: #7c3aed;
+      
+      --code-bg: #1e293b;
+      --code-border: #cbd5e1;
+      
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+      --shadow-lg: 0 10px 24px rgba(0, 0, 0, 0.1);
+      --shadow-xl: 0 20px 35px rgba(0, 0, 0, 0.12);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      line-height: 1.65;
+      font-size: 15px;
+      transition: background-color 0.25s ease, color 0.25s ease;
+      overflow-x: hidden;
+    }
+
+    /* Top Progress Bar */
+    #progress-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: var(--accent-gradient);
+      width: 0%;
+      z-index: 9999;
+      transition: width 0.1s ease-out;
+    }
+
+    /* Top Navigation Bar */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      background-color: var(--bg-glass);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 2rem;
+      transition: background-color 0.25s ease, border-color 0.25s ease;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      text-decoration: none;
+      color: var(--text-main);
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 1.15rem;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      background: var(--accent-gradient);
+      color: white;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+    }
+
+    .brand-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.2rem 0.65rem;
+      border-radius: 999px;
+      background: var(--primary-light);
+      color: var(--primary);
+      border: 1px solid var(--primary-border);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: inline-block;
+      margin-left: 0.4rem;
+    }
+
+    .topbar-nav {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-nav {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      padding: 0.45rem 0.85rem;
+      border-radius: var(--radius-md);
+      font-size: 0.88rem;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .btn-nav:hover {
+      background: var(--bg-surface-alt);
+      color: var(--text-main);
+      border-color: var(--border-color);
+    }
+
+    .btn-nav.active {
+      background: var(--primary-light);
+      color: var(--primary);
+      border-color: var(--primary-border);
+      font-weight: 600;
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .btn-action {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.5rem 0.9rem;
+      border-radius: var(--radius-md);
+      font-size: 0.86rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .btn-action:hover {
+      background: var(--bg-surface-alt);
+      border-color: var(--text-muted);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: var(--accent-gradient);
+      color: white;
+      border: none;
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-primary:hover {
+      opacity: 0.92;
+      box-shadow: 0 6px 18px rgba(59, 130, 246, 0.4);
+    }
+
+    /* Layout Containers */
+    .app-layout {
+      display: flex;
+      max-width: 1600px;
+      margin: 0 auto;
+      min-height: calc(100vh - 60px);
+    }
+
+    .sidebar {
+      width: 290px;
+      position: sticky;
+      top: 60px;
+      height: calc(100vh - 60px);
+      overflow-y: auto;
+      padding: 1.5rem 1rem 2.5rem;
+      border-right: 1px solid var(--border-color);
+      background-color: var(--bg-surface);
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-color) transparent;
+      flex-shrink: 0;
+    }
+
+    .sidebar-section-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin: 1.25rem 0 0.5rem;
+      padding-left: 0.5rem;
+    }
+
+    .nav-list { list-style: none; margin-bottom: 1rem; }
+    .nav-item { margin-bottom: 0.2rem; }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.45rem 0.65rem;
+      border-radius: var(--radius-md);
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .nav-link i { font-size: 0.85rem; width: 18px; text-align: center; }
+
+    .nav-link:hover {
+      background-color: var(--bg-surface-alt);
+      color: var(--primary);
+    }
+
+    .nav-link.active {
+      background-color: var(--primary-light);
+      color: var(--primary);
+      font-weight: 600;
+      border-left: 3px solid var(--primary);
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    }
+
+    .main-content {
+      flex: 1;
+      padding: 2.5rem 3rem 5rem;
+      max-width: 1250px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 1024px) {
+      .sidebar { display: none; }
+      .main-content { padding: 1.5rem; }
+      .topbar { padding: 0.75rem 1rem; }
+      .topbar-nav { display: none; }
+    }
+
+    /* Hero Banner */
+    .hero-banner {
+      background: var(--accent-gradient-subtle);
+      border: 1px solid var(--primary-border);
+      border-radius: var(--radius-xl);
+      padding: 2.75rem;
+      margin-bottom: 2.75rem;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+    }
+
+    .hero-banner::before {
+      content: '';
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 240px;
+      height: 240px;
+      background: var(--accent-gradient);
+      opacity: 0.15;
+      filter: blur(60px);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .hero-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .hero-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.4rem;
+      font-weight: 800;
+      line-height: 1.22;
+      color: var(--text-main);
+      margin-bottom: 1.1rem;
+      letter-spacing: -0.5px;
+    }
+
+    .hero-title .gradient-text {
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: inline-block;
+    }
+
+    .hero-desc {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      max-width: 900px;
+      line-height: 1.7;
+    }
+
+    .hero-badges {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-top: 1.5rem;
+    }
+
+    /* Live Search & Filter Bar */
+    .filter-sticky-bar {
+      position: sticky;
+      top: 60px;
+      z-index: 900;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem;
+      margin-bottom: 2.5rem;
+      box-shadow: var(--shadow-md);
+      backdrop-filter: blur(12px);
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+
+    .search-input-box {
+      position: relative;
+      width: 100%;
+    }
+
+    .search-input-box i {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 0.75rem 1rem 0.75rem 2.75rem;
+      background: var(--bg-surface-alt);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      color: var(--text-main);
+      font-size: 0.95rem;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    .filter-chips {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .filter-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-right: 0.25rem;
+    }
+
+    .chip-btn {
+      background: var(--bg-surface-alt);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .chip-btn:hover {
+      color: var(--text-main);
+      border-color: var(--primary-border);
+    }
+
+    .chip-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    }
+
+    /* Section Styling */
+    section {
+      margin-bottom: 3.5rem;
+      scroll-margin-top: 130px;
+    }
+
+    .section-header {
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .section-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .section-number {
+      display: inline-block;
+      width: 34px;
+      height: 34px;
+      line-height: 34px;
+      text-align: center;
+      background: var(--primary-light);
+      color: var(--primary);
+      border-radius: var(--radius-md);
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .section-badge {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* Concept Card Styling */
+    .concept-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .concept-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.6rem;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.25s ease;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .concept-card:hover {
+      box-shadow: var(--shadow-lg);
+      border-color: var(--border-highlight);
+      transform: translateY(-3px);
+    }
+
+    .concept-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .concept-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+      flex-shrink: 0;
+    }
+
+    .icon-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+    .icon-purple { background: rgba(139, 92, 246, 0.15); color: #c084fc; }
+    .icon-emerald { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .icon-amber { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .icon-rose { background: rgba(244, 63, 94, 0.15); color: #fb7185; }
+    .icon-cyan { background: rgba(6, 182, 212, 0.15); color: #22d3ee; }
+    .icon-indigo { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
+
+    .concept-titles {
+      flex: 1;
+    }
+
+    .concept-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .concept-tag {
+      font-size: 0.7rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .concept-en-name {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      margin-top: 0.15rem;
+    }
+
+    .concept-def {
+      font-size: 0.95rem;
+      color: var(--text-main);
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+
+    .concept-analogy {
+      background: var(--bg-surface-alt);
+      border-left: 3px solid var(--accent);
+      padding: 0.75rem 1rem;
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      font-size: 0.88rem;
+      color: var(--text-main);
+      margin-bottom: 1rem;
+    }
+
+    .concept-analogy strong {
+      color: var(--accent);
+      display: block;
+      margin-bottom: 0.2rem;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .concept-dev-box {
+      margin-top: auto;
+      background: var(--code-bg);
+      border: 1px solid var(--code-border);
+      border-radius: var(--radius-md);
+      padding: 0.85rem 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      color: #93c5fd;
+    }
+
+    .concept-dev-box .dev-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      margin-bottom: 0.35rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-weight: 700;
+    }
+
+    .concept-dev-box code {
+      color: #38bdf8;
+      background: transparent;
+      padding: 0;
+      border: none;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.2rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .badge-success { background: var(--badge-success-bg); color: var(--badge-success-text); }
+    .badge-danger { background: var(--badge-danger-bg); color: var(--badge-danger-text); }
+    .badge-warning { background: var(--badge-warning-bg); color: var(--badge-warning-text); }
+    .badge-info { background: var(--badge-info-bg); color: var(--badge-info-text); }
+    .badge-purple { background: var(--badge-purple-bg); color: var(--badge-purple-text); }
+
+    /* Tables */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      background: var(--bg-surface);
+      box-shadow: var(--shadow-sm);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background-color: var(--bg-surface-alt);
+      color: var(--text-main);
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      padding: 0.85rem 1.15rem;
+      border-bottom: 1px solid var(--border-color);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 0.85rem 1.15rem;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      vertical-align: top;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background-color: var(--bg-surface-alt); }
+
+    /* Visual Flow / Hierarchy Container */
+    .flow-tree-container {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl);
+      padding: 2rem;
+      margin: 1.5rem 0;
+      box-shadow: var(--shadow-md);
+      position: relative;
+      overflow-x: auto;
+    }
+
+    .flow-steps {
+      display: flex;
+      align-items: stretch;
+      gap: 1.25rem;
+      min-width: 900px;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .flow-step-card {
+      flex: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+
+    .flow-step-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .flow-step-card.active-flow {
+      border: 2px solid var(--primary);
+      background: var(--accent-gradient-subtle);
+    }
+
+    .flow-badge-step {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      background: var(--primary-light);
+      color: var(--primary);
+      display: inline-block;
+      margin-bottom: 0.5rem;
+      width: fit-content;
+    }
+
+    .flow-step-title {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text-main);
+      margin-bottom: 0.25rem;
+    }
+
+    .flow-step-dev {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .flow-step-desc {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .flow-arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 1.25rem;
+      padding: 0 0.25rem;
+    }
+
+    /* Comparison Battle Box */
+    .battle-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    @media (max-width: 640px) {
+      .battle-grid { grid-template-columns: 1fr; }
+    }
+
+    .battle-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .battle-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.85rem;
+      margin-bottom: 1rem;
+    }
+
+    .battle-title {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 1.15rem;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .vs-tag {
+      background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+      color: white;
+      font-weight: 800;
+      font-size: 0.75rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+    }
+
+    .battle-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .battle-col {
+      background: var(--bg-surface-alt);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      border: 1px solid var(--border-color);
+    }
+
+    .battle-col-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .battle-col ul {
+      list-style-type: disc;
+      padding-left: 1.2rem;
+      font-size: 0.85rem;
+      color: var(--text-main);
+      line-height: 1.6;
+    }
+
+    .battle-conclusion {
+      margin-top: 1rem;
+      padding: 0.85rem;
+      border-radius: var(--radius-md);
+      background: var(--primary-light);
+      border: 1px solid var(--primary-border);
+      font-size: 0.88rem;
+      color: var(--text-main);
+    }
+
+    .battle-conclusion strong {
+      color: var(--primary);
+    }
+
+    /* Interactive Quiz Section */
+    .quiz-container {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl);
+      padding: 2rem;
+      margin: 2rem 0;
+      box-shadow: var(--shadow-md);
+    }
+
+    .quiz-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .quiz-question {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: var(--text-main);
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+    }
+
+    .quiz-num {
+      background: var(--primary-light);
+      color: var(--primary);
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.82rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .quiz-option {
+      padding: 0.85rem 1.15rem;
+      background: var(--bg-surface-alt);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .quiz-option:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--primary-border);
+      transform: translateX(3px);
+    }
+
+    .quiz-option.correct {
+      background: var(--badge-success-bg) !important;
+      border-color: #10b981 !important;
+      color: #10b981 !important;
+      font-weight: 600;
+    }
+
+    .quiz-option.wrong {
+      background: var(--badge-danger-bg) !important;
+      border-color: #ef4444 !important;
+      color: #ef4444 !important;
+      font-weight: 600;
+    }
+
+    .quiz-explanation {
+      margin-top: 0.85rem;
+      padding: 0.75rem 1rem;
+      background: var(--bg-surface-alt);
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      line-height: 1.5;
+      display: none;
+    }
+
+    /* Code Blocks */
+    pre code {
+      display: block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.84rem;
+      padding: 1.15rem 1.35rem;
+      background: var(--code-bg);
+      border: 1px solid var(--code-border);
+      border-radius: var(--radius-md);
+      color: #e2e8f0;
+      overflow-x: auto;
+      line-height: 1.6;
+    }
+
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85em;
+      padding: 0.15em 0.45em;
+      background: var(--bg-surface-alt);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      color: var(--primary);
+    }
+
+    /* Callout Boxes */
+    .callout {
+      border-left: 4px solid var(--primary);
+      background: var(--primary-light);
+      padding: 1.25rem 1.5rem;
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      margin: 1.5rem 0;
+    }
+
+    .callout.warning {
+      border-left-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.12);
+    }
+
+    .callout.danger {
+      border-left-color: #ef4444;
+      background: rgba(239, 68, 68, 0.12);
+    }
+
+    .callout.success {
+      border-left-color: #10b981;
+      background: rgba(16, 185, 129, 0.12);
+    }
+
+    .callout-title {
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 0.4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Back to top button */
+    #back-to-top {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: var(--shadow-lg);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+      z-index: 999;
+    }
+
+    #back-to-top.show { opacity: 1; pointer-events: auto; }
+    #back-to-top:hover { background: var(--primary-hover); transform: translateY(-2px); }
+
+    footer {
+      border-top: 1px solid var(--border-color);
+      padding: 2.5rem 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      background: var(--bg-surface);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Progress Bar -->
+  <div id="progress-bar"></div>
+
+  <!-- Top Navigation Bar -->
+  <header class="topbar">
+    <a href="#" class="brand">
+      <div class="brand-icon">
+        <i class="fa-solid fa-graduation-cap"></i>
+      </div>
+      <div>
+        <span>TCM Developer Guide</span>
+        <span class="brand-badge">Kiểm thử cho Dev</span>
+      </div>
+    </a>
+
+    <nav class="topbar-nav">
+      <a href="#mental-model" class="btn-nav active"><i class="fa-solid fa-brain"></i> Tư Duy Cốt Lõi</a>
+      <a href="#entity-hierarchy" class="btn-nav"><i class="fa-solid fa-sitemap"></i> Phân Cấp & Dòng Chảy</a>
+      <a href="#core-concepts" class="btn-nav"><i class="fa-solid fa-book-bookmark"></i> Thuật Ngữ Chi Tiết</a>
+      <a href="#vs-battles" class="btn-nav"><i class="fa-solid fa-scale-balanced"></i> Phân Biệt Khái Niệm</a>
+      <a href="#db-schema" class="btn-nav"><i class="fa-solid fa-database"></i> Lược Đồ CSDL & C#</a>
+      <a href="#dev-quiz" class="btn-nav"><i class="fa-solid fa-vial-circle-check"></i> Trắc Nghiệm Nhanh</a>
+    </nav>
+
+    <div class="topbar-actions">
+      <a href="index.html" class="btn-action" title="Mở Tài liệu Phân tích Nghiệp vụ (BA)">
+        <i class="fa-solid fa-file-lines"></i>
+        <span>Tài Liệu BA</span>
+      </a>
+      <a href="app_mockup.html" class="btn-action" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border-color: rgba(16, 185, 129, 0.3); font-weight: 600;" title="Mở Wireframe Giao Diện Mẫu">
+        <i class="fa-solid fa-desktop"></i>
+        <span>Wireframe UI</span>
+      </a>
+      <button class="btn-action" id="theme-toggle" title="Đổi giao diện Sáng / Tối">
+        <i class="fa-solid fa-sun" id="theme-icon"></i>
+        <span id="theme-text">Sáng</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="app-layout">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-section-title">Nội Dung Chính</div>
+      <ul class="nav-list">
+        <li class="nav-item">
+          <a href="#mental-model" class="nav-link active">
+            <i class="fa-solid fa-brain"></i> 1. Tư Duy Dev vs QA
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#entity-hierarchy" class="nav-link">
+            <i class="fa-solid fa-sitemap"></i> 2. Phân Cấp & Dòng Chảy
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#core-concepts" class="nav-link">
+            <i class="fa-solid fa-layer-group"></i> 3. 28 Khái Niệm Cốt Lõi
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#vs-battles" class="nav-link">
+            <i class="fa-solid fa-scale-balanced"></i> 4. Các Cặp Dễ Nhầm Lẫn
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#testing-types" class="nav-link">
+            <i class="fa-solid fa-vials"></i> 5. Các Loại Kiểm Thử
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#db-schema" class="nav-link">
+            <i class="fa-solid fa-database"></i> 6. Ánh Xạ CSDL & C# Entity
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="#dev-quiz" class="nav-link">
+            <i class="fa-solid fa-vial-circle-check"></i> 7. Trắc Nghiệm Tương Tác
+          </a>
+        </li>
+      </ul>
+
+      <div class="sidebar-section-title">Nhóm Thuật Ngữ</div>
+      <div style="display: flex; flex-direction: column; gap: 0.35rem; padding: 0 0.5rem;">
+        <a href="#core-concepts" onclick="filterCategory('all')" style="font-size: 0.8rem; color: var(--text-muted); text-decoration: none;">• Tất cả thuật ngữ (28)</a>
+        <a href="#core-concepts" onclick="filterCategory('hierarchy')" style="font-size: 0.8rem; color: var(--text-muted); text-decoration: none;">• Nhóm Phân cấp (Suite, Case, Step)</a>
+        <a href="#core-concepts" onclick="filterCategory('execution')" style="font-size: 0.8rem; color: var(--text-muted); text-decoration: none;">• Nhóm Thực thi (Plan, Run, Exec)</a>
+        <a href="#core-concepts" onclick="filterCategory('quality')" style="font-size: 0.8rem; color: var(--text-muted); text-decoration: none;">• Nhóm Chất lượng (Gate, Flaky, Defect)</a>
+        <a href="#core-concepts" onclick="filterCategory('technique')" style="font-size: 0.8rem; color: var(--text-muted); text-decoration: none;">• Kỹ thuật thiết kế (BVA, EP, Matrix)</a>
+      </div>
+
+      <div class="sidebar-section-title" style="margin-top: 1.5rem;">Dự Án Đang Làm</div>
+      <div style="font-size: 0.8rem; color: var(--text-muted); padding: 0 0.5rem; line-height: 1.6;">
+        <div><strong>Module:</strong> TestCaseManagement</div>
+        <div><strong>Framework:</strong> ABP (.NET 8/9)</div>
+        <div><strong>Kiến trúc:</strong> DDD / Clean Architecture</div>
+        <div><strong>Mục tiêu:</strong> Thay thế TestRail/Xray</div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+
+      <!-- Hero Header -->
+      <div class="hero-banner">
+        <div class="hero-meta">
+          <span class="badge badge-info"><i class="fa-solid fa-code"></i> Developer-First Perspective</span>
+          <span class="badge badge-purple"><i class="fa-solid fa-cubes"></i> Chuẩn Thiết Kế Phần Mềm TCM</span>
+          <span class="badge badge-success"><i class="fa-solid fa-check-double"></i> 100% Thuật ngữ có Ví dụ & Bảng CSDL</span>
+        </div>
+        <h1 class="hero-title">
+          Cẩm Nang Khái Niệm Kiểm Thử Phần Mềm<br>
+          <span class="gradient-text">Dành Riêng Cho Lập Trình Viên (Developer)</span>
+        </h1>
+        <p class="hero-desc">
+          Bạn là Dev được giao nhiệm vụ xây dựng hệ thống <strong>Quản Lý Test Case (TCM)</strong> nhưng đang bị rối bời giữa 
+          <em>Test Case, Test Suite, Test Plan, Test Run, Test Execution, TestCaseVersion, Flaky Test, RTM...</em>? 
+          Tài liệu này giải thích toàn bộ hệ thống khái niệm QA thông qua <strong>tư duy lập trình viên</strong>: 
+          từ mô hình OOP (Class vs Object), Git commit (Snapshot/Immutability), cho đến thiết kế bảng cơ sở dữ liệu (EF Core / Relational DB).
+        </p>
+        
+        <div class="hero-badges">
+          <a href="#mental-model" class="btn-action btn-primary"><i class="fa-solid fa-compass"></i> Bắt đầu khám phá</a>
+          <a href="#entity-hierarchy" class="btn-action"><i class="fa-solid fa-diagram-project"></i> Xem Sơ đồ Dòng chảy</a>
+          <a href="#dev-quiz" class="btn-action"><i class="fa-solid fa-gamepad"></i> Thử thách Mini-Quiz</a>
+        </div>
+      </div>
+
+      <!-- Live Search & Category Filter Sticky Bar -->
+      <div class="filter-sticky-bar" id="search-filter-section">
+        <div class="search-input-box">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="concept-search" class="search-input" placeholder="Tìm kiếm nhanh khái niệm (Ví dụ: test plan, flaky, version, run item, severity, gate, rtm...)...">
+        </div>
+        <div class="filter-chips">
+          <span class="filter-label"><i class="fa-solid fa-filter"></i> Lọc theo:</span>
+          <button class="chip-btn active" data-cat="all" onclick="filterCategory('all')">Tất cả (28)</button>
+          <button class="chip-btn" data-cat="hierarchy" onclick="filterCategory('hierarchy')">Phân cấp Kịch bản</button>
+          <button class="chip-btn" data-cat="execution" onclick="filterCategory('execution')">Chu kỳ Thực thi</button>
+          <button class="chip-btn" data-cat="quality" onclick="filterCategory('quality')">Chất lượng & Lỗi</button>
+          <button class="chip-btn" data-cat="types" onclick="filterCategory('types')">Các Loại Test</button>
+          <button class="chip-btn" data-cat="technique" onclick="filterCategory('technique')">Kỹ thuật & Phương pháp</button>
+        </div>
+      </div>
+
+      <!-- SECTION 1: MENTAL MODEL CHO DEV -->
+      <section id="mental-model">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="section-number">1</span>
+            Tư Duy Cốt Lõi: Dev Nhìn Kiểm Thử Như Thế Nào?
+          </h2>
+          <span class="section-badge">OOP & Database Mindset</span>
+        </div>
+
+        <p>
+          Lý do lập trình viên cảm thấy các thuật ngữ kiểm thử khó hiểu là vì QA dùng nhiều từ ngữ nghe tương tự nhau 
+          (<em>Test Case, Test Plan, Test Run, Test Scenario, Test Suite...</em>). Nhưng khi quy về 
+          <strong>Lập trình Hướng đối tượng (OOP)</strong> và <strong>Cơ sở dữ liệu Quan hệ (RDBMS)</strong>, mọi thứ trở nên cực kỳ trong sáng và mạch lạc:
+        </p>
+
+        <!-- Bảng tương đương OOP & Đời thường -->
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Thuật ngữ QA</th>
+                <th>Tương đương trong OOP / Dev</th>
+                <th>Ẩn dụ Đời thường (Bếp ăn)</th>
+                <th>Đặc tính Cơ sở dữ liệu</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Test Suite / Module</strong></td>
+                <td><code>Namespace / Folder / Package</code></td>
+                <td>Cuốn sổ phân loại món (Khai vị, Món chính)</td>
+                <td>Bảng <code>TestSuites</code> (Cấu trúc cây tự trỏ đệ quy <code>ParentId</code>)</td>
+              </tr>
+              <tr>
+                <td><strong>Test Case (TC)</strong></td>
+                <td><code>Class / Blueprint / Interface</code></td>
+                <td>Công thức nấu một món ăn cụ thể</td>
+                <td>Bảng <code>TestCases</code> (Master data thư viện, không lưu kết quả Pass/Fail)</td>
+              </tr>
+              <tr>
+                <td><strong>Test Step</strong></td>
+                <td><code>Method / Code Lines / Instructions</code></td>
+                <td>Các bước cụ thể: Rửa rau -> Đảo chảo -> Nêm nếm</td>
+                <td>Bảng <code>TestSteps</code> (Quan hệ 1-N với Test Case, có số thứ tự <code>StepOrder</code>)</td>
+              </tr>
+              <tr>
+                <td><strong>TestCaseVersion</strong></td>
+                <td><code>Git Commit Hash / Immutable Snapshot</code></td>
+                <td>Bản in công thức tại ngày ký hợp đồng tiệc</td>
+                <td>Bảng <code>TestCaseVersions</code> (Read-only, bảo toàn lịch sử không bị sửa)</td>
+              </tr>
+              <tr>
+                <td><strong>Test Plan</strong></td>
+                <td><code>Release Backlog Scope / Contract Scope</code></td>
+                <td>Thực đơn tiệc cưới ngày 20/10 (Gồm những món nào)</td>
+                <td>Bảng <code>TestPlans</code> (Chứa mục tiêu, phạm vi Milestone/Sprint)</td>
+              </tr>
+              <tr>
+                <td><strong>Test Run</strong></td>
+                <td><code>CI/CD Pipeline Run / Job Process</code></td>
+                <td>Ca trực bếp trưa ngày 20/10 bắt đầu nấu tiệc</td>
+                <td>Bảng <code>TestRuns</code> (Một đợt chạy cụ thể trên môi trường Staging/Prod)</td>
+              </tr>
+              <tr>
+                <td><strong>Test Run Item</strong></td>
+                <td><code>Job Task / Instance / Work Item</code></td>
+                <td>Đĩa món X được giao cho đầu bếp Nam nấu</td>
+                <td>Bảng <code>TestRunItems</code> (Ánh xạ Test Case vào Test Run, gán cho Tester)</td>
+              </tr>
+              <tr>
+                <td><strong>Test Execution</strong></td>
+                <td><code>Execution Log / Attempt / Run Result</code></td>
+                <td>Biên bản nếm thử của quản lý (Ngon/Mặn/Hỏng)</td>
+                <td>Bảng <code>TestExecutions</code> (1 Item có N lần nếm; Pass, Fail, Blocked, ảnh lỗi)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 3 Sai Lầm Chí Mạng -->
+        <div class="callout warning">
+          <div class="callout-title">
+            <i class="fa-solid fa-triangle-exclamation"></i> 
+            3 Sai Lầm Chí Mạng Khi Dev Bắt Tay Thiết Kế Hệ Thống Quản Lý Test Case
+          </div>
+          <ol style="padding-left: 1.5rem; line-height: 1.7; font-size: 0.92rem;">
+            <li>
+              <strong>Sai lầm 1: Đặt cột <code>Status (Pass/Fail)</code> vào thẳng bảng <code>TestCases</code>.</strong><br>
+              <em>Hậu quả:</em> Bảng <code>TestCases</code> là <strong>thư viện tri thức lâu dài</strong> (Master Library). Nếu lưu Pass/Fail ở đây, khi chạy đợt test mới (Sprint 2), kết quả của Sprint 1 sẽ bị ghi đè hoàn toàn, hệ thống mất sạch lịch sử báo cáo!
+            </li>
+            <li>
+              <strong>Sai lầm 2: Ghi đè (UPDATE) dòng kết quả khi tester thực thi lại (Re-test).</strong><br>
+              <em>Hậu quả:</em> Khi test lần 1 bị <code>Fail</code>, Dev fix bug xong Tester test lần 2 ra <code>Pass</code>. Nếu UPDATE đè, bạn sẽ không thể thống kê được: <em>"Bao nhiêu % test case phải chạy từ 2 lần trở lên mới Pass?"</em> (Chỉ số Defect Reopen Rate / First-Time Pass Rate).
+            </li>
+            <li>
+              <strong>Sai lầm 3: Không tạo Snapshot (TestCaseVersion) khi gán kịch bản vào đợt test.</strong><br>
+              <em>Hậu quả:</em> Sang tháng sau, một bạn tester khác vào sửa nội dung bước 3 của Test Case. Báo cáo nghiệm thu của tháng trước bị thay đổi nội dung ngầm mà không ai hay biết!
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- SECTION 2: PHÂN CẤP & DÒNG CHẢY (THE HIERARCHY) -->
+      <section id="entity-hierarchy">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="section-number">2</span>
+            Sơ Đồ Phân Cấp & Dòng Chảy Thực Thi Trong TCM
+          </h2>
+          <span class="section-badge">Life-cycle & Execution Flow</span>
+        </div>
+
+        <p>
+          Trong hệ thống TCM chuyên nghiệp (như TestRail, Zephyr, Xray), toàn bộ dữ liệu luôn được chia làm 
+          <strong>2 Thế Giới Riêng Biệt</strong>: 
+          <em>Kho Thư Viện (Design Time - Repository)</em> và <em>Đợt Chạy Kiểm Thử (Execution Time - Run Cycle)</em>.
+        </p>
+
+        <!-- Visual Flow Tree -->
+        <div class="flow-tree-container">
+          <div style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between;">
+            <span><i class="fa-solid fa-network-wired" style="color: var(--primary);"></i> Dòng Chảy Vận Hành Từ Kịch Bản Đến Báo Cáo Xuất Xưởng</span>
+            <span class="badge badge-info">1-N & Snapshot Relationship</span>
+          </div>
+
+          <div class="flow-steps">
+            <!-- Step 1: Suite -->
+            <div class="flow-step-card">
+              <span class="flow-badge-step">01. Tổ chức</span>
+              <div class="flow-step-title">Test Suite</div>
+              <div class="flow-step-dev">Folder / Module</div>
+              <p class="flow-step-desc">Cây thư mục phân loại: Authentication, Cart, Checkout, Admin...</p>
+            </div>
+
+            <div class="flow-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+            <!-- Step 2: Test Case -->
+            <div class="flow-step-card">
+              <span class="flow-badge-step">02. Thiết kế</span>
+              <div class="flow-step-title">Test Case</div>
+              <div class="flow-step-dev">Template / Steps</div>
+              <p class="flow-step-desc">Kịch bản chi tiết: Tiền điều kiện, từng bước thực hiện, kết quả mong đợi.</p>
+            </div>
+
+            <div class="flow-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+            <!-- Step 3: Snapshot -->
+            <div class="flow-step-card active-flow">
+              <span class="flow-badge-step">03. Đóng băng</span>
+              <div class="flow-step-title">TC Version</div>
+              <div class="flow-step-dev">Immutable Snapshot</div>
+              <p class="flow-step-desc">Chốt phiên bản v1, v2 khi đưa vào chạy để không bị sửa đổi ngoài ý muốn.</p>
+            </div>
+
+            <div class="flow-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+            <!-- Step 4: Test Plan -->
+            <div class="flow-step-card">
+              <span class="flow-badge-step">04. Kế hoạch</span>
+              <div class="flow-step-title">Test Plan</div>
+              <div class="flow-step-dev">Sprint Scope</div>
+              <p class="flow-step-desc">Gom phạm vi kịch bản cho Sprint 24, Release v2.1, Milestone Q3.</p>
+            </div>
+
+            <div class="flow-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+            <!-- Step 5: Test Run -->
+            <div class="flow-step-card">
+              <span class="flow-badge-step">05. Đợt chạy</span>
+              <div class="flow-step-title">Test Run</div>
+              <div class="flow-step-dev">Execution Session</div>
+              <p class="flow-step-desc">Đợt chạy trên môi trường thực tế (Staging, Android, iOS, Chrome v124).</p>
+            </div>
+
+            <div class="flow-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+            <!-- Step 6: Execution -->
+            <div class="flow-step-card">
+              <span class="flow-badge-step">06. Ghi nhận</span>
+              <div class="flow-step-title">Execution</div>
+              <div class="flow-step-dev">Attempts (1-N)</div>
+              <p class="flow-step-desc">Lần 1: Fail (kèm ảnh lỗi, link Jira) -> Dev fix -> Lần 2: Pass!</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bảng phân tích chi tiết quan hệ -->
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Thực thể</th>
+                <th>Tần suất tồn tại</th>
+                <th>Ai thao tác chính?</th>
+                <th>Hành động khi có tính năng mới</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Kho Kịch Bản (Test Cases)</strong></td>
+                <td>Vĩnh cửu theo vòng đời dự án (Tăng dần theo thời gian)</td>
+                <td>QA Lead / Senior Tester</td>
+                <td>Viết thêm kịch bản mới hoặc cập nhật version kịch bản cũ</td>
+              </tr>
+              <tr>
+                <td><strong>Kế hoạch (Test Plan)</strong></td>
+                <td>Theo từng Sprint / Milestone / Phiên bản Release</td>
+                <td>QA Lead / Project Manager</td>
+                <td>Tạo mới cho mỗi Sprint, chọn các Test Case cần chạy</td>
+              </tr>
+              <tr>
+                <td><strong>Đợt chạy (Test Run)</strong></td>
+                <td>Tạo liên tục theo mỗi bản build / môi trường kiểm thử</td>
+                <td>Tester / CI Pipeline Automation</td>
+                <td>Kích hoạt chạy trên Staging, Mobile, hoặc chạy tự động</td>
+              </tr>
+              <tr>
+                <td><strong>Lịch sử chạy (Test Execution)</strong></td>
+                <td>Bất biến (Insert-only, không bao giờ UPDATE đè)</td>
+                <td>Tester / Test Runner Agent</td>
+                <td>Lưu vết từng lần click test (Thời gian, ai test, log lỗi)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SECTION 3: 28 THUẬT NGỮ CỐT LÕI (SEARCHABLE / FILTERABLE CARDS) -->
+      <section id="core-concepts">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="section-number">3</span>
+            Từ Điển Thuật Ngữ Kiểm Thử Chi Tiết
+          </h2>
+          <span class="section-badge" id="visible-count">Hiển thị 28 / 28 thuật ngữ</span>
+        </div>
+
+        <div class="concept-grid" id="concepts-container">
+
+          <!-- 1. Test Case -->
+          <div class="concept-card" data-category="hierarchy">
+            <div class="concept-header">
+              <div class="concept-icon icon-blue"><i class="fa-solid fa-file-lines"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">Test Case (TC) <span class="badge badge-info concept-tag">Cốt Lõi</span></div>
+                <div class="concept-en-name">Trường hợp kiểm thử / Kịch bản kiểm thử</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              Tập hợp gồm các <strong>điều kiện tiên quyết</strong> (Preconditions), <strong>các bước thực hiện</strong> (Steps), 
+              <strong>dữ liệu đầu vào</strong> (Input Data) và <strong>kết quả mong đợi</strong> (Expected Result) nhằm xác định xem 
+              một tính năng cụ thể có hoạt động đúng theo yêu cầu phần mềm hay không.
+            </p>
+            <div class="concept-analogy">
+              <strong>Ví dụ đời thường:</strong>
+              Giống như một tờ <em>phiếu bài tập</em>: Đề bài yêu cầu tính 2 + 2, đáp án chuẩn là 4. Bất kỳ ai cầm tờ phiếu này làm theo đều sẽ có cùng một tiêu chuẩn chấm điểm.
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Bảng <code>TestCases</code> trong CSDL. Thuộc tính: <code>Id</code>, <code>Code</code> ("TC-001"), <code>Title</code>, <code>SuiteId</code>, <code>Priority</code>, <code>Severity</code>. Không có cột <code>Result</code>!
+            </div>
+          </div>
+
+          <!-- 2. Test Step -->
+          <div class="concept-card" data-category="hierarchy">
+            <div class="concept-header">
+              <div class="concept-icon icon-cyan"><i class="fa-solid fa-list-ol"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">Test Step <span class="badge badge-info concept-tag">Chi Tiết</span></div>
+                <div class="concept-en-name">Bước kiểm thử</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              Một hành động nguyên tử (atomic action) bên trong Test Case. Mỗi bước luôn gồm 2 vế song song: 
+              <strong>Hành động thực hiện (Action)</strong> và <strong>Kết quả mong đợi tương ứng (Expected Outcome)</strong>.
+            </p>
+            <div class="concept-analogy">
+              <strong>Ví dụ:</strong>
+              Bước 1: Nhập email hợp lệ & click Next &rarr; Màn hình hiển thị ô nhập mật khẩu.<br>
+              Bước 2: Nhập pass & click Đăng nhập &rarr; Chuyển hướng vào Dashboard, hiển thị avatar người dùng.
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Bảng <code>TestSteps</code>. Khóa ngoại <code>TestCaseId</code>, thuộc tính <code>StepOrder (int)</code>, <code>Action (string)</code>, <code>ExpectedResult (string)</code>.
+            </div>
+          </div>
+
+          <!-- 3. Test Suite -->
+          <div class="concept-card" data-category="hierarchy">
+            <div class="concept-header">
+              <div class="concept-icon icon-purple"><i class="fa-solid fa-folder-tree"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">Test Suite / Module <span class="badge badge-purple concept-tag">Phân Cấp</span></div>
+                <div class="concept-en-name">Bộ kịch bản kiểm thử / Thư mục module</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              Cấu trúc cây thư mục dùng để <strong>nhóm các Test Case có liên quan logic lại với nhau</strong> 
+              (theo chức năng, theo microservice, hoặc theo hành trình người dùng). Ví dụ: Suite "Quản lý Đơn Hàng" chứa các sub-suite "Tạo đơn", "Thanh toán", "Hủy đơn".
+            </p>
+            <div class="concept-analogy">
+              <strong>Tương đương trong Code:</strong>
+              Giống hệt cấu trúc <strong>Folder / Namespace</strong> trong dự án C# hay Java (<code>Acme.Orders.Checkout</code>).
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Bảng <code>TestSuites</code>. Khóa ngoại tự trỏ <code>ParentId (Guid?)</code> để tạo cây thư mục vô tận, <code>OrderIndex (int)</code> để kéo thả sắp xếp (Drag & Drop).
+            </div>
+          </div>
+
+          <!-- 4. TestCaseVersion (Snapshot) -->
+          <div class="concept-card" data-category="hierarchy">
+            <div class="concept-header">
+              <div class="concept-icon icon-indigo"><i class="fa-solid fa-camera-retro"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">TestCaseVersion <span class="badge badge-success concept-tag">Snapshot</span></div>
+                <div class="concept-en-name">Ảnh chụp đóng băng phiên bản kịch bản</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              Bản ghi bất biến (Immutable Record) lưu lại toàn bộ nội dung (Title, Precondition, Steps JSON) của Test Case 
+              tại một thời điểm cụ thể. Khi Test Case được cập nhật sang version mới (v2), các đợt test cũ đã chạy với v1 
+              vẫn giữ nguyên vẹn giá trị lịch sử.
+            </p>
+            <div class="concept-analogy">
+              <strong>Tương đương trong Git:</strong>
+              Giống như <strong>Git Commit Hash</strong>. Bạn có thể sửa code ở nhánh chính (master), nhưng commit lịch sử trong quá khứ không bao giờ bị thay đổi!
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Bảng <code>TestCaseVersions</code>. Khóa ngoại <code>TestCaseId</code>, thuộc tính <code>VersionNumber (int)</code>, <code>SnapshotData (JSON string)</code>, <code>CreatedTime</code>.
+            </div>
+          </div>
+
+          <!-- 5. Test Plan -->
+          <div class="concept-card" data-category="execution">
+            <div class="concept-header">
+              <div class="concept-icon icon-amber"><i class="fa-solid fa-calendar-check"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">Test Plan <span class="badge badge-warning concept-tag">Kế Hoạch</span></div>
+                <div class="concept-en-name">Kế hoạch kiểm thử tổng thể</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              Văn bản / thực thể định nghĩa <strong>mục tiêu, phạm vi kiểm thử (Scope), tài nguyên, môi trường, thời hạn</strong> 
+              cho một đợt phát hành (Release) hoặc Milestone. Nó xác định: <em>"Trong bản release v2.0 này, chúng ta sẽ test những Suite nào, những kịch bản nào?"</em>
+            </p>
+            <div class="concept-analogy">
+              <strong>Ví dụ:</strong>
+              Kế hoạch kiểm thử Sprint 24: Tập trung vào tính năng Cổng thanh toán MoMo và kiểm thử hồi quy luồng Đăng ký tài khoản.
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Bảng <code>TestPlans</code>. Thuộc tính <code>MilestoneId</code>, <code>StartDate</code>, <code>EndDate</code>, <code>Status (Draft/Active/Completed)</code>. Có thể chứa nhiều Test Runs bên trong.
+            </div>
+          </div>
+
+          <!-- 6. Test Run -->
+          <div class="concept-card" data-category="execution">
+            <div class="concept-header">
+              <div class="concept-icon icon-emerald"><i class="fa-solid fa-play"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">Test Run <span class="badge badge-success concept-tag">Đợt Chạy</span></div>
+                <div class="concept-en-name">Đợt thực thi kiểm thử cụ thể</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              Một <strong>phiên làm việc thực tế</strong> để chạy một danh sách Test Case cụ thể trên một môi trường xác định 
+              (ví dụ: Chạy đợt test trên môi trường <em>Staging - Trình duyệt Google Chrome</em> hoặc <em>Production - App iOS</em>). 
+              Đây là nơi các tester bắt đầu click vào từng kịch bản để chấm điểm Pass/Fail.
+            </p>
+            <div class="concept-analogy">
+              <strong>Tương đương trong CI/CD:</strong>
+              Giống như một <strong>Pipeline Run</strong> hay <strong>GitHub Actions Workflow Run</strong>.
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Bảng <code>TestRuns</code>. Thuộc tính <code>PlanId</code>, <code>Environment ("Staging")</code>, <code>AssignedToUserId</code>, <code>ExecutionStatus (Untested/In-Progress/Completed)</code>.
+            </div>
+          </div>
+
+          <!-- 7. Test Run Item -->
+          <div class="concept-card" data-category="execution">
+            <div class="concept-header">
+              <div class="concept-icon icon-blue"><i class="fa-solid fa-table-list"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">Test Run Item <span class="badge badge-info concept-tag">Phân Phối</span></div>
+                <div class="concept-en-name">Hạng mục kiểm thử trong đợt chạy</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              Thể hiện mối quan hệ gán (Instance) giữa một Test Case (chính xác hơn là một TestCaseVersion) với một Test Run. 
+              Nó đại diện cho 1 dòng công việc cụ thể: <em>"Kịch bản Đăng nhập Google được đưa vào Đợt chạy Staging và gán cho bạn Tester A thực hiện"</em>.
+            </p>
+            <div class="concept-analogy">
+              <strong>Tương đương trong Jira:</strong>
+              Giống như một <strong>Sub-task</strong> được tạo ra và assign cho một người thực hiện trong Sprint.
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Bảng <code>TestRunItems</code>. Khóa ngoại <code>TestRunId</code>, <code>TestCaseVersionId</code>, <code>AssignedUserId</code>, <code>CurrentStatus</code> (Pass/Fail/Blocked/Untested - tính theo lần test mới nhất).
+            </div>
+          </div>
+
+          <!-- 8. Test Execution -->
+          <div class="concept-card" data-category="execution">
+            <div class="concept-header">
+              <div class="concept-icon icon-rose"><i class="fa-solid fa-stopwatch"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">Test Execution <span class="badge badge-danger concept-tag">Thực Thi</span></div>
+                <div class="concept-en-name">Lần thực thi / Ghi nhận kết quả (Attempt)</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              Nhật ký thực thi của <strong>một lần thử nghiệm cụ thể</strong> cho 1 Test Run Item. Khi tester bấm nút "Pass" hoặc "Fail", 
+              một bản ghi Test Execution mới được INSERT vào database. Nếu test lần 1 Fail, dev sửa bug, tester test lại lần 2 Pass &rarr; 
+              hệ thống có <strong>2 bản ghi Execution</strong> liên kết với cùng 1 Run Item (Attempt 1 và Attempt 2).
+            </p>
+            <div class="concept-analogy">
+              <strong>Tương đương:</strong>
+              Giống như <strong>Audit Log / Transaction Log</strong>. Chỉ INSERT thêm, không bao giờ UPDATE đè lên kết quả cũ!
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Bảng <code>TestExecutions</code>. Khóa ngoại <code>TestRunItemId</code>, <code>Status (Pass/Fail/Blocked)</code>, <code>ActualResult</code>, <code>ExecutionTimeSeconds</code>, <code>ExecutedByUserId</code>, <code>ExecutedAt</code>.
+            </div>
+          </div>
+
+          <!-- 9. Test Scenario -->
+          <div class="concept-card" data-category="hierarchy">
+            <div class="concept-header">
+              <div class="concept-icon icon-purple"><i class="fa-solid fa-route"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">Test Scenario <span class="badge badge-purple concept-tag">Tổng Quát</span></div>
+                <div class="concept-en-name">Kịch bản tổng quát / Tình huống kiểm thử</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              Mô tả ở mức tổng quan (high-level) về những gì cần kiểm tra, thường trả lời câu hỏi: <em>"Cần kiểm tra cái gì?"</em> (What to test), 
+              trong khi Test Case trả lời: <em>"Kiểm tra như thế nào?"</em> (How to test). Một Test Scenario thường sinh ra <strong>nhiều Test Case</strong> cụ thể.
+            </p>
+            <div class="concept-analogy">
+              <strong>Ví dụ:</strong>
+              Scenario: "Kiểm tra chức năng Đăng nhập".<br>
+              &rarr; Sinh ra TC1: Login thành công với email hợp lệ (Happy path).<br>
+              &rarr; Sinh ra TC2: Login thất bại khi sai pass 5 lần (Lock account).<br>
+              &rarr; Sinh ra TC3: Login bằng tài khoản chưa kích hoạt.
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Thường tương đương với một <code>User Story</code> hoặc một <code>Feature Acceptance Criteria</code> trong Jira.
+            </div>
+          </div>
+
+          <!-- 10. Precondition & Postcondition -->
+          <div class="concept-card" data-category="hierarchy">
+            <div class="concept-header">
+              <div class="concept-icon icon-indigo"><i class="fa-solid fa-door-open"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">Pre & Post Condition <span class="badge badge-info concept-tag">Điều Kiện</span></div>
+                <div class="concept-en-name">Tiền điều kiện & Hậu điều kiện</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              <strong>Precondition:</strong> Trạng thái bắt buộc của hệ thống hoặc dữ liệu trước khi bắt đầu test (ví dụ: User đã đăng nhập, giỏ hàng đang có ít nhất 1 sản phẩm).<br>
+              <strong>Postcondition:</strong> Trạng thái của hệ thống sau khi test xong (ví dụ: Số lượng tồn kho giảm 1, đơn hàng chuyển sang trạng thái "Đã thanh toán").
+            </p>
+            <div class="concept-analogy">
+              <strong>Tương đương trong Unit Test:</strong>
+              Giống như hàm <code>[SetUp]</code> (khởi tạo mock data) và <code>[TearDown]</code> (dọn dẹp dữ liệu/rollback transaction).
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Thuộc tính <code>Preconditions (string)</code> và <code>Postconditions (string)</code> trong bảng <code>TestCases</code>.
+            </div>
+          </div>
+
+          <!-- 11. Expected Result vs Actual Result -->
+          <div class="concept-card" data-category="execution">
+            <div class="concept-header">
+              <div class="concept-icon icon-cyan"><i class="fa-solid fa-code-compare"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">Expected vs Actual <span class="badge badge-info concept-tag">So Sánh</span></div>
+                <div class="concept-en-name">Kết quả mong đợi vs Kết quả thực tế</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              <strong>Expected Result:</strong> Kết quả được định nghĩa từ trước theo tài liệu đặc tả (SRS/Figma).<br>
+              <strong>Actual Result:</strong> Kết quả thực tế hiển thị trên màn hình khi tester chạy ứng dụng.<br>
+              &rarr; Nếu <code>Expected == Actual</code> &rarr; <strong>PASS</strong>.<br>
+              &rarr; Nếu <code>Expected != Actual</code> &rarr; <strong>FAIL (Phát hiện Bug!)</strong>.
+            </div>
+            <div class="concept-analogy">
+              <strong>Tương đương trong Code:</strong>
+              Giống như câu lệnh <code>Assert.Equal(expected, actual);</code> trong thư viện xUnit / NUnit.
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              <code>ExpectedResult</code> nằm ở bảng mẫu <code>TestSteps</code>; còn <code>ActualResult</code> nằm ở bảng thực thi <code>TestExecutions</code>.
+            </div>
+          </div>
+
+          <!-- 12. RTM (Requirements Traceability Matrix) -->
+          <div class="concept-card" data-category="quality">
+            <div class="concept-header">
+              <div class="concept-icon icon-purple"><i class="fa-solid fa-table-cells"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">RTM <span class="badge badge-purple concept-tag">Truy Vết</span></div>
+                <div class="concept-en-name">Requirements Traceability Matrix (Ma trận truy vết)</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              Ma trận 2 chiều liên kết giữa <strong>Yêu cầu nghiệp vụ (User Story / Requirement)</strong> với các 
+              <strong>Test Case kiểm thử nó</strong> và các <strong>Bug phát sinh</strong>. Giúp trả lời câu hỏi cốt tử của sếp: 
+              <em>"Tính năng Đổi mật khẩu này đã có kịch bản test chưa? Test bao nhiêu case? Đã Pass hết chưa?"</em>
+            </p>
+            <div class="concept-analogy">
+              <strong>Góc nhìn Dev:</strong>
+              Giống như đo đạc <strong>Code Coverage</strong>, nhưng ở cấp độ Nghiệp vụ (Business Requirement Coverage).
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Bảng trung gian N-N: <code>RequirementTestCases</code> (<code>RequirementId</code> & <code>TestCaseId</code>). Dùng để xuất báo cáo Coverage %.
+            </div>
+          </div>
+
+          <!-- 13. Quality Gate -->
+          <div class="concept-card" data-category="quality">
+            <div class="concept-header">
+              <div class="concept-icon icon-emerald"><i class="fa-solid fa-shield-halved"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">Quality Gate <span class="badge badge-success concept-tag">Cổng Xuất Xưởng</span></div>
+                <div class="concept-en-name">Cổng kiểm soát chất lượng (Release Gate)</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              Tập hợp các tiêu chí định lượng (Thresholds) bắt buộc phải đạt được trước khi một bản build được phép triển khai 
+              (Deploy) lên môi trường tiếp theo (ví dụ: từ Staging lên Production).<br>
+              Ví dụ: Tỷ lệ Pass rate &ge; 95%, <strong>0 Bug Critical/High còn mở</strong>, 100% Smoke tests hoàn thành.
+            </p>
+            <div class="concept-analogy">
+              <strong>Tương đương trong CI/CD:</strong>
+              Giống như quy tắc chặn merge PR (Merge Rules): Bắt buộc CI test passed, SonarQube Quality Gate passed mới cho click Merge!
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Logic kiểm tra tự động trước khi đóng Test Plan: <code>if (failedCriticalBugs > 0 || passRate < 0.95) return BlockRelease();</code>
+            </div>
+          </div>
+
+          <!-- 14. Flaky Test -->
+          <div class="concept-card" data-category="quality">
+            <div class="concept-header">
+              <div class="concept-icon icon-rose"><i class="fa-solid fa-ghost"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">Flaky Test <span class="badge badge-danger concept-tag">Chập Chờn</span></div>
+                <div class="concept-en-name">Kịch bản kiểm thử không ổn định (Heisenbug)</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              Một test case mà khi chạy lặp đi lặp lại trên cùng một phiên bản mã nguồn (source code không đổi) nhưng 
+              <strong>lúc thì Pass, lúc lại Fail</strong>. Nguyên nhân phổ biến: mạng chập chờn, bất đồng bộ (Race condition), 
+              phụ thuộc thứ tự test, hoặc dữ liệu test bị trùng lặp.
+            </p>
+            <div class="concept-analogy">
+              <strong>Nỗi đau của Dev:</strong>
+              Cảm giác tức tối khi CI/CD lúc đỏ lúc xanh không rõ nguyên nhân khiến team mất niềm tin vào hệ thống kiểm thử tự động.
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Cột <code>IsFlaky (bool)</code> và <code>FlakyScore (double)</code> trong bảng <code>TestCases</code>. Tự động tính toán khi kết quả đảo chiều liên tục giữa các lần chạy.
+            </div>
+          </div>
+
+          <!-- 15. Severity vs Priority -->
+          <div class="concept-card" data-category="quality">
+            <div class="concept-header">
+              <div class="concept-icon icon-amber"><i class="fa-solid fa-scale-balanced"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">Severity vs Priority <span class="badge badge-warning concept-tag">Phân Loại Lỗi</span></div>
+                <div class="concept-en-name">Độ nghiêm trọng kỹ thuật vs Độ ưu tiên kinh doanh</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              <strong>Severity (Nghiêm trọng):</strong> Mức độ ảnh hưởng kỹ thuật của lỗi lên hệ thống (Crash app, mất dữ liệu, rò rỉ bảo mật).<br>
+              <strong>Priority (Ưu tiên):</strong> Mức độ khẩn cấp cần phải sửa xét theo góc độ kinh doanh và người dùng (Cần fix ngay hôm nay hay để tuần sau).
+            </p>
+            <div class="concept-analogy">
+              <strong>Ví dụ kinh điển:</strong>
+              Logo công ty bị sai chính tả thành từ ngữ nhạy cảm ngay trang chủ &rarr; <em>Severity Thấp</em> (không crash hệ thống), nhưng <em>Priority Cực Cao</em> (phải sửa trong 5 phút vì ảnh hưởng thương hiệu!).
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Hai enum độc lập: <code>SeverityLevel { Low, Medium, High, Critical }</code> và <code>PriorityLevel { Low, Medium, High, Urgent }</code>.
+            </div>
+          </div>
+
+          <!-- 16. Smoke Testing -->
+          <div class="concept-card" data-category="types">
+            <div class="concept-header">
+              <div class="concept-icon icon-rose"><i class="fa-solid fa-fire"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">Smoke Testing <span class="badge badge-danger concept-tag">Test Khói</span></div>
+                <div class="concept-en-name">Kiểm thử sơ bộ / Build Acceptance Test</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              Đợt kiểm thử nhanh các tính năng sống còn cốt lõi nhất ngay sau khi nhận bản build mới. Mục đích: Kiểm tra xem 
+              hệ thống có <em>"bốc khói" (crash màn hình, không mở được app, không login được)</em> hay không. 
+              Nếu Smoke Test fail &rarr; <strong>Từ chối bản build ngay lập tức</strong>, không tốn công test tiếp!
+            </p>
+            <div class="concept-analogy">
+              <strong>Nguồn gốc:</strong>
+              Lấy từ ngành sửa ống nước/điện tử: Khi cắm điện vào bảng mạch mới lắp, nếu thấy bốc khói thì lập tức rút điện ra sửa, chưa cần đo đạc gì phức tạp.
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Cột gắn cờ <code>IsSmokeTest (bool)</code> trên <code>TestCases</code>. Dùng để tạo Test Run nhanh trong CI/CD chỉ gồm ~10-20 case tối quan trọng.
+            </div>
+          </div>
+
+          <!-- 17. Sanity Testing -->
+          <div class="concept-card" data-category="types">
+            <div class="concept-header">
+              <div class="concept-icon icon-emerald"><i class="fa-solid fa-stethoscope"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">Sanity Testing <span class="badge badge-success concept-tag">Tỉnh Táo</span></div>
+                <div class="concept-en-name">Kiểm thử nhanh vùng vừa sửa lỗi</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              Đợt kiểm thử tập trung vào một phân hệ hẹp vừa mới được Dev sửa bug hoặc thêm một tính năng nhỏ. 
+              Mục đích: Xác nhận xem Dev có thực sự sửa đúng bug đó chưa và hệ thống có còn "tỉnh táo" (sane) ở khu vực đó không. 
+              Khác với Smoke test (rộng và nông), Sanity test là (hẹp và sâu vào tính năng vừa sửa).
+            </p>
+            <div class="concept-analogy">
+              <strong>Ví dụ:</strong>
+              Dev vừa báo: "Đã sửa bug lỗi mã giảm giá 50%". Tester mở đúng form nhập mã giảm giá ra test các trường hợp mã &rarr; Đó là Sanity Test.
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Test Run được tạo theo <code>BugId</code> hoặc nhánh hotfix cụ thể.
+            </div>
+          </div>
+
+          <!-- 18. Regression Testing -->
+          <div class="concept-card" data-category="types">
+            <div class="concept-header">
+              <div class="concept-icon icon-blue"><i class="fa-solid fa-rotate-left"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">Regression Testing <span class="badge badge-info concept-tag">Hồi Quy</span></div>
+                <div class="concept-en-name">Kiểm thử hồi quy</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              Việc chạy lại các kịch bản kiểm thử đã có từ trước sau khi mã nguồn có sự thay đổi (thêm tính năng mới, refactor code, nâng cấp thư viện). 
+              Mục đích tối thượng: <strong>Đảm bảo những tính năng cũ đã chạy tốt KHÔNG BỊ HỎNG</strong> bởi những dòng code mới!
+            </p>
+            <div class="concept-analogy">
+              <strong>Quy luật đau đớn:</strong>
+              <em>"Sửa 1 dòng code ở module A, vô tình làm nổ tung module B"</em>. Kiểm thử hồi quy chính là tấm lưới bắt các vụ nổ ngầm này.
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Tập hợp các Test Case được đánh dấu <code>IsRegression (bool)</code>. Đây là tập kịch bản lý tưởng nhất để viết kiểm thử tự động (Automation Test).
+            </div>
+          </div>
+
+          <!-- 19. Acceptance Testing (UAT) -->
+          <div class="concept-card" data-category="types">
+            <div class="concept-header">
+              <div class="concept-icon icon-purple"><i class="fa-solid fa-handshake"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">UAT (User Acceptance) <span class="badge badge-purple concept-tag">Nghiệm Thu</span></div>
+                <div class="concept-en-name">Kiểm thử chấp nhận của người dùng</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              Giai đoạn kiểm thử cuối cùng trước khi bàn giao hệ thống, do chính <strong>khách hàng, người dùng cuối (End-user) 
+              hoặc Product Owner (PO)</strong> trực tiếp thực hiện. Mục đích: Kiểm tra xem hệ thống có giải quyết đúng bài toán nghiệp vụ 
+              của họ trong thực tế hay không, thay vì chỉ kiểm tra đúng code.
+            </p>
+            <div class="concept-analogy">
+              <strong>Ví dụ:</strong>
+              Dev làm đúng theo thiết kế, app không có lỗi kỹ thuật nào, nhưng khách hàng bảo: "Thao tác thanh toán phải bấm tới 7 bước thì nhân viên bán hàng của tôi không dùng kịp".
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Một Test Plan riêng biệt gán cho nhóm người dùng mang Role <code>Client / BusinessTester</code>.
+            </div>
+          </div>
+
+          <!-- 20. Defect Link & Bug Tracking -->
+          <div class="concept-card" data-category="quality">
+            <div class="concept-header">
+              <div class="concept-icon icon-rose"><i class="fa-solid fa-bug"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">Defect Link <span class="badge badge-danger concept-tag">Liên Kết Lỗi</span></div>
+                <div class="concept-en-name">Liên kết lỗi sang hệ thống Issue Tracker</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              Cơ chế đồng bộ 2 chiều giữa kết quả thất bại (Failed Execution) trong hệ thống TCM với một vé lỗi (Bug Ticket) 
+              trên các công cụ quản lý công việc như <strong>Jira, GitHub Issues, Azure DevOps, GitLab</strong>. 
+              Giúp Dev click từ Jira là xem được ngay các bước tái hiện và ảnh chụp màn hình lúc test.
+            </p>
+            <div class="concept-analogy">
+              <strong>Tương đương:</strong>
+              Giống như một <code>External Foreign Key</code> nối từ bảng <code>TestExecutions</code> sang Jira Issue Key (ví dụ: <code>PROJ-1234</code>).
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Bảng <code>DefectLinks</code>. Thuộc tính <code>TestExecutionId</code>, <code>ExternalSystem ("Jira")</code>, <code>ExternalIssueKey ("PROJ-89")</code>, <code>ExternalUrl</code>.
+            </div>
+          </div>
+
+          <!-- 21. Sign-Off Report -->
+          <div class="concept-card" data-category="execution">
+            <div class="concept-header">
+              <div class="concept-icon icon-emerald"><i class="fa-solid fa-file-signature"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">Sign-Off Report <span class="badge badge-success concept-tag">Biên Bản</span></div>
+                <div class="concept-en-name">Biên bản nghiệm thu xuất xưởng</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              Báo cáo tổng hợp trang trọng được xuất ra khi hoàn thành một Test Plan. Chứa đầy đủ số liệu: Tổng số case đã chạy, 
+              tỷ lệ Pass/Fail, danh sách các Bug còn tồn đọng (Known Issues) và <strong>chữ ký điện tử phê duyệt</strong> 
+              của QA Lead, Tech Lead và Product Owner cho phép release sản phẩm.
+            </p>
+            <div class="concept-analogy">
+              <strong>Ý nghĩa pháp lý:</strong>
+              Là "giấy thông hành" chính thức giải phóng trách nhiệm cho team Dev và QA khi bản cập nhật được đẩy lên Production.
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Bảng <code>TestSignOffs</code>. Thuộc tính <code>TestPlanId</code>, <code>SummaryStatsJson</code>, <code>Decision (Approved/Rejected)</code>, <code>ApprovedByUserId</code>, <code>SignOffDate</code>.
+            </div>
+          </div>
+
+          <!-- 22. Automation ID & Test Harness -->
+          <div class="concept-card" data-category="technique">
+            <div class="concept-header">
+              <div class="concept-icon icon-indigo"><i class="fa-solid fa-robot"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">Automation ID <span class="badge badge-purple concept-tag">Tự Động Hóa</span></div>
+                <div class="concept-en-name">Mã định danh liên kết kịch bản tự động</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              Chuỗi định danh duy nhất (Unique Key) dùng để <strong>nối một Test Case thủ công trên giao diện web</strong> với 
+              <strong>một hàm kiểm thử tự động trong mã nguồn</strong> (viết bằng Playwright, Selenium, Cypress, xUnit). Khi CI/CD chạy xong, 
+              nó dùng ID này để tự động đẩy kết quả Pass/Fail ngược vào hệ thống TCM thông qua REST API.
+            </p>
+            <div class="concept-analogy">
+              <strong>Ví dụ trong code:</strong>
+              <code>[Fact(DisplayName = "TC-LOGIN-001")]</code> &rarr; CI runner parse kết quả XML/JSON và gửi API: <em>"Cập nhật kết quả cho AutomationId = TC-LOGIN-001 là PASS"</em>.
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Cột <code>AutomationId (string, Indexed)</code> và enum <code>ExecutionType { Manual, Automated, Hybrid }</code> trong <code>TestCases</code>.
+            </div>
+          </div>
+
+          <!-- 23. Positive vs Negative Testing -->
+          <div class="concept-card" data-category="technique">
+            <div class="concept-header">
+              <div class="concept-icon icon-amber"><i class="fa-solid fa-yin-yang"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">Positive vs Negative <span class="badge badge-warning concept-tag">Kỹ Thuật</span></div>
+                <div class="concept-en-name">Kiểm thử tích cực vs Kiểm thử tiêu cực</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              <strong>Positive Testing (Happy Path):</strong> Nhập dữ liệu hợp lệ và kỳ vọng hệ thống thực hiện đúng chức năng (ví dụ: Nhập đúng mật khẩu &rarr; Đăng nhập thành công).<br>
+              <strong>Negative Testing (Unhappy Path):</strong> Cố tình nhập dữ liệu sai, bất thường, độc hại và kỳ vọng hệ thống xử lý lỗi khéo léo (graceful error handling) thay vì sập web (ví dụ: Nhập ký tự SQL Injection, để trống ô bắt buộc).
+            </p>
+            <div class="concept-analogy">
+              <strong>Dev chú ý:</strong>
+              Dev thường chỉ chăm chăm viết code cho Happy Path, còn QA sinh ra là để "phá hoại" bằng Negative Testing nhằm bảo vệ hệ thống.
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Cột <code>TestKind (Enum: Positive, Negative, Boundary)</code> trong bảng <code>TestCases</code>.
+            </div>
+          </div>
+
+          <!-- 24. Boundary Value Analysis (BVA) -->
+          <div class="concept-card" data-category="technique">
+            <div class="concept-header">
+              <div class="concept-icon icon-cyan"><i class="fa-solid fa-arrows-left-right-to-line"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">BVA (Giá Trị Biên) <span class="badge badge-info concept-tag">Thiết Kế</span></div>
+                <div class="concept-en-name">Boundary Value Analysis (Phân tích giá trị biên)</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              Kỹ thuật thiết kế test case dựa trên quy luật thực nghiệm: <strong>Hầu hết lỗi lập trình đều xảy ra tại các điểm biên</strong> 
+              của điều kiện (lỗi kinh điển <em>Off-by-one: <code>&gt;</code> thay vì <code>&ge;</code></em>).<br>
+              Nếu ô nhập tuổi cho phép từ 18 đến 60, các giá trị cần test gồm: <code>17, 18, 19</code> và <code>59, 60, 61</code>.
+            </p>
+            <div class="concept-analogy">
+              <strong>Mẹo cho Dev:</strong>
+              Khi viết câu lệnh <code>if (age >= 18 && age <= 60)</code>, hãy tự viết unit test tại các điểm 17, 18, 60, 61 trước khi nộp code!
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Dùng để thiết kế các kịch bản test kiểm tra validation logic của DTO trong FluentValidation.
+            </div>
+          </div>
+
+          <!-- 25. Equivalence Partitioning (EP) -->
+          <div class="concept-card" data-category="technique">
+            <div class="concept-header">
+              <div class="concept-icon icon-blue"><i class="fa-solid fa-pie-chart"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">Equivalence Partitioning <span class="badge badge-info concept-tag">Thiết Kế</span></div>
+                <div class="concept-en-name">Phân vùng tương đương</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              Kỹ thuật chia tập dữ liệu đầu vào thành các nhóm (vùng) có tính chất xử lý giống nhau. Nếu một giá trị đại diện trong nhóm hoạt động đúng/sai, 
+              thì tất cả các giá trị khác trong nhóm đó cũng sẽ hoạt động tương tự. Giúp <strong>giảm số lượng test case từ hàng ngàn xuống còn vài case đại diện</strong>.
+            </p>
+            <div class="concept-analogy">
+              <strong>Ví dụ:</strong>
+              Ô nhập điểm thi từ 0 đến 10. Chia làm 3 vùng: Vùng hợp lệ (0-10, chọn số 7 để test), Vùng âm (&lt; 0, chọn -5 để test), Vùng vượt quá (&gt; 10, chọn 15 để test).
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Phương pháp thiết kế bảng dữ liệu kiểm thử (Test Data Matrix).
+            </div>
+          </div>
+
+          <!-- 26. Black Box vs White Box Testing -->
+          <div class="concept-card" data-category="types">
+            <div class="concept-header">
+              <div class="concept-icon icon-purple"><i class="fa-solid fa-box"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">Black-box vs White-box <span class="badge badge-purple concept-tag">Phương Pháp</span></div>
+                <div class="concept-en-name">Hộp đen vs Hộp trắng</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              <strong>Hộp đen (Black-box):</strong> Tester hoàn toàn không biết cấu trúc code bên trong, chỉ thao tác qua giao diện UI/API như một người dùng thông thường.<br>
+              <strong>Hộp trắng (White-box):</strong> Kiểm thử dựa trên việc nhìn thấy mã nguồn, kiểm tra từng rẽ nhánh (branch coverage), từng dòng lệnh (Dev viết Unit Test chính là White-box testing).
+            </p>
+            <div class="concept-analogy">
+              <strong>Ẩn dụ:</strong>
+              Lái thử một chiếc ô tô xem chạy êm không (Hộp đen) vs Mở nắp capo xem từng pít-tông và dây điện hoạt động ra sao (Hộp trắng).
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Cột <code>TestingMethod { BlackBox, WhiteBox, GrayBox }</code> trong thuộc tính mở rộng của TestCase.
+            </div>
+          </div>
+
+          <!-- 27. Reusable Test Step (Shared Step) -->
+          <div class="concept-card" data-category="hierarchy">
+            <div class="concept-header">
+              <div class="concept-icon icon-emerald"><i class="fa-solid fa-recycle"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">Shared / Reusable Step <span class="badge badge-success concept-tag">Tái Sử Dụng</span></div>
+                <div class="concept-en-name">Bước kiểm thử dùng chung</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              Một tập hợp các bước kiểm thử được định nghĩa một lần nhưng được nhúng vào nhiều Test Case khác nhau. 
+              Ví dụ: Bước "Đăng nhập với quyền Quản trị viên" xuất hiện ở 200 kịch bản khác nhau. Khi đổi giao diện đăng nhập, 
+              chỉ cần sửa 1 lần tại Shared Step là 200 kịch bản tự động cập nhật theo!
+            </p>
+            <div class="concept-analogy">
+              <strong>Tương đương trong Code:</strong>
+              Giống hệt việc <strong>viết một hàm dùng chung (Helper Function / Sub-routine)</strong> thay vì copy-paste code ra 200 chỗ.
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Bảng <code>SharedSteps</code>. Trong bảng <code>TestSteps</code> có cột <code>SharedStepId (Guid?)</code> để trỏ tới.
+            </div>
+          </div>
+
+          <!-- 28. Milestone -->
+          <div class="concept-card" data-category="execution">
+            <div class="concept-header">
+              <div class="concept-icon icon-amber"><i class="fa-solid fa-flag-checkered"></i></div>
+              <div class="concept-titles">
+                <div class="concept-name">Milestone <span class="badge badge-warning concept-tag">Cột Mốc</span></div>
+                <div class="concept-en-name">Cột mốc dự án / Mục tiêu phát hành</div>
+              </div>
+            </div>
+            <p class="concept-def">
+              Cột mốc thời gian hoặc sự kiện bàn giao quan trọng trong dự án (ví dụ: <em>"Bản Alpha Release", "Sprint 14 Review", "UAT Khách hàng đợt 1"</em>). 
+              Một Milestone thường là thực thể cha, chứa nhiều Test Plan và Test Run bên dưới để theo dõi tiến độ tổng thể.
+            </p>
+            <div class="concept-analogy">
+              <strong>Tương đương:</strong>
+              Giống như <strong>Milestone trong GitHub</strong> hoặc <strong>Release Version trong Jira</strong>.
+            </div>
+            <div class="concept-dev-box">
+              <div class="dev-label"><i class="fa-solid fa-code"></i> Developer Mapping</div>
+              Bảng <code>Milestones</code>. Thuộc tính <code>Name</code>, <code>TargetDate</code>, <code>IsCompleted</code>. 1 Milestone có quan hệ 1-N với <code>TestPlans</code>.
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- SECTION 4: PHÂN BIỆT CÁC CẶP KHÁI NIỆM DỄ NHẦM LẪN (VS BATTLES) -->
+      <section id="vs-battles">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="section-number">4</span>
+            Đại Chiến Phân Biệt: Các Cặp Khái Niệm Dễ Nhầm Lẫn Nhất
+          </h2>
+          <span class="section-badge">Head-to-Head Comparison</span>
+        </div>
+
+        <p>
+          Dưới đây là 4 cặp khái niệm mà 95% lập trình viên khi mới làm quen với QA đều bị nhầm lẫn hoặc dùng sai thuật ngữ:
+        </p>
+
+        <div class="battle-grid">
+
+          <!-- Battle 1: Test Plan vs Test Run -->
+          <div class="battle-card">
+            <div class="battle-header">
+              <div class="battle-title">
+                <i class="fa-solid fa-code-compare" style="color: var(--primary);"></i>
+                Test Plan vs Test Run
+              </div>
+              <span class="vs-tag">VS</span>
+            </div>
+            <div class="battle-columns">
+              <div class="battle-col">
+                <div class="battle-col-title" style="color: #fbbf24;"><i class="fa-solid fa-calendar-check"></i> Test Plan</div>
+                <ul>
+                  <li><strong>Ý nghĩa:</strong> Kế hoạch phạm vi (Scope). Trả lời: <em>Sẽ test cái gì trong Sprint này?</em></li>
+                  <li><strong>Tần suất:</strong> Tạo 1 lần cho cả Sprint hoặc Release.</li>
+                  <li><strong>Chứa đựng:</strong> Chứa nhiều Test Run bên dưới.</li>
+                </ul>
+              </div>
+              <div class="battle-col">
+                <div class="battle-col-title" style="color: #34d399;"><i class="fa-solid fa-play"></i> Test Run</div>
+                <ul>
+                  <li><strong>Ý nghĩa:</strong> Đợt thực thi cụ thể. Trả lời: <em>Đang chạy trên môi trường nào, ai test?</em></li>
+                  <li><strong>Tần suất:</strong> Tạo liên tục theo từng build/môi trường.</li>
+                  <li><strong>Chứa đựng:</strong> Chứa danh sách các Test Run Item & kết quả thực tế.</li>
+                </ul>
+              </div>
+            </div>
+            <div class="battle-conclusion">
+              <strong>Công thức nhớ cho Dev:</strong> <code>TestPlan</code> là Giỏ hàng dự kiến; <code>TestRun</code> là Hóa đơn thanh toán thực tế của từng lần mua.
+            </div>
+          </div>
+
+          <!-- Battle 2: Test Case vs Test Scenario -->
+          <div class="battle-card">
+            <div class="battle-header">
+              <div class="battle-title">
+                <i class="fa-solid fa-code-compare" style="color: var(--primary);"></i>
+                Test Scenario vs Test Case
+              </div>
+              <span class="vs-tag">VS</span>
+            </div>
+            <div class="battle-columns">
+              <div class="battle-col">
+                <div class="battle-col-title" style="color: #c084fc;"><i class="fa-solid fa-route"></i> Test Scenario</div>
+                <ul>
+                  <li><strong>Góc nhìn:</strong> Tổng quan, High-level.</li>
+                  <li><strong>Trả lời:</strong> <em>Test cái gì?</em> (Ví dụ: Kiểm tra việc chuyển tiền qua app).</li>
+                  <li><strong>Độ chi tiết:</strong> Không có bước bấm cụ thể, không có dữ liệu test chi tiết.</li>
+                </ul>
+              </div>
+              <div class="battle-col">
+                <div class="battle-col-title" style="color: #60a5fa;"><i class="fa-solid fa-file-lines"></i> Test Case</div>
+                <ul>
+                  <li><strong>Góc nhìn:</strong> Chi tiết, Low-level.</li>
+                  <li><strong>Trả lời:</strong> <em>Test như thế nào?</em> (Click nút nào, nhập số tiền mấy, thông báo gì hiện ra).</li>
+                  <li><strong>Độ chi tiết:</strong> Có Precondition, Step 1..n, Expected Result.</li>
+                </ul>
+              </div>
+            </div>
+            <div class="battle-conclusion">
+              <strong>Quan hệ:</strong> 1 <code>Test Scenario</code> sinh ra <strong>N</strong> <code>Test Cases</code> (1 tình huống có nhiều ca kiểm thử thành công, thất bại, biên).
+            </div>
+          </div>
+
+          <!-- Battle 3: Test Run Item vs Test Execution -->
+          <div class="battle-card">
+            <div class="battle-header">
+              <div class="battle-title">
+                <i class="fa-solid fa-code-compare" style="color: var(--primary);"></i>
+                Test Run Item vs Test Execution
+              </div>
+              <span class="vs-tag">VS</span>
+            </div>
+            <div class="battle-columns">
+              <div class="battle-col">
+                <div class="battle-col-title" style="color: #38bdf8;"><i class="fa-solid fa-table-list"></i> Test Run Item</div>
+                <ul>
+                  <li><strong>Là gì:</strong> Nhiệm vụ gán test (Assignment). 1 dòng trong bảng chạy test.</li>
+                  <li><strong>Số lượng:</strong> Duy nhất 1 bản ghi cho mỗi Test Case trong một Test Run.</li>
+                  <li><strong>Trạng thái:</strong> Thể hiện trạng thái <em>mới nhất</em> (Pass hoặc Fail).</li>
+                </ul>
+              </div>
+              <div class="battle-col">
+                <div class="battle-col-title" style="color: #f87171;"><i class="fa-solid fa-stopwatch"></i> Test Execution</div>
+                <ul>
+                  <li><strong>Là gì:</strong> Lịch sử của từng lần bấm thử (Attempt).</li>
+                  <li><strong>Số lượng:</strong> Có thể có nhiều bản ghi (Lần 1 Fail, Lần 2 Blocked, Lần 3 Pass).</li>
+                  <li><strong>Tính chất:</strong> Bất biến (Immutable Log), không bao giờ bị ghi đè.</li>
+                </ul>
+              </div>
+            </div>
+            <div class="battle-conclusion">
+              <strong>Công thức nhớ:</strong> Quan hệ <code>1 - N</code>. Một nhiệm vụ (Item) có thể phải làm lại (Execution) nhiều lần mới đạt yêu cầu.
+            </div>
+          </div>
+
+          <!-- Battle 4: Smoke vs Sanity vs Regression -->
+          <div class="battle-card">
+            <div class="battle-header">
+              <div class="battle-title">
+                <i class="fa-solid fa-code-compare" style="color: var(--primary);"></i>
+                Smoke vs Sanity vs Regression
+              </div>
+              <span class="vs-tag">VS</span>
+            </div>
+            <div class="battle-columns">
+              <div class="battle-col">
+                <div class="battle-col-title" style="color: #f43f5e;"><i class="fa-solid fa-fire"></i> Smoke & Sanity</div>
+                <ul>
+                  <li><strong>Smoke Test:</strong> Rộng nhưng Nông. Chạy nhanh ~15 phút xem app có khởi động được không.</li>
+                  <li><strong>Sanity Test:</strong> Hẹp nhưng Sâu. Chỉ kiểm tra riêng tính năng vừa sửa bug.</li>
+                </ul>
+              </div>
+              <div class="battle-col">
+                <div class="battle-col-title" style="color: #818cf8;"><i class="fa-solid fa-rotate-left"></i> Regression</div>
+                <ul>
+                  <li><strong>Quy mô:</strong> Toàn diện và Sâu rộng.</li>
+                  <li><strong>Mục tiêu:</strong> Đảm bảo code mới không làm hỏng tính năng cũ.</li>
+                  <li><strong>Thời gian:</strong> Thường mất vài giờ đến vài ngày (hoặc chạy automation qua đêm).</li>
+                </ul>
+              </div>
+            </div>
+            <div class="battle-conclusion">
+              <strong>Trình tự thực tế:</strong> Nhận build &rarr; Chạy <strong>Smoke</strong> (nếu sống) &rarr; Chạy <strong>Sanity</strong> (check bug vừa sửa) &rarr; Chạy <strong>Regression</strong> (check toàn bộ hệ thống).
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- SECTION 5: CÁC LOẠI KIỂM THỬ (TESTING TYPES) -->
+      <section id="testing-types">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="section-number">5</span>
+            Các Cấp Độ & Loại Hình Kiểm Thử Dev Cần Nắm
+          </h2>
+          <span class="section-badge">Testing Levels & Types</span>
+        </div>
+
+        <p>
+          Trong kim tự tháp kiểm thử phần mềm (Testing Pyramid), trách nhiệm kiểm thử được phân chia rõ rệt giữa Dev và QA:
+        </p>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Cấp độ Kiểm thử</th>
+                <th>Ai là người thực hiện?</th>
+                <th>Công cụ / Ngôn ngữ phổ biến</th>
+                <th>Mục tiêu chính</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>1. Unit Testing</strong> (Cấp đơn vị)</td>
+                <td><span class="badge badge-info">100% Lập trình viên</span></td>
+                <td>xUnit, NUnit, Jest, JUnit, Moq</td>
+                <td>Kiểm tra từng hàm, từng class riêng lẻ với dữ liệu mock cách ly hoàn toàn.</td>
+              </tr>
+              <tr>
+                <td><strong>2. Integration Testing</strong> (Tích hợp)</td>
+                <td><span class="badge badge-info">Dev & Automation QA</span></td>
+                <td>TestServer, Testcontainers, Postman</td>
+                <td>Kiểm tra kết nối thực tế giữa API, Database, Redis Cache, Message Queue.</td>
+              </tr>
+              <tr>
+                <td><strong>3. System Testing</strong> (Hệ thống)</td>
+                <td><span class="badge badge-purple">QA / QC Team</span></td>
+                <td>TCM Platform (TestRail, Phần mềm bạn đang làm), Browser</td>
+                <td>Kiểm thử toàn diện phần mềm hoàn chỉnh theo kịch bản người dùng cuối.</td>
+              </tr>
+              <tr>
+                <td><strong>4. Acceptance Testing</strong> (Nghiệm thu)</td>
+                <td><span class="badge badge-success">Khách hàng, PO, End-User</span></td>
+                <td>UAT Environment, Test Scenarios</td>
+                <td>Xác nhận sản phẩm đáp ứng đúng giá trị nghiệp vụ trước khi thanh toán hợp đồng.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SECTION 6: LƯỢC ĐỒ CSDL & C# ENTITY (DEV ARCHITECTURE) -->
+      <section id="db-schema">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="section-number">6</span>
+            Lược Đồ Cơ Sở Dữ Liệu & Code C# Chuẩn ABP Framework
+          </h2>
+          <span class="section-badge">C# & EF Core Domain Entities</span>
+        </div>
+
+        <p>
+          Dưới đây là cách mô hình hóa các thực thể cốt lõi bằng C# theo chuẩn <strong>Domain-Driven Design (DDD)</strong> 
+          và <strong>ABP Framework</strong>, đảm bảo tách bạch hoàn hảo giữa Thư viện kịch bản và Đợt chạy:
+        </p>
+
+        <!-- Code Block C# -->
+        <pre><code>// ============================================================================
+// 1. KHO THƯ VIỆN KỊCH BẢN (DESIGN-TIME REPOSITORY)
+// ============================================================================
+
+// Aggregate Root quản lý thông tin chung của Test Case
+public class TestCase : FullAuditedAggregateRoot&lt;Guid&gt;
+{
+    public Guid SuiteId { get; set; }           // Thuộc về Test Suite (Folder) nào
+    public string Code { get; set; }             // Mã kịch bản (VD: "TC-AUTH-001")
+    public string Title { get; set; }            // Tiêu đề tóm tắt
+    public PriorityLevel Priority { get; set; }  // Low, Medium, High, Urgent
+    public SeverityLevel Severity { get; set; }  // Low, Medium, High, Critical
+    public ExecutionType Type { get; set; }      // Manual, Automated, Hybrid
+    public string? AutomationId { get; set; }    // Định danh để tool test tự động mapping
+    public bool IsFlaky { get; set; }            // Có bị chập chờn hay không
+    
+    // Lưu ý: Không hề có trường Result hay Status ở đây!
+}
+
+// Bảng đóng băng phiên bản (Immutable Snapshot)
+public class TestCaseVersion : CreationAuditedEntity&lt;Guid&gt;
+{
+    public Guid TestCaseId { get; set; }
+    public int VersionNumber { get; set; }       // v1, v2, v3
+    public string Title { get; set; }
+    public string Preconditions { get; set; }    // Điều kiện tiên quyết
+    public string StepsJson { get; set; }        // Snapshot toàn bộ các bước dạng JSON
+    public string Postconditions { get; set; }
+}
+
+// ============================================================================
+// 2. CHU KỲ THỰC THI KIỂM THỬ (EXECUTION-TIME RUN CYCLE)
+// ============================================================================
+
+// Kế hoạch tổng thể cho 1 Sprint hoặc Release
+public class TestPlan : FullAuditedAggregateRoot&lt;Guid&gt;
+{
+    public string Name { get; set; }             // "Test Plan Sprint 24"
+    public Guid? MilestoneId { get; set; }
+    public DateTime? StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
+    public PlanStatus Status { get; set; }       // Draft, InProgress, Closed
+}
+
+// Một đợt chạy cụ thể trên 1 môi trường xác định
+public class TestRun : FullAuditedAggregateRoot&lt;Guid&gt;
+{
+    public Guid TestPlanId { get; set; }
+    public string Title { get; set; }            // "Chạy kiểm thử Staging - Chrome 124"
+    public string Environment { get; set; }      // "Staging", "Production", "iOS 17"
+    public Guid? AssignedToUserId { get; set; }
+    public RunStatus Status { get; set; }        // New, InProgress, Completed
+}
+
+// Một hạng mục test cụ thể trong đợt chạy (Instance)
+public class TestRunItem : Entity&lt;Guid&gt;
+{
+    public Guid TestRunId { get; set; }
+    public Guid TestCaseVersionId { get; set; }  // Trỏ thẳng vào Snapshot bất biến!
+    public Guid? AssignedUserId { get; set; }
+    public TestResultStatus CurrentStatus { get; set; } // Untested, Passed, Failed, Blocked
+}
+
+// Lịch sử từng lần tester bấm test (Attempt log - 1 Item có N lần Executions)
+public class TestExecution : CreationAuditedEntity&lt;Guid&gt;
+{
+    public Guid TestRunItemId { get; set; }
+    public TestResultStatus Status { get; set; } // Passed, Failed, Blocked
+    public string? ActualResult { get; set; }     // Thực tế hiển thị gì khi bị lỗi
+    public int DurationSeconds { get; set; }     // Thời gian thực hiện test (giây)
+    public string? DefectJiraKey { get; set; }   // Nếu lỗi: link sang "PROJ-102"
+    // Khi Re-test: INSERT bản ghi mới, KHÔNG BAO GIỜ UPDATE dòng cũ!
+}</code></pre>
+      </section>
+
+      <!-- SECTION 7: TRẮC NGHIỆM TƯƠNG TÁC (INTERACTIVE QUIZ) -->
+      <section id="dev-quiz">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="section-number">7</span>
+            Thử Thách Lập Trình Viên: Mini-Quiz Khái Niệm Kiểm Thử
+          </h2>
+          <span class="section-badge"><i class="fa-solid fa-gamepad"></i> 5 Câu hỏi tương tác</span>
+        </div>
+
+        <p>
+          Hãy kiểm tra xem bạn đã thực sự "thông suốt" các khái niệm kiểm thử phần mềm qua 5 câu trắc nghiệm nhanh dưới đây:
+        </p>
+
+        <div class="quiz-container">
+
+          <!-- Question 1 -->
+          <div class="quiz-card" id="q1">
+            <div class="quiz-question">
+              <span class="quiz-num">1</span>
+              <span>Khi thiết kế CSDL cho hệ thống Test Case Management, cột <code>Status (Passed/Failed)</code> nên được đặt ở bảng nào là đúng chuẩn nhất?</span>
+            </div>
+            <div class="quiz-options">
+              <div class="quiz-option" onclick="checkAnswer('q1', this, false)">
+                <i class="fa-regular fa-circle"></i> A. Đặt trực tiếp vào bảng <code>TestCases</code> để truy vấn cho nhanh.
+              </div>
+              <div class="quiz-option" onclick="checkAnswer('q1', this, true)">
+                <i class="fa-regular fa-circle"></i> B. Đặt ở bảng <code>TestExecutions</code> (nhật ký thực thi) và cập nhật trạng thái mới nhất ở <code>TestRunItems</code>.
+              </div>
+              <div class="quiz-option" onclick="checkAnswer('q1', this, false)">
+                <i class="fa-regular fa-circle"></i> C. Đặt vào bảng <code>TestSuites</code> để hiển thị cây thư mục.
+              </div>
+              <div class="quiz-option" onclick="checkAnswer('q1', this, false)">
+                <i class="fa-regular fa-circle"></i> D. Đặt vào bảng <code>TestPlans</code>.
+              </div>
+            </div>
+            <div class="quiz-explanation" id="q1-exp">
+              <strong>Giải thích:</strong> Chính xác! Bảng <code>TestCases</code> chỉ là thư viện kịch bản dùng chung lâu năm. Kết quả Pass/Fail phải gắn liền với một đợt chạy cụ thể (<code>TestRunItems</code>) và từng lần bấm thử (<code>TestExecutions</code>).
+            </div>
+          </div>
+
+          <!-- Question 2 -->
+          <div class="quiz-card" id="q2">
+            <div class="quiz-question">
+              <span class="quiz-num">2</span>
+              <span>Một test case mà khi chạy trên cùng một bản build mã nguồn nhưng lúc thì PASS, lúc thì FAIL được gọi là gì?</span>
+            </div>
+            <div class="quiz-options">
+              <div class="quiz-option" onclick="checkAnswer('q2', this, false)">
+                <i class="fa-regular fa-circle"></i> A. Smoke Test.
+              </div>
+              <div class="quiz-option" onclick="checkAnswer('q2', this, true)">
+                <i class="fa-regular fa-circle"></i> B. Flaky Test.
+              </div>
+              <div class="quiz-option" onclick="checkAnswer('q2', this, false)">
+                <i class="fa-regular fa-circle"></i> C. Regression Test.
+              </div>
+              <div class="quiz-option" onclick="checkAnswer('q2', this, false)">
+                <i class="fa-regular fa-circle"></i> D. Sanity Test.
+              </div>
+            </div>
+            <div class="quiz-explanation" id="q2-exp">
+              <strong>Giải thích:</strong> Chính xác! <strong>Flaky Test</strong> (Test chập chờn) là cơn ác mộng lớn nhất trong CI/CD, thường do race condition, timeout hoặc bất đồng bộ gây ra.
+            </div>
+          </div>
+
+          <!-- Question 3 -->
+          <div class="quiz-card" id="q3">
+            <div class="quiz-question">
+              <span class="quiz-num">3</span>
+              <span>Website bị lỗi sai chính tả từ ngữ nhạy cảm ngay trên Logo trang chủ (nhưng website không hề bị crash). Phân loại lỗi này như thế nào?</span>
+            </div>
+            <div class="quiz-options">
+              <div class="quiz-option" onclick="checkAnswer('q3', this, false)">
+                <i class="fa-regular fa-circle"></i> A. Severity: Critical, Priority: Low.
+              </div>
+              <div class="quiz-option" onclick="checkAnswer('q3', this, true)">
+                <i class="fa-regular fa-circle"></i> B. Severity: Low (kỹ thuật nhẹ), Priority: High / Urgent (kinh doanh khẩn cấp).
+              </div>
+              <div class="quiz-option" onclick="checkAnswer('q3', this, false)">
+                <i class="fa-regular fa-circle"></i> C. Severity: Critical, Priority: Critical.
+              </div>
+              <div class="quiz-option" onclick="checkAnswer('q3', this, false)">
+                <i class="fa-regular fa-circle"></i> D. Severity: Low, Priority: Low.
+              </div>
+            </div>
+            <div class="quiz-explanation" id="q3-exp">
+              <strong>Giải thích:</strong> Rất chuẩn! Về mặt kỹ thuật hệ thống hoàn toàn bình thường (Severity Low), nhưng về mặt thương hiệu và trải nghiệm khách hàng thì cực kỳ khẩn cấp cần sửa ngay lập tức (Priority Urgent).
+            </div>
+          </div>
+
+          <!-- Question 4 -->
+          <div class="quiz-card" id="q4">
+            <div class="quiz-question">
+              <span class="quiz-num">4</span>
+              <span>Tại sao hệ thống TCM bắt buộc phải có cơ chế <code>TestCaseVersion</code> (Snapshot)?</span>
+            </div>
+            <div class="quiz-options">
+              <div class="quiz-option" onclick="checkAnswer('q4', this, false)">
+                <i class="fa-regular fa-circle"></i> A. Để làm đẹp giao diện web.
+              </div>
+              <div class="quiz-option" onclick="checkAnswer('q4', this, true)">
+                <i class="fa-regular fa-circle"></i> B. Để khi kịch bản trong kho thư viện bị chỉnh sửa sau này, các đợt test và báo cáo nghiệm thu đã chạy trong quá khứ không bị sai lệch dữ liệu.
+              </div>
+              <div class="quiz-option" onclick="checkAnswer('q4', this, false)">
+                <i class="fa-regular fa-circle"></i> C. Để tăng tốc độ truy vấn SQL.
+              </div>
+              <div class="quiz-option" onclick="checkAnswer('q4', this, false)">
+                <i class="fa-regular fa-circle"></i> D. Để tự động sinh mã kiểm thử tự động.
+              </div>
+            </div>
+            <div class="quiz-explanation" id="q4-exp">
+              <strong>Giải thích:</strong> Chính xác! Đây là nguyên tắc Immutability (Bất biến) trong thiết kế hệ thống kiểm toán (Audit Trail) cấp doanh nghiệp.
+            </div>
+          </div>
+
+          <!-- Question 5 -->
+          <div class="quiz-card" id="q5">
+            <div class="quiz-question">
+              <span class="quiz-num">5</span>
+              <span>Đợt kiểm thử nhanh các tính năng sống còn cốt lõi xem hệ thống có "bốc khói / sập" ngay khi nhận build mới không gọi là gì?</span>
+            </div>
+            <div class="quiz-options">
+              <div class="quiz-option" onclick="checkAnswer('q5', this, true)">
+                <i class="fa-regular fa-circle"></i> A. Smoke Testing (Kiểm thử khói).
+              </div>
+              <div class="quiz-option" onclick="checkAnswer('q5', this, false)">
+                <i class="fa-regular fa-circle"></i> B. Stress Testing.
+              </div>
+              <div class="quiz-option" onclick="checkAnswer('q5', this, false)">
+                <i class="fa-regular fa-circle"></i> C. Regression Testing.
+              </div>
+              <div class="quiz-option" onclick="checkAnswer('q5', this, false)">
+                <i class="fa-regular fa-circle"></i> D. Usability Testing.
+              </div>
+            </div>
+            <div class="quiz-explanation" id="q5-exp">
+              <strong>Giải thích:</strong> Hoàn toàn chính xác! <strong>Smoke Test</strong> là bước kiểm tra gác cổng đầu tiên trước khi cho phép Tester tốn thời gian test sâu vào các tính năng khác.
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Back to Top Button -->
+  <button id="back-to-top" title="Cuộn lên đầu trang">
+    <i class="fa-solid fa-arrow-up"></i>
+  </button>
+
+  <!-- Footer -->
+  <footer>
+    <div style="max-width: 1200px; margin: 0 auto; padding: 0 1.5rem;">
+      <p style="margin-bottom: 0.5rem; font-weight: 600; color: var(--text-main);">
+        Cẩm Nang Khái Niệm Kiểm Thử Phần Mềm (QA/QC) Dành Riêng Cho Developer
+      </p>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Hệ thống Quản Lý Test Case chuẩn ABP Framework &bull; Cập nhật ngày: 06/10/2026
+      </p>
+      <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+        <a href="index.html" style="color: var(--primary); text-decoration: none; font-size: 0.85rem;"><i class="fa-solid fa-file-lines"></i> Tài liệu Phân tích Nghiệp vụ (BA)</a>
+        <a href="app_mockup.html" style="color: var(--primary); text-decoration: none; font-size: 0.85rem;"><i class="fa-solid fa-desktop"></i> Wireframe Giao Diện Mẫu</a>
+        <a href="#mental-model" style="color: var(--primary); text-decoration: none; font-size: 0.85rem;"><i class="fa-solid fa-arrow-up"></i> Về đầu trang</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- JavaScript Functionality -->
+  <script>
+    // Theme Toggle (Dark / Light)
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+    const themeText = document.getElementById('theme-text');
+    const htmlElem = document.documentElement;
+
+    function setTheme(theme) {
+      htmlElem.setAttribute('data-theme', theme);
+      localStorage.setItem('tcm-theme', theme);
+      if (theme === 'light') {
+        themeIcon.className = 'fa-solid fa-moon';
+        themeText.textContent = 'Tối';
+      } else {
+        themeIcon.className = 'fa-solid fa-sun';
+        themeText.textContent = 'Sáng';
+      }
+    }
+
+    // Init theme from storage or default dark
+    const savedTheme = localStorage.getItem('tcm-theme') || 'dark';
+    setTheme(savedTheme);
+
+    themeToggleBtn.addEventListener('click', () => {
+      const currentTheme = htmlElem.getAttribute('data-theme');
+      setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+    });
+
+    // Reading Progress Bar & Back to top
+    const progressBar = document.getElementById('progress-bar');
+    const backToTopBtn = document.getElementById('back-to-top');
+
+    window.addEventListener('scroll', () => {
+      const winScroll = document.documentElement.scrollTop || document.body.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrolled = (winScroll / height) * 100;
+      progressBar.style.width = scrolled + '%';
+
+      if (winScroll > 350) {
+        backToTopBtn.classList.add('show');
+      } else {
+        backToTopBtn.classList.remove('show');
+      }
+    });
+
+    backToTopBtn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // Live Search & Category Filtering
+    const searchInput = document.getElementById('concept-search');
+    const conceptCards = document.querySelectorAll('.concept-card');
+    const chipBtns = document.querySelectorAll('.chip-btn');
+    const visibleCountSpan = document.getElementById('visible-count');
+
+    let currentCategory = 'all';
+
+    function filterConcepts() {
+      const query = searchInput.value.toLowerCase().trim();
+      let visible = 0;
+
+      conceptCards.forEach(card => {
+        const category = card.getAttribute('data-category');
+        const text = card.textContent.toLowerCase();
+
+        const matchesCategory = (currentCategory === 'all' || category === currentCategory);
+        const matchesQuery = (!query || text.includes(query));
+
+        if (matchesCategory && matchesQuery) {
+          card.style.display = 'flex';
+          visible++;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+
+      visibleCountSpan.textContent = `Hiển thị ${visible} / ${conceptCards.length} thuật ngữ`;
+    }
+
+    searchInput.addEventListener('input', filterConcepts);
+
+    function filterCategory(cat) {
+      currentCategory = cat;
+      chipBtns.forEach(btn => {
+        if (btn.getAttribute('data-cat') === cat) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+      filterConcepts();
+    }
+
+    // Interactive Quiz Logic
+    function checkAnswer(questionId, optionElement, isCorrect) {
+      const card = document.getElementById(questionId);
+      const options = card.querySelectorAll('.quiz-option');
+      const explanation = document.getElementById(questionId + '-exp');
+
+      // Disable all options in this card
+      options.forEach(opt => {
+        opt.style.pointerEvents = 'none';
+        opt.querySelector('i').className = 'fa-regular fa-circle';
+      });
+
+      if (isCorrect) {
+        optionElement.classList.add('correct');
+        optionElement.querySelector('i').className = 'fa-solid fa-circle-check';
+      } else {
+        optionElement.classList.add('wrong');
+        optionElement.querySelector('i').className = 'fa-solid fa-circle-xmark';
+        
+        // Highlight the correct one
+        options.forEach(opt => {
+          if (opt.getAttribute('onclick').includes('true')) {
+            opt.classList.add('correct');
+            opt.querySelector('i').className = 'fa-solid fa-circle-check';
+          }
+        });
+      }
+
+      explanation.style.display = 'block';
+    }
+
+    // Scrollspy for sidebar links
+    const sections = document.querySelectorAll('section');
+    const navLinks = document.querySelectorAll('.sidebar .nav-link');
+
+    window.addEventListener('scroll', () => {
+      let currentSection = '';
+      sections.forEach(section => {
+        const sectionTop = section.offsetTop - 150;
+        if (window.pageYOffset >= sectionTop) {
+          currentSection = section.getAttribute('id');
+        }
+      });
+
+      navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === '#' + currentSection) {
+          link.classList.add('active');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <RootNamespace>Acme.TestCaseManagement</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Volo.Abp.Autofac" />
+    <PackageReference Include="Volo.Abp.Swashbuckle" />
+    <PackageReference Include="Volo.Abp.EntityFrameworkCore.Sqlite" />
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Volo.Abp.Identity.Domain" />
+    <PackageReference Include="Volo.Abp.Identity.EntityFrameworkCore" />
+    <PackageReference Include="Volo.Abp.PermissionManagement.Domain" />
+    <PackageReference Include="Volo.Abp.PermissionManagement.Domain.Identity" />
+    <PackageReference Include="Volo.Abp.PermissionManagement.EntityFrameworkCore" />
+    <ProjectReference Include="..\..\src\Acme.TestCaseManagement.Application\Acme.TestCaseManagement.Application.csproj" />
+    <ProjectReference Include="..\..\src\Acme.TestCaseManagement.EntityFrameworkCore\Acme.TestCaseManagement.EntityFrameworkCore.csproj" />
+    <ProjectReference Include="..\..\src\Acme.TestCaseManagement.HttpApi\Acme.TestCaseManagement.HttpApi.csproj" />
+  </ItemGroup>
+</Project>

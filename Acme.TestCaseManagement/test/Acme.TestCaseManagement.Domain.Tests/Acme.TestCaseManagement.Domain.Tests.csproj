@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Acme.TestCaseManagement</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <ProjectReference Include="..\Acme.TestCaseManagement.TestBase\Acme.TestCaseManagement.TestBase.csproj" />
+  </ItemGroup>
+</Project>

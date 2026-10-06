@@ -1,0 +1,116 @@
+<div class="page">
+  <div class="page-head">
+    <h1>{{ 'rtm.title' | t }}</h1>
+    @if (auth.can(perm.Requirements.Manage)) { <button type="button" class="btn primary" (click)="newRequirement()">{{ 'rtm.newRequirement' | t }}</button> }
+  </div>
+
+  @if (matrix(); as m) {
+    <div class="stats">
+      <div class="stat"><b>{{ m.summary.totalRequirements }}</b><span>{{ 'rtm.requirements' | t }}</span></div>
+      <div class="stat"><b>{{ m.summary.coveragePercentage }}%</b><span>{{ 'rtm.covered' | t }}</span></div>
+      <div class="stat"><b style="color: var(--ok)">{{ m.summary.passedPercentage }}%</b><span>{{ label(coverageEnum, coverageEnum.Passed) }}</span></div>
+      <div class="stat"><b style="color: var(--bad)">{{ m.summary.failedRequirements }}</b><span>{{ label(coverageEnum, coverageEnum.Failed) }}</span></div>
+      <div class="stat"><b style="color: var(--warn)">{{ m.summary.blockedRequirements }}</b><span>{{ label(coverageEnum, coverageEnum.Blocked) }}</span></div>
+      <div class="stat"><b>{{ m.summary.notRunRequirements }}</b><span>{{ label(coverageEnum, coverageEnum.NotRun) }}</span></div>
+      <div class="stat"><b>{{ m.summary.uncoveredRequirements }}</b><span>{{ label(coverageEnum, coverageEnum.Uncovered) }}</span></div>
+    </div>
+  }
+
+  <div class="card">
+    <form class="row" (ngSubmit)="load()">
+      <input class="grow" name="search" [(ngModel)]="search" [placeholder]="'rtm.searchPlaceholder' | t" [attr.aria-label]="'common.search' | t" />
+      <select name="plan" [(ngModel)]="planId" (ngModelChange)="load()" [attr.aria-label]="'common.plan' | t" style="width: auto">
+        <option value="">{{ 'rtm.allPlans' | t }}</option>
+        @for (plan of plans(); track plan.id) { <option [value]="plan.id">{{ plan.name }}</option> }
+      </select>
+      <input name="environment" [(ngModel)]="environment" [placeholder]="'common.environment' | t" [attr.aria-label]="'common.environment' | t" style="width: 140px" />
+      <select name="status" [(ngModel)]="status" (ngModelChange)="load()" [attr.aria-label]="'common.status' | t" style="width: auto">
+        <option value="">{{ 'common.anyStatus' | t }}</option>
+        @for (o of statusOptions; track o.value) { <option [ngValue]="o.value">{{ label(coverageEnum, o.value) }}</option> }
+      </select>
+      <button type="submit" class="btn">{{ 'common.apply' | t }}</button>
+    </form>
+  </div>
+
+  <div class="card flush">
+    <table>
+      <thead><tr><th>{{ 'rtm.colRequirement' | t }}</th><th>{{ 'common.status' | t }}</th><th>{{ 'rtm.colLinked' | t }}</th><th>{{ 'rtm.colDefects' | t }}</th><th></th></tr></thead>
+      <tbody>
+        @for (row of matrix()?.requirements ?? []; track row.requirementId) {
+          <tr>
+            <td>
+              <span class="mono">{{ row.code }}</span> <span class="badge" [class]="badgeOf('priority', row.priority)">{{ label(priorityEnum, row.priority) }}</span>
+              <div>{{ row.title }}</div>
+            </td>
+            <td><span class="badge" [class]="badgeOf('rtm', row.status)">{{ label(coverageEnum, row.status) }}</span></td>
+            <td>
+              @for (tc of row.testCases; track tc.testCaseId) {
+                <div class="row" style="margin-bottom: 2px" [style.opacity]="tc.countsTowardCoverage ? 1 : .55">
+                  <span class="mono">{{ tc.code }}</span>
+                  <span class="badge" [class]="badgeOf('result', tc.result)">{{ label(resultEnum, tc.result) }}</span>
+                  @if (!tc.countsTowardCoverage) { <span class="muted">{{ 'rtm.deprecated' | t }}</span> }
+                  @if (auth.can(perm.Requirements.Manage)) {
+                    <button type="button" class="icon-btn" style="font-size: 1rem" (click)="unlink(row, tc.testCaseId)" [attr.aria-label]="'rtm.unlink' | t: { code: tc.code }">&times;</button>
+                  }
+                </div>
+              }
+              @if (!row.testCases.length) { <span class="muted">{{ 'rtm.noneLinked' | t }}</span> }
+            </td>
+            <td>
+              @for (d of row.blockingDefects; track d.testExecutionId + d.issueKey) {
+                <div>
+                  <span class="badge" [class]="badgeOf('severity', d.severity)">{{ label(severityEnum, d.severity) }}</span>
+                  @if (d.issueUrl) { <a [href]="d.issueUrl" target="_blank" rel="noopener">{{ d.issueKey }}</a> } @else { {{ d.issueKey }} }
+                  <span class="muted">{{ 'rtm.via' | t: { code: d.testCaseCode } }}</span>
+                </div>
+              }
+              @if (!row.blockingDefects.length) { <span class="muted">-</span> }
+            </td>
+            <td class="right nowrap">
+              @if (auth.can(perm.Requirements.Manage)) {
+                <button type="button" class="btn sm" (click)="openLink(row)">{{ 'rtm.linkTests' | t }}</button>
+                <button type="button" class="btn sm" (click)="editRequirement(row)">{{ 'common.edit' | t }}</button>
+                <button type="button" class="btn sm danger" (click)="deleteRequirement(row)">{{ 'common.delete' | t }}</button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    @if (!(matrix()?.requirements?.length)) { <div class="empty">{{ 'rtm.noMatch' | t }}</div> }
+  </div>
+</div>
+
+@if (form(); as f) {
+  <app-modal [title]="(f.id ? 'rtm.editRequirement' : 'rtm.newRequirementTitle') | t" (closed)="form.set(null)">
+    <form id="req-form" (ngSubmit)="saveRequirement()">
+      <div class="form-grid">
+        <div class="field"><label for="rq-code">{{ 'common.code' | t }}</label><input id="rq-code" name="code" required maxlength="64" [(ngModel)]="f.code" placeholder="REQ-PAY-01" /></div>
+        <div class="field">
+          <label for="rq-priority">{{ 'common.priority' | t }}</label>
+          <select id="rq-priority" name="priority" [(ngModel)]="f.priority">
+            @for (o of priorityOptions; track o.value) { <option [ngValue]="o.value">{{ label(priorityEnum, o.value) }}</option> }
+          </select>
+        </div>
+      </div>
+      <div class="field"><label for="rq-title">{{ 'common.title' | t }}</label><input id="rq-title" name="title" required [(ngModel)]="f.title" /></div>
+      <div class="field"><label for="rq-desc">{{ 'common.description' | t }}</label><textarea id="rq-desc" name="description" [(ngModel)]="f.description"></textarea></div>
+      <div class="field"><label for="rq-ac">{{ 'rtm.acceptance' | t }}</label><textarea id="rq-ac" name="ac" [(ngModel)]="f.acceptanceCriteria"></textarea></div>
+      <div class="field"><label for="rq-ms">{{ 'rtm.milestone' | t }}</label><input id="rq-ms" name="milestone" [(ngModel)]="f.milestoneId" /></div>
+    </form>
+    <ng-container slot="footer">
+      <button type="button" class="btn" (click)="form.set(null)">{{ 'common.cancel' | t }}</button>
+      <button type="submit" form="req-form" class="btn primary">{{ 'common.save' | t }}</button>
+    </ng-container>
+  </app-modal>
+}
+
+@if (linkForm(); as l) {
+  <app-modal [title]="'rtm.linkTitle' | t: { code: l.row.code }" [wide]="true" (closed)="linkForm.set(null)">
+    <app-case-picker [onlyApproved]="false" [exclude]="linkedIds(l.row)" [(selectedIds)]="l.testCaseIds" />
+    <ng-container slot="footer">
+      <button type="button" class="btn" (click)="linkForm.set(null)">{{ 'common.cancel' | t }}</button>
+      <button type="button" class="btn primary" [disabled]="!l.testCaseIds.length" (click)="link()">{{ 'rtm.link' | t }}</button>
+    </ng-container>
+  </app-modal>
+}

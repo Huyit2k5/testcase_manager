@@ -1,0 +1,28 @@
+@if (auth.isAuthenticated() && auth.ready()) {
+<header class="topbar">
+  <div class="brand">{{ 'app.name' | t }}</div>
+  <nav [attr.aria-label]="'app.mainNav' | t">
+    @for (tab of tabs; track tab.path) {
+      <a [routerLink]="tab.path" routerLinkActive="active">{{ tab.label | t }}</a>
+    }
+  </nav>
+  <div class="user">
+    <app-language-switch />
+    <span><b>{{ auth.user()?.userName }}</b> <span class="muted">({{ auth.roleLabel() }})</span></span>
+    <button type="button" class="btn sm" (click)="logout()">{{ 'app.signOut' | t }}</button>
+  </div>
+</header>
+}
+
+<main>
+  <router-outlet />
+</main>
+
+<div class="toasts" aria-live="polite">
+  @for (toast of toasts.toasts(); track toast.id) {
+    <div class="toast" [class]="toast.kind" role="status">
+      <span>{{ toast.text }}</span>
+      <button type="button" class="icon-btn" [attr.aria-label]="'app.dismiss' | t" (click)="toasts.dismiss(toast.id)">&times;</button>
+    </div>
+  }
+</div>

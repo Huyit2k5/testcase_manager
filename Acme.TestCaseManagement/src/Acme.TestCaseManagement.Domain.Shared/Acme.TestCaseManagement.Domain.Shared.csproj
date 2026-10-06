@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Acme.TestCaseManagement</RootNamespace>
+    <Description>Shared enums, constants, error codes and localization resources (en, vi) of the Acme.TestCaseManagement ABP module.</Description>
+    <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Volo.Abp.Validation" />
+    <PackageReference Include="Volo.Abp.Localization" />
+    <PackageReference Include="Volo.Abp.VirtualFileSystem" />
+    <PackageReference Include="Volo.Abp.MultiTenancy" />
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Localization\TestCaseManagement\*.json" />
+    <Content Remove="Localization\TestCaseManagement\*.json" />
+  </ItemGroup>
+</Project>

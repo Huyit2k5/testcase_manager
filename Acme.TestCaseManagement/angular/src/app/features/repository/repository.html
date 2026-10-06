@@ -1,0 +1,113 @@
+<div class="page">
+  <div class="page-head">
+    <h1>{{ 'repo.title' | t }}</h1>
+    <div class="row">
+      <button type="button" class="btn" [title]="'transfer.exportHint' | t" (click)="exportCases(formats.Xlsx)">{{ 'transfer.exportExcel' | t }}</button>
+      <button type="button" class="btn" [title]="'transfer.exportHint' | t" (click)="exportCases(formats.Csv)">{{ 'transfer.exportCsv' | t }}</button>
+      @if (auth.can(perm.TestCases.Create)) { <button type="button" class="btn" (click)="importOpen.set(true)">{{ 'transfer.import' | t }}</button> }
+      @if (auth.can(perm.TestSuites.Manage)) { <button type="button" class="btn" (click)="openSuiteDialog()">{{ 'repo.newSuite' | t }}</button> }
+      @if (auth.can(perm.TestCases.Create)) { <button type="button" class="btn primary" [disabled]="suites().length === 0" (click)="newCase()">{{ 'repo.newCase' | t }}</button> }
+    </div>
+  </div>
+
+  <div class="split">
+    <aside class="card">
+      <div class="row" style="justify-content: space-between; margin-bottom: 8px">
+        <h2 style="margin: 0">{{ 'repo.suites' | t }}</h2>
+        @if (selectedSuite() && auth.can(perm.TestSuites.Manage)) {
+          <button type="button" class="btn sm danger" (click)="deleteSuite()">{{ 'common.delete' | t }}</button>
+        }
+      </div>
+      <button type="button" class="btn sm" style="width: 100%; margin-bottom: 8px" [class.primary]="!selectedSuite()" (click)="selectSuite(null)">{{ 'repo.allCases' | t }}</button>
+      @if (tree().length) {
+        <ul style="list-style: none; margin: 0; padding: 0">
+          @for (node of tree(); track node.id) {
+            <app-suite-node [node]="node" [selectedId]="selectedSuite()" (selected)="selectSuite($event)" />
+          }
+        </ul>
+      } @else {
+        <p class="muted">{{ 'repo.noSuite' | t }}</p>
+      }
+    </aside>
+
+    <section>
+      <div class="card">
+        <form class="row" (ngSubmit)="applyFilters()">
+          <input class="grow" name="search" [(ngModel)]="search" [placeholder]="'repo.searchPlaceholder' | t" [attr.aria-label]="'common.search' | t" />
+          <select name="priority" [(ngModel)]="priority" (ngModelChange)="applyFilters()" [attr.aria-label]="'common.priority' | t" style="width: auto">
+            <option value="">{{ 'repo.anyPriority' | t }}</option>
+            @for (o of priorityOptions; track o.value) { <option [ngValue]="o.value">{{ label(priorityEnum, o.value) }}</option> }
+          </select>
+          <select name="status" [(ngModel)]="status" (ngModelChange)="applyFilters()" [attr.aria-label]="'common.status' | t" style="width: auto">
+            <option value="">{{ 'common.anyStatus' | t }}</option>
+            @for (o of statusOptions; track o.value) { <option [ngValue]="o.value">{{ label(statusEnum, o.value) }}</option> }
+          </select>
+          <button type="submit" class="btn">{{ 'common.search' | t }}</button>
+        </form>
+      </div>
+
+      <div class="card flush">
+        <table>
+          <thead>
+            <tr><th>{{ 'common.code' | t }}</th><th>{{ 'common.title' | t }}</th><th>{{ 'common.priority' | t }}</th><th>{{ 'common.severity' | t }}</th><th>{{ 'common.status' | t }}</th><th>{{ 'common.version' | t }}</th></tr>
+          </thead>
+          <tbody>
+            @for (tc of cases(); track tc.id) {
+              <tr class="clickable" tabindex="0" (click)="open(tc)" (keydown.enter)="open(tc)">
+                <td class="mono nowrap">{{ tc.code }}</td>
+                <td>{{ tc.title }}</td>
+                <td><span class="badge" [class]="badgeOf('priority', tc.priority)">{{ label(priorityEnum, tc.priority) }}</span></td>
+                <td><span class="badge" [class]="badgeOf('severity', tc.severity)">{{ label(severityEnum, tc.severity) }}</span></td>
+                <td><span class="badge" [class]="badgeOf('case', tc.status)">{{ label(statusEnum, tc.status) }}</span></td>
+                <td>v{{ tc.currentVersion }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        @if (!cases().length) {
+          <div class="empty">{{ (loading() ? 'common.loading' : 'repo.noMatch') | t }}</div>
+        }
+      </div>
+
+      <div class="row" style="justify-content: space-between">
+        <span class="muted">{{ 'repo.count' | t: { total: total(), suite: selectedSuiteName() } }}</span>
+        <div class="row">
+          <button type="button" class="btn sm" [disabled]="page() === 0" (click)="goto(-1)">{{ 'common.previous' | t }}</button>
+          <span class="muted">{{ 'repo.page' | t: { page: page() + 1 } }}</span>
+          <button type="button" class="btn sm" [disabled]="(page() + 1) * pageSize >= total()" (click)="goto(1)">{{ 'common.next' | t }}</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+@if (suiteDialog(); as dialog) {
+  <app-modal [title]="(selectedSuite() ? 'repo.newSuiteIn' : 'repo.newRootSuite') | t: { name: selectedSuiteName() }" (closed)="suiteDialog.set(null)">
+    <form id="suite-form" (ngSubmit)="createSuite()">
+      <div class="field">
+        <label for="suite-name">{{ 'common.name' | t }}</label>
+        <input id="suite-name" name="name" required maxlength="128" [(ngModel)]="dialog.name" />
+      </div>
+      <div class="field">
+        <label for="suite-desc">{{ 'common.description' | t }}</label>
+        <textarea id="suite-desc" name="description" [(ngModel)]="dialog.description"></textarea>
+      </div>
+    </form>
+    <ng-container slot="footer">
+      <button type="button" class="btn" (click)="suiteDialog.set(null)">{{ 'common.cancel' | t }}</button>
+      <button type="submit" form="suite-form" class="btn primary">{{ 'common.create' | t }}</button>
+    </ng-container>
+  </app-modal>
+}
+
+@if (importOpen()) {
+  <app-import-dialog kind="cases" [suites]="suites()" (imported)="onImported()" (closed)="importOpen.set(false)" />
+}
+
+@if (detail(); as testCase) {
+  <app-test-case-detail [testCase]="testCase" (edit)="editCase($event)" (changed)="onChanged()" (closed)="detail.set(null)" />
+}
+
+@if (form(); as f) {
+  <app-test-case-form [suites]="suites()" [defaultSuiteId]="selectedSuite()" [existing]="f.existing" (saved)="onSaved()" (closed)="form.set(null)" />
+}

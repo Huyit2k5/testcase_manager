@@ -1,0 +1,165 @@
+<div class="page">
+  <p><a routerLink="/runs">&larr; {{ 'nav.runs' | t }}</a></p>
+
+  @if (run(); as r) {
+    <div class="page-head">
+      <div>
+        <h1>{{ r.title }}</h1>
+        <span class="muted">{{ 'run.environment' | t: { name: r.environment } }}</span>
+        <span class="badge" [class]="badgeOf('run', r.status)" style="margin-left: 8px">{{ label(runEnum, r.status) }}</span>
+      </div>
+      <div class="row">
+        <button type="button" class="btn" (click)="exportResults(formats.Xlsx)">{{ 'transfer.exportExcel' | t }}</button>
+        <button type="button" class="btn" (click)="exportResults(formats.Csv)">{{ 'transfer.exportCsv' | t }}</button>
+        @if (isOpen(r) && auth.can(perm.TestRuns.Execute)) {
+          <button type="button" class="btn" (click)="importOpen.set(true)">{{ 'transfer.importResults' | t }}</button>
+        }
+        @if (isOpen(r) && auth.can(perm.TestPlans.Manage)) {
+          <button type="button" class="btn" (click)="addForm.set({ testCaseIds: [] })">{{ 'run.addCases' | t }}</button>
+          <button type="button" class="btn primary" (click)="complete()">{{ 'run.complete' | t }}</button>
+        }
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><b>{{ r.summary.totalItems }}</b><span>{{ 'run.items' | t }}</span></div>
+      <div class="stat"><b style="color: var(--ok)">{{ r.summary.passed }}</b><span>{{ label(resultEnum, resultEnum.Passed) }}</span></div>
+      <div class="stat"><b style="color: var(--bad)">{{ r.summary.failed }}</b><span>{{ label(resultEnum, resultEnum.Failed) }}</span></div>
+      <div class="stat"><b style="color: var(--warn)">{{ r.summary.blocked }}</b><span>{{ label(resultEnum, resultEnum.Blocked) }}</span></div>
+      <div class="stat"><b>{{ r.summary.skipped }}</b><span>{{ label(resultEnum, resultEnum.Skipped) }}</span></div>
+      <div class="stat"><b>{{ r.summary.untested }}</b><span>{{ label(resultEnum, resultEnum.Untested) }}</span></div>
+      <div class="stat">
+        <b>{{ r.summary.completionPercentage }}%</b><span>{{ 'run.executed' | t }}</span>
+      </div>
+      <div class="stat">
+        <b>{{ r.summary.firstTimePassRate === null ? '-' : r.summary.firstTimePassRate + '%' }}</b><span>{{ 'run.firstPass' | t }}</span>
+      </div>
+    </div>
+
+    <div class="card flush">
+      <table>
+        <thead><tr><th>#</th><th>{{ 'run.colTestCase' | t }}</th><th>{{ 'common.version' | t }}</th><th>{{ 'run.colResult' | t }}</th><th>{{ 'run.colAttempts' | t }}</th><th></th></tr></thead>
+        <tbody>
+          @for (item of r.items; track item.id) {
+            <tr>
+              <td>{{ item.sequence }}</td>
+              <td><span class="mono">{{ item.testCaseCode }}</span> {{ item.testCaseTitle }}</td>
+              <td>v{{ item.versionNumber }}</td>
+              <td><span class="badge" [class]="badgeOf('result', item.currentStatus)">{{ label(resultEnum, item.currentStatus) }}</span></td>
+              <td>{{ item.attemptCount }}</td>
+              <td class="right nowrap">
+                @if (item.attemptCount) {
+                  <button type="button" class="btn sm" (click)="openHistory(item)">{{ 'run.history' | t }}</button>
+                }
+                @if (isOpen(r) && auth.can(perm.TestRuns.Execute)) {
+                  <button type="button" class="btn sm primary" (click)="startExecute(item)">{{ (item.attemptCount ? 'run.retest' : 'run.execute') | t }}</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      @if (!r.items.length) { <div class="empty">{{ 'run.noItems' | t }}</div> }
+    </div>
+  } @else {
+    <div class="empty">{{ 'common.loading' | t }}</div>
+  }
+</div>
+
+@if (importOpen()) {
+  <app-import-dialog kind="results" [runId]="id()" (imported)="reload()" (closed)="importOpen.set(false)" />
+}
+
+@if (executeForm(); as form) {
+  <app-modal [title]="'run.executeTitle' | t: { code: form.item.testCaseCode }" [wide]="true" (closed)="executeForm.set(null)">
+    <p class="muted">{{ 'run.executeIntro' | t: { title: form.item.testCaseTitle, version: form.item.versionNumber, user: auth.user()?.userName } }}</p>
+    <form id="exec-form" (ngSubmit)="execute()">
+      <div class="form-grid">
+        <div class="field">
+          <label for="ex-status">{{ 'run.result' | t }}</label>
+          <select id="ex-status" name="status" [(ngModel)]="form.status">
+            @for (o of resultOptions; track o.value) { <option [ngValue]="o.value">{{ label(resultEnum, o.value) }}</option> }
+          </select>
+        </div>
+        <div class="field">
+          <label for="ex-duration">{{ 'run.duration' | t }}</label>
+          <input id="ex-duration" type="number" min="0" name="duration" [(ngModel)]="form.durationSeconds" />
+        </div>
+      </div>
+      <div class="field">
+        <label for="ex-actual">{{ 'run.actual' | t }}</label>
+        <textarea id="ex-actual" name="actual" [(ngModel)]="form.actualResult"></textarea>
+      </div>
+
+      @if (form.status === resultEnum.Failed) {
+        <h3>{{ 'run.defectsFound' | t }}</h3>
+        @for (d of form.defects; track $index; let i = $index) {
+          <div class="row" style="margin-bottom: 8px">
+            <input [name]="'sys' + i" [(ngModel)]="d.externalSystem" [placeholder]="'run.tracker' | t" [attr.aria-label]="'run.tracker' | t" style="width: 110px" />
+            <input [name]="'key' + i" [(ngModel)]="d.issueKey" placeholder="BUG-42" [attr.aria-label]="'run.issueKey' | t" style="width: 120px" />
+            <input class="grow" [name]="'url' + i" [(ngModel)]="d.issueUrl" [placeholder]="'run.issueUrlPlaceholder' | t" [attr.aria-label]="'run.issueLink' | t" />
+            <select [name]="'sev' + i" [(ngModel)]="d.severity" [attr.aria-label]="'common.severity' | t" style="width: 130px">
+              <option [ngValue]="null">{{ 'run.sameSeverity' | t }}</option>
+              @for (o of severityOptions; track o.value) { <option [ngValue]="o.value">{{ label(severityEnum, o.value) }}</option> }
+            </select>
+            <button type="button" class="btn sm danger" (click)="form.defects.splice(i, 1)" [attr.aria-label]="'run.removeDefect' | t">&times;</button>
+          </div>
+        }
+        <button type="button" class="btn sm" (click)="addDefectRow(form)">{{ 'run.linkDefectRow' | t }}</button>
+      }
+    </form>
+    <ng-container slot="footer">
+      <button type="button" class="btn" (click)="executeForm.set(null)">{{ 'common.cancel' | t }}</button>
+      <button type="submit" form="exec-form" class="btn primary">{{ 'run.record' | t }}</button>
+    </ng-container>
+  </app-modal>
+}
+
+@if (history(); as h) {
+  <app-modal [title]="'run.attemptsOf' | t: { code: h.item.testCaseCode }" [wide]="true" (closed)="history.set(null)">
+    @for (attempt of h.attempts; track attempt.id) {
+      <div class="card">
+        <div class="row" style="justify-content: space-between">
+          <div class="row">
+            <b>{{ 'run.attemptNumber' | t: { n: attempt.attemptNumber } }}</b>
+            <span class="badge" [class]="badgeOf('result', attempt.status)">{{ label(resultEnum, attempt.status) }}</span>
+            <span class="muted">{{ attempt.creationTime | fdate: 'medium' }}, {{ attempt.durationSeconds }}s</span>
+          </div>
+          @if (attempt.status === resultEnum.Failed && auth.can(perm.TestRuns.Execute)) {
+            <button type="button" class="btn sm" (click)="linkDefect(attempt)">{{ 'run.linkDefect' | t }}</button>
+          }
+        </div>
+        @if (attempt.actualResult) { <p>{{ attempt.actualResult }}</p> }
+        @if (attempt.defectLinks.length) {
+          <table>
+            <tbody>
+              @for (d of attempt.defectLinks; track d.id) {
+                <tr>
+                  <td>@if (d.issueUrl) { <a [href]="d.issueUrl" target="_blank" rel="noopener">{{ d.externalSystem }} {{ d.issueKey }}</a> } @else { {{ d.externalSystem }} {{ d.issueKey }} }</td>
+                  <td><span class="badge" [class]="badgeOf('severity', d.severity)">{{ label(severityEnum, d.severity) }}</span></td>
+                  <td><span class="badge" [class]="d.isResolved ? 'ok' : 'bad'">{{ (d.isResolved ? 'common.resolved' : 'common.open') | t }}</span></td>
+                  <td class="right nowrap">
+                    @if (auth.can(perm.TestRuns.Execute)) {
+                      <button type="button" class="btn sm" (click)="toggleResolved(attempt, d)">{{ (d.isResolved ? 'run.reopen' : 'run.markResolved') | t }}</button>
+                      <button type="button" class="btn sm danger" (click)="removeDefect(attempt, d)">{{ 'common.remove' | t }}</button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </div>
+    }
+  </app-modal>
+}
+
+@if (addForm(); as form) {
+  <app-modal [title]="'run.addTitle' | t" [wide]="true" (closed)="addForm.set(null)">
+    <app-case-picker [exclude]="run() ? excluded(run()!) : []" [(selectedIds)]="form.testCaseIds" />
+    <ng-container slot="footer">
+      <button type="button" class="btn" (click)="addForm.set(null)">{{ 'common.cancel' | t }}</button>
+      <button type="button" class="btn primary" [disabled]="!form.testCaseIds.length" (click)="addItems()">{{ 'common.add' | t }}</button>
+    </ng-container>
+  </app-modal>
+}

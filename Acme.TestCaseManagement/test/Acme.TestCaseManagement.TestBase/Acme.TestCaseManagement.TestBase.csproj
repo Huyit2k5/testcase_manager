@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Acme.TestCaseManagement</RootNamespace>
+    <IsTestProject>false</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Volo.Abp.TestBase" />
+    <PackageReference Include="Volo.Abp.Autofac" />
+    <PackageReference Include="Volo.Abp.EntityFrameworkCore.Sqlite" />
+    <PackageReference Include="Microsoft.Data.Sqlite" />
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" />
+    <PackageReference Include="Shouldly" />
+    <PackageReference Include="NSubstitute" />
+    <PackageReference Include="xunit" />
+    <ProjectReference Include="..\..\src\Acme.TestCaseManagement.Application\Acme.TestCaseManagement.Application.csproj" />
+    <ProjectReference Include="..\..\src\Acme.TestCaseManagement.EntityFrameworkCore\Acme.TestCaseManagement.EntityFrameworkCore.csproj" />
+  </ItemGroup>
+</Project>

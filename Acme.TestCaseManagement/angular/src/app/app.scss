@@ -1,0 +1,21 @@
+.topbar {
+  display: flex; align-items: center; gap: 24px; padding: 0 20px; background: var(--surface);
+  border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; flex-wrap: wrap;
+}
+.brand { font-weight: 800; padding: 14px 0; }
+nav { display: flex; gap: 4px; flex: 1; flex-wrap: wrap; }
+nav a {
+  padding: 15px 14px; text-decoration: none; color: var(--muted); font-weight: 600; border-bottom: 3px solid transparent;
+  &:hover { color: var(--text); }
+  &.active { color: var(--primary); border-bottom-color: var(--primary); }
+}
+.user { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
+
+.toasts { position: fixed; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 100; max-width: min(420px, calc(100vw - 32px)); }
+.toast {
+  display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; padding: 10px 14px; border-radius: 8px;
+  background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-lg); white-space: pre-line;
+  &.success { border-left: 4px solid var(--ok); }
+  &.error { border-left: 4px solid var(--bad); }
+  &.info { border-left: 4px solid var(--info); }
+}

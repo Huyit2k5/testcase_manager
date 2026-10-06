@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Acme.TestCaseManagement</RootNamespace>
+    <Description>Domain layer of the Acme.TestCaseManagement ABP module: test library, plans, runs, requirements, quality gates and sign-off aggregates with their domain services.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Volo.Abp.Ddd.Domain" />
+    <ProjectReference Include="..\Acme.TestCaseManagement.Domain.Shared\Acme.TestCaseManagement.Domain.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Acme.TestCaseManagement.Domain.Tests" />
+  </ItemGroup>
+</Project>

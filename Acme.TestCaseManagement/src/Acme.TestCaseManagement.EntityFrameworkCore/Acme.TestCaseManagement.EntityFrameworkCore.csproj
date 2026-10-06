@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Acme.TestCaseManagement</RootNamespace>
+    <Description>Entity Framework Core integration of the Acme.TestCaseManagement ABP module: DbContext, entity mappings and repositories.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Volo.Abp.EntityFrameworkCore" />
+    <ProjectReference Include="..\Acme.TestCaseManagement.Domain\Acme.TestCaseManagement.Domain.csproj" />
+  </ItemGroup>
+</Project>

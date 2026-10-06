@@ -1,0 +1,106 @@
+<div class="page">
+  <div class="page-head">
+    <h1>{{ 'runs.title' | t }}</h1>
+    <div class="row">
+      @if (auth.can(perm.TestPlans.Manage)) {
+        <button type="button" class="btn" (click)="newPlan()">{{ 'runs.newPlan' | t }}</button>
+        <button type="button" class="btn primary" (click)="newRun()">{{ 'runs.newRun' | t }}</button>
+      }
+    </div>
+  </div>
+
+  <h2>{{ 'runs.runs' | t }}</h2>
+  <div class="card flush">
+    <table>
+      <thead><tr><th>{{ 'runs.colRun' | t }}</th><th>{{ 'common.plan' | t }}</th><th>{{ 'common.environment' | t }}</th><th>{{ 'common.status' | t }}</th><th>{{ 'runs.colProgress' | t }}</th><th>{{ 'runs.colPassed' | t }}</th><th>{{ 'runs.colFailed' | t }}</th></tr></thead>
+      <tbody>
+        @for (run of runs(); track run.id) {
+          <tr>
+            <td><a [routerLink]="['/runs', run.id]">{{ run.title }}</a></td>
+            <td>{{ planName(run.testPlanId) }}</td>
+            <td>{{ run.environment }}</td>
+            <td><span class="badge" [class]="badgeOf('run', run.status)">{{ label(runEnum, run.status) }}</span></td>
+            <td style="min-width: 120px">
+              <div class="progress" role="progressbar" [attr.aria-valuenow]="run.summary.completionPercentage" aria-valuemin="0" aria-valuemax="100"><div [style.width.%]="run.summary.completionPercentage"></div></div>
+            </td>
+            <td>{{ run.summary.passed }}</td>
+            <td>{{ run.summary.failed }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    @if (!runs().length) { <div class="empty">{{ 'runs.noRun' | t }}</div> }
+  </div>
+
+  <h2 style="margin-top: 24px">{{ 'runs.plans' | t }}</h2>
+  <div class="card flush">
+    <table>
+      <thead><tr><th>{{ 'common.plan' | t }}</th><th>{{ 'runs.colMilestone' | t }}</th><th>{{ 'runs.colSchedule' | t }}</th><th>{{ 'common.status' | t }}</th><th></th></tr></thead>
+      <tbody>
+        @for (plan of plans(); track plan.id) {
+          <tr>
+            <td>{{ plan.name }}<div class="muted">{{ plan.description }}</div></td>
+            <td class="mono">{{ plan.milestoneId ? plan.milestoneId.substring(0, 8) : '-' }}</td>
+            <td class="nowrap">@if (plan.startDate) { {{ plan.startDate | fdate: 'mediumDate' }} - {{ plan.endDate | fdate: 'mediumDate' }} } @else { - }</td>
+            <td><span class="badge" [class]="badgeOf('plan', plan.status)">{{ label(planEnum, plan.status) }}</span></td>
+            <td class="right nowrap">
+              @if (auth.can(perm.TestPlans.Manage)) {
+                @for (target of transitions(plan); track target) {
+                  <button type="button" class="btn sm" (click)="movePlan(plan, target)">{{ label(planEnum, target) }}</button>
+                }
+                <button type="button" class="btn sm" (click)="editPlan(plan)">{{ 'common.edit' | t }}</button>
+                <button type="button" class="btn sm danger" (click)="deletePlan(plan)">{{ 'common.delete' | t }}</button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    @if (!plans().length) { <div class="empty">{{ 'runs.noPlan' | t }}</div> }
+  </div>
+</div>
+
+@if (planForm(); as form) {
+  <app-modal [title]="(form.id ? 'runs.editPlan' : 'runs.newPlanTitle') | t" (closed)="planForm.set(null)">
+    <form id="plan-form" (ngSubmit)="savePlan()">
+      <div class="field"><label for="plan-name">{{ 'common.name' | t }}</label><input id="plan-name" name="name" required maxlength="128" [(ngModel)]="form.name" /></div>
+      <div class="field"><label for="plan-desc">{{ 'common.description' | t }}</label><textarea id="plan-desc" name="description" [(ngModel)]="form.description"></textarea></div>
+      <div class="field">
+        <label for="plan-ms">{{ 'runs.milestone' | t }}</label>
+        <input id="plan-ms" name="milestone" [(ngModel)]="form.milestoneId" placeholder="00000000-0000-0000-0000-000000000000" />
+      </div>
+      <div class="form-grid">
+        <div class="field"><label for="plan-start">{{ 'runs.start' | t }}</label><input id="plan-start" type="date" name="start" [(ngModel)]="form.startDate" /></div>
+        <div class="field"><label for="plan-end">{{ 'runs.end' | t }}</label><input id="plan-end" type="date" name="end" [(ngModel)]="form.endDate" /></div>
+      </div>
+    </form>
+    <ng-container slot="footer">
+      <button type="button" class="btn" (click)="planForm.set(null)">{{ 'common.cancel' | t }}</button>
+      <button type="submit" form="plan-form" class="btn primary">{{ 'common.save' | t }}</button>
+    </ng-container>
+  </app-modal>
+}
+
+@if (runForm(); as form) {
+  <app-modal [title]="'runs.newRunTitle' | t" [wide]="true" (closed)="runForm.set(null)">
+    <form id="run-form" (ngSubmit)="createRun()">
+      <div class="form-grid">
+        <div class="field"><label for="run-title">{{ 'common.title' | t }}</label><input id="run-title" name="title" required maxlength="256" [(ngModel)]="form.title" /></div>
+        <div class="field"><label for="run-env">{{ 'common.environment' | t }}</label><input id="run-env" name="environment" required [(ngModel)]="form.environment" [placeholder]="'runs.envPlaceholder' | t" /></div>
+      </div>
+      <div class="field">
+        <label for="run-plan">{{ 'common.plan' | t }}</label>
+        <select id="run-plan" name="plan" [(ngModel)]="form.testPlanId">
+          <option value="">{{ 'runs.noPlanOption' | t }}</option>
+          @for (plan of plans(); track plan.id) { <option [value]="plan.id">{{ plan.name }}</option> }
+        </select>
+      </div>
+      <label>{{ 'runs.casesToSchedule' | t }}</label>
+      <app-case-picker [(selectedIds)]="form.testCaseIds" />
+    </form>
+    <ng-container slot="footer">
+      <button type="button" class="btn" (click)="runForm.set(null)">{{ 'common.cancel' | t }}</button>
+      <button type="submit" form="run-form" class="btn primary">{{ 'runs.createRun' | t }}</button>
+    </ng-container>
+  </app-modal>
+}

@@ -1,0 +1,177 @@
+<div class="page">
+  <div class="page-head"><h1>{{ 'qg.title' | t }}</h1></div>
+
+  <section class="card">
+    <h2>{{ 'qg.evaluateTitle' | t }}</h2>
+    <form class="row" (ngSubmit)="evaluate()">
+      <select name="plan" [(ngModel)]="planId" [attr.aria-label]="'common.plan' | t" style="width: auto; min-width: 220px">
+        @for (plan of plans(); track plan.id) { <option [value]="plan.id">{{ plan.name }}</option> }
+      </select>
+      <select name="gate" [(ngModel)]="gateId" [attr.aria-label]="'qg.gate' | t" style="width: auto; min-width: 200px">
+        <option value="">{{ 'qg.defaultGate' | t }}</option>
+        @for (gate of gates(); track gate.id) { <option [value]="gate.id">{{ gate.name }}</option> }
+      </select>
+      <button type="submit" class="btn primary" [disabled]="!canEvaluate()">{{ 'qg.evaluate' | t }}</button>
+    </form>
+
+    @if (evaluation(); as e) {
+      <div class="alert" [class]="e.passed ? 'ok' : 'bad'" style="margin-top: 14px" role="status">
+        <b>{{ (e.passed ? 'qg.passed' : 'qg.notPassed') | t }}</b>
+        {{ 'qg.evalLine' | t: { plan: planName(planId), gate: e.gate.name, rate: e.gate.minPassRate, approvals: e.gate.requiredApprovals, baseline: e.gate.isBuiltIn ? ('qg.builtInSuffix' | t) : '' } }}
+      </div>
+
+      <table>
+        <thead><tr><th>{{ 'qg.colCriterion' | t }}</th><th>{{ 'qg.colRequired' | t }}</th><th>{{ 'qg.colActual' | t }}</th><th></th></tr></thead>
+        <tbody>
+          @for (c of e.criteria; track c.code) {
+            <tr>
+              <td>{{ c.label }}</td>
+              <td>{{ c.operator }} {{ c.threshold }}</td>
+              <td>{{ c.actual === null ? ('common.na' | t) : c.actual }}</td>
+              <td><span class="badge" [class]="c.passed ? 'ok' : 'bad'">{{ (c.passed ? 'common.pass' : 'common.fail') | t }}</span></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <div class="stats" style="margin-top: 14px">
+        <div class="stat"><b>{{ e.metrics.totalItems }}</b><span>{{ 'qg.runItems' | t }}</span></div>
+        <div class="stat"><b>{{ e.metrics.passed }}</b><span>{{ label(resultEnum, resultEnum.Passed) }}</span></div>
+        <div class="stat"><b>{{ e.metrics.failed }}</b><span>{{ label(resultEnum, resultEnum.Failed) }}</span></div>
+        <div class="stat"><b>{{ e.metrics.skipped }}</b><span>{{ 'qg.skippedNa' | t }}</span></div>
+        <div class="stat"><b>{{ e.metrics.p1Executed }} / {{ e.metrics.p1Total }}</b><span>{{ 'qg.p1Executed' | t }}</span></div>
+        <div class="stat"><b>{{ e.metrics.openDefects.total }}</b><span>{{ 'qg.openDefects' | t }}</span></div>
+      </div>
+
+      @if (e.metrics.openDefectIssues.length) {
+        <h3>{{ 'qg.residual' | t }}</h3>
+        <ul>
+          @for (d of e.metrics.openDefectIssues; track d.issueKey) {
+            <li><span class="badge" [class]="badgeOf('severity', d.severity)">{{ label(severityEnum, d.severity) }}</span> {{ d.externalSystem }} {{ d.issueKey }}</li>
+          }
+        </ul>
+      }
+
+      <div class="row" style="margin-top: 8px">
+        <button type="button" class="btn primary" [disabled]="!e.passed || !auth.can(perm.SignOff.Approve)" [title]="auth.can(perm.SignOff.Approve) ? '' : ('qg.cannotApprove' | t)" (click)="startSignOff()">{{ 'qg.startSignOff' | t: { role: auth.roleLabel() } }}</button>
+        @if (!e.passed) { <span class="muted">{{ 'qg.failBlocks' | t }}</span> }
+      </div>
+    }
+  </section>
+
+  <section class="card">
+    <h2>{{ 'qg.reports' | t }}</h2>
+    <table>
+      <thead><tr><th>{{ 'qg.colReport' | t }}</th><th>{{ 'qg.colGate' | t }}</th><th>{{ 'common.status' | t }}</th><th>{{ 'qg.colApprovals' | t }}</th><th>{{ 'qg.colIntegrity' | t }}</th><th></th></tr></thead>
+      <tbody>
+        @for (r of reports(); track r.id) {
+          <tr>
+            <td><a href="javascript:void(0)" (click)="selectedReport.set(r)">{{ r.title }}</a><div class="muted">{{ r.creationTime | fdate: 'medium' }}</div></td>
+            <td>{{ r.qualityGateName }} ({{ r.minPassRate }}%)</td>
+            <td><span class="badge" [class]="badgeOf('signoff', r.status)">{{ label(statusEnum, r.status) }}</span></td>
+            <td>{{ r.approvals.length }} / {{ r.requiredApprovals }}</td>
+            <td><span class="badge" [class]="r.integrityVerified ? 'ok' : 'bad'">{{ (r.integrityVerified ? 'qg.verified' : 'qg.tampered') | t }}</span></td>
+            <td class="right">
+              @if (r.status === statusEnum.Pending && auth.can(perm.SignOff.Approve)) {
+                <button type="button" class="btn sm primary" [disabled]="alreadyApproved(r)" [title]="alreadyApproved(r) ? ('qg.alreadyApproved' | t) : ''" (click)="approve(r)">{{ 'qg.approve' | t }}</button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    @if (!reports().length) { <div class="empty">{{ 'qg.noReports' | t }}</div> }
+  </section>
+
+  <section class="card">
+    <div class="row" style="justify-content: space-between; margin-bottom: 8px">
+      <h2 style="margin: 0">{{ 'qg.gates' | t }}</h2>
+      @if (auth.can(perm.QualityGates.Manage)) { <button type="button" class="btn" (click)="newGate()">{{ 'qg.newGate' | t }}</button> }
+    </div>
+    <p class="muted">{{ 'qg.rulesNote' | t }}</p>
+    <table>
+      <thead><tr><th>{{ 'common.name' | t }}</th><th>{{ 'qg.colMinPassRate' | t }}</th><th>{{ 'qg.colApprovals' | t }}</th><th>{{ 'qg.colDefault' | t }}</th><th></th></tr></thead>
+      <tbody>
+        @for (g of gates(); track g.id) {
+          <tr>
+            <td>{{ g.name }}<div class="muted">{{ g.description }}</div></td>
+            <td>{{ g.minPassRate }}%</td>
+            <td>{{ g.requiredApprovals }}</td>
+            <td>@if (g.isDefault) { <span class="badge info">{{ 'qg.defaultBadge' | t }}</span> }</td>
+            <td class="right nowrap">
+              @if (auth.can(perm.QualityGates.Manage)) {
+                <button type="button" class="btn sm" (click)="editGate(g)">{{ 'common.edit' | t }}</button>
+                <button type="button" class="btn sm danger" (click)="deleteGate(g)">{{ 'common.delete' | t }}</button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    @if (!gates().length) { <div class="empty">{{ 'qg.noGates' | t }}</div> }
+  </section>
+</div>
+
+@if (gateForm(); as g) {
+  <app-modal [title]="(g.id ? 'qg.editGate' : 'qg.newGateTitle') | t" (closed)="gateForm.set(null)">
+    <form id="gate-form" (ngSubmit)="saveGate()">
+      <div class="field"><label for="g-name">{{ 'common.name' | t }}</label><input id="g-name" name="name" required maxlength="128" [(ngModel)]="g.name" /></div>
+      <div class="field"><label for="g-desc">{{ 'common.description' | t }}</label><textarea id="g-desc" name="description" [(ngModel)]="g.description"></textarea></div>
+      <div class="form-grid">
+        <div class="field"><label for="g-rate">{{ 'qg.minPassRate' | t }}</label><input id="g-rate" type="number" name="rate" min="0.01" max="100" step="0.01" required [(ngModel)]="g.minPassRate" /></div>
+        <div class="field"><label for="g-appr">{{ 'qg.requiredApprovals' | t }}</label><input id="g-appr" type="number" name="approvals" min="1" max="10" required [(ngModel)]="g.requiredApprovals" /></div>
+      </div>
+      <label class="check"><input type="checkbox" name="default" [(ngModel)]="g.isDefault" /> {{ 'qg.useDefault' | t }}</label>
+    </form>
+    <ng-container slot="footer">
+      <button type="button" class="btn" (click)="gateForm.set(null)">{{ 'common.cancel' | t }}</button>
+      <button type="submit" form="gate-form" class="btn primary">{{ 'common.save' | t }}</button>
+    </ng-container>
+  </app-modal>
+}
+
+@if (approvalForm(); as a) {
+  <app-modal [title]="a.report ? ('qg.approveTitle' | t: { title: a.report.title }) : ('qg.startTitle' | t: { plan: planName(planId) })" (closed)="approvalForm.set(null)">
+    <p class="muted">{{ 'qg.signingAs' | t: { user: auth.user()?.userName } }}</p>
+    <form id="approval-form" (ngSubmit)="submitApproval()">
+      <div class="field"><label for="a-role">{{ 'qg.yourRole' | t }}</label><input id="a-role" name="role" maxlength="128" [(ngModel)]="a.role" /></div>
+      <div class="field"><label for="a-comment">{{ 'qg.comment' | t }}</label><textarea id="a-comment" name="comment" [(ngModel)]="a.comment"></textarea></div>
+    </form>
+    <ng-container slot="footer">
+      <button type="button" class="btn" (click)="approvalForm.set(null)">{{ 'common.cancel' | t }}</button>
+      <button type="submit" form="approval-form" class="btn primary">{{ 'qg.sign' | t }}</button>
+    </ng-container>
+  </app-modal>
+}
+
+@if (selectedReport(); as r) {
+  <app-modal [title]="r.title" [wide]="true" (closed)="selectedReport.set(null)">
+    <div class="row" style="margin-bottom: 12px">
+      <span class="badge" [class]="badgeOf('signoff', r.status)">{{ label(statusEnum, r.status) }}</span>
+      <span class="badge" [class]="r.integrityVerified ? 'ok' : 'bad'">{{ (r.integrityVerified ? 'qg.integrityOk' : 'qg.integrityFail') | t }}</span>
+      <span class="muted">{{ 'qg.snapshot' | t }} <span class="mono">{{ r.snapshotHash }}</span></span>
+    </div>
+    @if (r.summary; as s) {
+      <p>{{ 'qg.summaryLine' | t: { rate: s.metrics.passRate ?? ('common.na' | t), items: s.metrics.totalItems, p1Executed: s.metrics.p1Executed, p1Total: s.metrics.p1Total, defects: s.metrics.openDefects.total } }}</p>
+      <table>
+        <tbody>
+          @for (c of s.criteria; track c.code) {
+            <tr><td>{{ c.label }}</td><td>{{ c.operator }} {{ c.threshold }}</td><td>{{ c.actual === null ? ('common.na' | t) : c.actual }}</td><td><span class="badge" [class]="c.passed ? 'ok' : 'bad'">{{ (c.passed ? 'common.pass' : 'common.fail') | t }}</span></td></tr>
+          }
+        </tbody>
+      </table>
+    }
+    <h3>{{ 'qg.approvalsHeading' | t: { n: r.approvals.length, required: r.requiredApprovals } }}</h3>
+    <table>
+      <thead><tr><th>{{ 'qg.colWho' | t }}</th><th>{{ 'qg.colRole' | t }}</th><th>{{ 'qg.colWhen' | t }}</th><th>{{ 'qg.colComment' | t }}</th><th>{{ 'qg.colDigest' | t }}</th></tr></thead>
+      <tbody>
+        @for (a of r.approvals; track a.id) {
+          <tr>
+            <td>{{ a.approverName }}</td><td>{{ a.approverRole }}</td><td>{{ a.approvedTime | fdate: 'medium' }}</td>
+            <td>{{ a.comment }}</td><td class="mono">{{ a.signature.substring(0, 12) }}...</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </app-modal>
+}
