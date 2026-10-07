@@ -403,6 +403,27 @@ public class AutomationResultsAppService_Tests : TestCaseManagementApplicationTe
     }
 
     [Fact]
+    public async Task Two_Requests_With_One_Key_At_The_Same_Time_Record_Once_And_The_Other_Replays()
+    {
+        await CaseAsync("TC-1", "e2e.race");
+        var factory = GetRequiredService<Microsoft.Extensions.DependencyInjection.IServiceScopeFactory>();
+
+        async Task<PublishAutomationResultsDto> SendAsync()
+        {
+            using var scope = factory.CreateScope();
+            var input = NewRun(Result("e2e.race"));
+            input.IdempotencyKey = "build-race";
+            return await Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<IAutomationResultsAppService>(scope.ServiceProvider).PublishAsync(input);
+        }
+
+        var answers = await Task.WhenAll(SendAsync(), SendAsync(), SendAsync());
+
+        answers.Count(a => !a.Replayed).ShouldBe(1);
+        answers.Select(a => a.RunId).Distinct().Count().ShouldBe(1);
+        (await _runs.GetAsync(answers[0].RunId!.Value)).Items.Single().AttemptCount.ShouldBe(1);
+    }
+
+    [Fact]
     public async Task A_Strict_Request_That_Was_Refused_Does_Not_Use_Up_Its_Key()
     {
         await CaseAsync("TC-1", "known");

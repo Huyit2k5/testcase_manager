@@ -47,6 +47,7 @@ public static class TestCaseManagementErrorCodes
     public const string DuplicateAutomationId = "TestCaseManagement:DuplicateAutomationId";
     public const string AutomationTooManyResults = "TestCaseManagement:AutomationTooManyResults";
     public const string IdempotencyKeyReused = "TestCaseManagement:IdempotencyKeyReused";
+    public const string AutomationPublishInProgress = "TestCaseManagement:AutomationPublishInProgress";
     public const string InvalidApiKeyExpiry = "TestCaseManagement:InvalidApiKeyExpiry";
     public const string InvalidAutomationRun = "TestCaseManagement:InvalidAutomationRun";
 

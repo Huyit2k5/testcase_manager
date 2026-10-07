@@ -231,7 +231,9 @@ symbol packages. Requires the .NET SDK 10 (see `global.json`).
   signatures and do not give non-repudiation.
 - The module contains no user interface and no EF Core migrations.
 - Results published with an API key have no creator, there is no rate limiting on the publish endpoint, stored idempotency records
-  are never cleaned up, and publishing was tested on SQLite with a single tenant only.
+  are never cleaned up, and publishing was tested on SQLite with a single tenant only. Requests that share an idempotency key are
+  serialized by an in-process lock; with several server nodes register a distributed lock provider. The Automation ID is unique by
+  the application services, not by a database index.
 
 ## Angular front end
 

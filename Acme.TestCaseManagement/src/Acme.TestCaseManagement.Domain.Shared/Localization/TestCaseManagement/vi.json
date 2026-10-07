@@ -56,6 +56,7 @@
     "TestCaseManagement:DuplicateAutomationId": "Đã có test case khác dùng automation id '{AutomationId}'.",
     "TestCaseManagement:AutomationTooManyResults": "Mỗi yêu cầu chỉ chứa tối đa {Limit} kết quả, nhưng yêu cầu này có {Count}. Hãy gửi thành nhiều yêu cầu.",
     "TestCaseManagement:IdempotencyKeyReused": "Khóa idempotency '{Key}' đã được dùng cho một yêu cầu khác.",
+    "TestCaseManagement:AutomationPublishInProgress": "Một yêu cầu khác với khóa idempotency '{Key}' vẫn đang được xử lý. Hãy thử lại sau giây lát.",
     "TestCaseManagement:InvalidApiKeyExpiry": "Ngày hết hạn của API key phải ở tương lai.",
     "TestCaseManagement:InvalidAutomationRun": "Hãy cho RunId (test run có sẵn) hoặc Run (test run mới), không cho cả hai và không bỏ trống cả hai.",
     "TestCaseManagement:ExportTooLarge": "Tệp xuất sẽ có {Count} test case, trong khi giới hạn là {Limit}. Hãy thu hẹp bằng bộ lọc.",

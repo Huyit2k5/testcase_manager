@@ -147,17 +147,33 @@ public class TestCaseTransferAppService : TestCaseManagementAppService, ITestCas
             suite.Id = created.Id;
         }
 
-        foreach (var plan in plans.Where(p => p.Outcome is ImportOutcome.Created or ImportOutcome.Updated))
+        // A test case that takes an Automation ID waits for the one that gives it up (the rule of uniqueness holds at every step).
+        var pending = plans.Where(p => p.Outcome is ImportOutcome.Created or ImportOutcome.Updated).ToList();
+        var written = new HashSet<Guid>();
+        while (pending.Count > 0)
         {
-            plan.Dto!.SuiteId = plan.Suite?.Id ?? plan.SuiteId ?? plan.Dto.SuiteId;
-
-            if (plan.Outcome == ImportOutcome.Created)
+            var ready = pending.Where(p => p.Releasing == null || written.Contains(p.Releasing.Id)).ToList();
+            if (ready.Count == 0)
             {
-                await _testCaseService.CreateAsync(plan.Dto);
+                // Planning refuses a cycle, so this cannot happen; whatever is left is written as it comes.
+                ready = pending;
             }
-            else
+
+            foreach (var plan in ready)
             {
-                await _testCaseService.UpdateAsync(plan.Existing!.Id, plan.Dto);
+                plan.Dto!.SuiteId = plan.Suite?.Id ?? plan.SuiteId ?? plan.Dto.SuiteId;
+
+                if (plan.Outcome == ImportOutcome.Created)
+                {
+                    await _testCaseService.CreateAsync(plan.Dto);
+                }
+                else
+                {
+                    await _testCaseService.UpdateAsync(plan.Existing!.Id, plan.Dto);
+                    written.Add(plan.Existing.Id);
+                }
+
+                pending.Remove(plan);
             }
         }
 
@@ -179,6 +195,7 @@ public class TestCaseTransferAppService : TestCaseManagementAppService, ITestCas
 
         var plans = new List<CasePlan>();
         var automationIds = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var finalIds = FinalAutomationIds(sheet, input, existing);
 
         foreach (var draft in sheet.Drafts)
         {
@@ -205,7 +222,7 @@ public class TestCaseTransferAppService : TestCaseManagementAppService, ITestCas
                 {
                     ResolveSuite(plan, sheet, tree, input, messages, canCreateSuites);
                     CheckTitle(plan, sheet, messages);
-                    await CheckAutomationIdAsync(plan, sheet, automationIds, messages);
+                    await CheckAutomationIdAsync(plan, sheet, automationIds, finalIds, existing.Values, messages);
                 }
             }
 
@@ -302,7 +319,29 @@ public class TestCaseTransferAppService : TestCaseManagementAppService, ITestCas
     /// An Automation ID names one test case (FR-019). Refused here, so that it shows in the report with its row, and not as an
     /// error half way through the import: the ID may not belong to another test case of the library or of the file.
     /// </summary>
-    private async Task CheckAutomationIdAsync(CasePlan plan, ParsedSheet sheet, Dictionary<string, string> seen, TransferMessages messages)
+    /// <summary>The Automation ID each existing test case of the file will have afterwards (null: none), when the file sets it.</summary>
+    private static Dictionary<Guid, string?> FinalAutomationIds(ParsedSheet sheet, ImportTestCasesInput input, Dictionary<string, TestCase> existing)
+    {
+        var finalIds = new Dictionary<Guid, string?>();
+        if (input.OnExisting != ImportConflictMode.Update || !sheet.Columns.Contains(TestCaseSheet.AutomationId))
+        {
+            return finalIds;
+        }
+
+        foreach (var draft in sheet.Drafts)
+        {
+            if (draft.Code.Length > 0 && existing.TryGetValue(draft.Code, out var current))
+            {
+                finalIds[current.Id] = TestCaseManager.NormalizeAutomationId(draft.AutomationId);
+            }
+        }
+
+        return finalIds;
+    }
+
+    private async Task CheckAutomationIdAsync(
+        CasePlan plan, ParsedSheet sheet, Dictionary<string, string> seen, Dictionary<Guid, string?> finalIds,
+        IEnumerable<TestCase> existing, TransferMessages messages)
     {
         // A column that the file does not have leaves the ID of an existing test case as it is.
         if (plan.Existing != null && !sheet.Columns.Contains(TestCaseSheet.AutomationId))
@@ -320,12 +359,56 @@ public class TestCaseTransferAppService : TestCaseManagementAppService, ITestCas
         var owner = unchanged ? null : await _testCaseRepository.FindByAutomationIdAsync(automationId);
         var takenInFile = seen.TryGetValue(automationId, out var otherCode) && !string.Equals(otherCode, plan.Draft.Code, StringComparison.OrdinalIgnoreCase);
 
-        if ((owner != null && owner.Id != plan.Existing?.Id) || takenInFile)
+        var taken = owner != null && owner.Id != plan.Existing?.Id;
+        if (taken && GivenUpByTheFile(owner!, automationId, plan.Existing, finalIds, existing))
+        {
+            // The owner is in the file and gets another ID (or none): the ID is free once the owner is written.
+            plan.Releasing = owner;
+            taken = false;
+        }
+
+        if (taken || takenInFile)
         {
             plan.Messages.Add(messages.Get("Import:DuplicateAutomationId", ("AutomationId", automationId)));
         }
 
         seen.TryAdd(automationId, plan.Draft.Code);
+    }
+
+    /// <summary>
+    /// True when the file moves the owner of an ID to another ID or clears it, and so the ID can be taken. Following the chain
+    /// (A takes what B has, B takes what C has...) back to the test case itself is a swap or a cycle, which has no safe order.
+    /// </summary>
+    private static bool GivenUpByTheFile(
+        TestCase owner, string automationId, TestCase? taker, Dictionary<Guid, string?> finalIds, IEnumerable<TestCase> existing)
+    {
+        var holders = existing
+            .Where(x => !string.IsNullOrEmpty(x.AutomationId))
+            .GroupBy(x => x.AutomationId!, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+        var current = owner;
+        for (var steps = 0; steps <= finalIds.Count; steps++)
+        {
+            if (!finalIds.TryGetValue(current.Id, out var next) || string.Equals(next, automationId, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (next == null || !holders.TryGetValue(next, out var holder) || holder.Id == current.Id)
+            {
+                return true;
+            }
+
+            if (taker != null && holder.Id == taker.Id)
+            {
+                return false;
+            }
+
+            current = holder;
+        }
+
+        return false;
     }
 
     /// <summary>A title is required for a new test case, and may not be blanked on an existing one.</summary>
@@ -461,6 +544,9 @@ public class TestCaseTransferAppService : TestCaseManagementAppService, ITestCas
 
         /// <summary>The suite when it exists already, or the default suite.</summary>
         public Guid? SuiteId { get; set; }
+
+        /// <summary>The test case of the file that has to give up the Automation ID this one takes, so it is written first.</summary>
+        public TestCase? Releasing { get; set; }
 
         /// <summary>A suite that the import has yet to create: its id is known once pass 2 has made it.</summary>
         internal SuiteTree.Node? Suite { get; set; }

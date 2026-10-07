@@ -56,6 +56,7 @@
     "TestCaseManagement:DuplicateAutomationId": "Another test case already uses the automation id '{AutomationId}'.",
     "TestCaseManagement:AutomationTooManyResults": "A request may carry at most {Limit} results, and this one has {Count}. Send them in several requests.",
     "TestCaseManagement:IdempotencyKeyReused": "The idempotency key '{Key}' was already used for a different request.",
+    "TestCaseManagement:AutomationPublishInProgress": "Another request with the idempotency key '{Key}' is still being processed. Try again in a moment.",
     "TestCaseManagement:InvalidApiKeyExpiry": "The expiry of an API key must be in the future.",
     "TestCaseManagement:InvalidAutomationRun": "Give either RunId (an existing run) or Run (a new one), not both and not neither.",
     "TestCaseManagement:ExportTooLarge": "The export would have {Count} test cases, and the limit is {Limit}. Narrow it down with the filters.",

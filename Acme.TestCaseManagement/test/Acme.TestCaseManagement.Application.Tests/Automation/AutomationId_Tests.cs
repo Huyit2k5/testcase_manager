@@ -168,4 +168,58 @@ public class AutomationId_Tests : TestCaseManagementApplicationTestBase
         var clash = await _transfer.ImportAsync(Csv("Code,AutomationId\nTC-1,other.id\n", ImportConflictMode.Update));
         clash.Invalid.ShouldBe(1);
     }
+
+    [Fact]
+    public async Task An_Import_May_Move_An_Id_To_A_Free_One_And_Give_The_Old_One_To_Another_Test_Case()
+    {
+        var a = await CreateAsync("TC-1", "id.a");
+        var b = await CreateAsync("TC-2", "id.b");
+
+        // TC-1 takes what TC-2 had, and TC-2 moves on, in the order that would fail if it were written as it comes.
+        var report = await _transfer.ImportAsync(Csv("Code,AutomationId\nTC-1,id.b\nTC-2,id.c\n",ImportConflictMode.Update));
+
+        report.Imported.ShouldBeTrue();
+        (await _testCases.GetAsync(a.Id)).AutomationId.ShouldBe("id.b");
+        (await _testCases.GetAsync(b.Id)).AutomationId.ShouldBe("id.c");
+    }
+
+    [Fact]
+    public async Task An_Import_May_Clear_An_Id_And_Give_It_To_Another_Test_Case()
+    {
+        var a = await CreateAsync("TC-1", "id.a");
+        var b = await CreateAsync("TC-2", "id.b");
+
+        var report = await _transfer.ImportAsync(Csv("Code,AutomationId\nTC-1,id.b\nTC-2,\n",ImportConflictMode.Update));
+
+        report.Imported.ShouldBeTrue();
+        (await _testCases.GetAsync(a.Id)).AutomationId.ShouldBe("id.b");
+        (await _testCases.GetAsync(b.Id)).AutomationId.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task An_Import_That_Swaps_Two_Ids_Is_Refused_Because_There_Is_No_Order_That_Keeps_Them_Unique()
+    {
+        var a = await CreateAsync("TC-1", "id.a");
+        var b = await CreateAsync("TC-2", "id.b");
+
+        var report = await _transfer.ImportAsync(Csv("Code,AutomationId\nTC-1,id.b\nTC-2,id.a\n",ImportConflictMode.Update));
+
+        report.Imported.ShouldBeFalse();
+        report.Invalid.ShouldBe(2);
+        (await _testCases.GetAsync(a.Id)).AutomationId.ShouldBe("id.a");
+        (await _testCases.GetAsync(b.Id)).AutomationId.ShouldBe("id.b");
+    }
+
+    [Fact]
+    public async Task An_Import_Cannot_Take_An_Id_From_A_Test_Case_That_Keeps_It()
+    {
+        await CreateAsync("TC-1", "id.a");
+        await CreateAsync("TC-2", "id.b");
+
+        // TC-2 is in the file, but its ID stays; the file also gives it to TC-1.
+        var report = await _transfer.ImportAsync(Csv("Code,AutomationId\nTC-1,id.b\nTC-2,id.b\n",ImportConflictMode.Update));
+
+        report.Imported.ShouldBeFalse();
+        report.Invalid.ShouldBeGreaterThan(0);
+    }
 }

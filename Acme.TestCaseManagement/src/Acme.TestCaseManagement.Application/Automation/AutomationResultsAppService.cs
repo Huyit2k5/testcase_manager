@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.DistributedLocking;
+using Volo.Abp.Uow;
 
 namespace Acme.TestCaseManagement.Automation;
 
@@ -19,6 +21,7 @@ namespace Acme.TestCaseManagement.Automation;
 public class AutomationResultsAppService : TestCaseManagementAppService, IAutomationResultsAppService
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
+    private static readonly TimeSpan PublishLockWait = TimeSpan.FromSeconds(30);
 
     private readonly ITestCaseRepository _testCaseRepository;
     private readonly IRepository<TestRun, Guid> _runRepository;
@@ -27,6 +30,7 @@ public class AutomationResultsAppService : TestCaseManagementAppService, IAutoma
     private readonly TestRunManager _runManager;
     private readonly DefectLinkManager _defectManager;
     private readonly TestCaseManagementAutomationOptions _options;
+    private readonly IAbpDistributedLock _distributedLock;
 
     public AutomationResultsAppService(
         ITestCaseRepository testCaseRepository,
@@ -35,7 +39,8 @@ public class AutomationResultsAppService : TestCaseManagementAppService, IAutoma
         IRepository<AutomationPublication, Guid> publicationRepository,
         TestRunManager runManager,
         DefectLinkManager defectManager,
-        IOptions<TestCaseManagementAutomationOptions> options)
+        IOptions<TestCaseManagementAutomationOptions> options,
+        IAbpDistributedLock distributedLock)
     {
         _testCaseRepository = testCaseRepository;
         _runRepository = runRepository;
@@ -44,6 +49,7 @@ public class AutomationResultsAppService : TestCaseManagementAppService, IAutoma
         _runManager = runManager;
         _defectManager = defectManager;
         _options = options.Value;
+        _distributedLock = distributedLock;
     }
 
     public virtual async Task<PublishAutomationResultsDto> PublishAsync(PublishAutomationResultsInput input)
@@ -51,6 +57,36 @@ public class AutomationResultsAppService : TestCaseManagementAppService, IAutoma
         EnsureWellFormed(input);
 
         var key = string.IsNullOrWhiteSpace(input.IdempotencyKey) ? null : input.IdempotencyKey.Trim();
+        if (key == null)
+        {
+            return await PublishCoreAsync(input, null);
+        }
+
+        // Two requests with one key must not both pass the check "was this key used?" before either has written. The lock is
+        // held until the unit of work of this request is over (committed or rolled back), so the second request starts
+        // after the first has committed and then finds its answer. (The lock is in this process unless the host registers a
+        // distributed lock provider.)
+        var handle = await _distributedLock.TryAcquireAsync($"tcm-automation-publish:{CurrentTenant.Id}:{key}", PublishLockWait);
+        if (handle == null)
+        {
+            throw new BusinessException(TestCaseManagementErrorCodes.AutomationPublishInProgress).WithData("Key", key);
+        }
+
+        var unitOfWork = CurrentUnitOfWork;
+        if (unitOfWork == null)
+        {
+            await using (handle)
+            {
+                return await PublishCoreAsync(input, key);
+            }
+        }
+
+        unitOfWork.Disposed += (_, _) => handle.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        return await PublishCoreAsync(input, key);
+    }
+
+    private async Task<PublishAutomationResultsDto> PublishCoreAsync(PublishAutomationResultsInput input, string? key)
+    {
         var requestHash = key == null ? null : HashOf(input);
         if (key != null)
         {
