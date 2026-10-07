@@ -24,4 +24,10 @@ public class GetTestCaseListInput : PagedAndSortedResultRequestDto
     public TestKind? Kind { get; set; }
 
     public TestLayer? Layer { get; set; }
+
+    /// <summary>Only test cases that have all of these tags (compared ignoring case).</summary>
+    public List<string>? Tags { get; set; }
+
+    /// <summary>True: only test cases linked to automation (they have an Automation ID); false: only those that are not.</summary>
+    public bool? HasAutomationId { get; set; }
 }

@@ -170,3 +170,11 @@ label.inline input { width: auto; }
 .thumb { width: 56px; height: 42px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); flex: none; }
 .thumb.kind { display: grid; place-items: center; font-size: .7rem; font-weight: 700; color: var(--muted); }
 button.link { background: none; border: 0; padding: 0; color: var(--primary); cursor: pointer; font: inherit; text-align: left; text-decoration: underline; }
+
+.chips { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; background: var(--info-bg); color: var(--info); font-size: .8rem; font-weight: 600; }
+.chip.small { font-size: .72rem; padding: 1px 7px; }
+.chip button { background: none; border: 0; padding: 0; line-height: 1; cursor: pointer; color: inherit; font-size: 1rem; }
+.tag-input { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; background: var(--surface); }
+.tag-input.readonly { border-color: transparent; padding-left: 0; }
+.tag-input input { flex: 1; min-width: 140px; border: 0; outline: none; padding: 2px 0; background: transparent; }

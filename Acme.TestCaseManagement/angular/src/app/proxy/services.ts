@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import {
-  AddDefect, ApiKey, Attachment, ApiKeyCreated, ApplyFlakyFlagsResult, CreateRun, Dashboard, FlakyTestList, DefectLink, EvaluateInput, ExecuteItem, PagedResult, QualityGate, QualityGateEvaluation,
+  AddDefect, ApiKey, Attachment, TagSummary, ApiKeyCreated, ApplyFlakyFlagsResult, CreateRun, Dashboard, FlakyTestList, DefectLink, EvaluateInput, ExecuteItem, PagedResult, QualityGate, QualityGateEvaluation,
   Requirement, RtmMatrix, RtmRequest, SavePlan, SaveQualityGate, SaveRequirement, SaveTestCase, SignOffReport, StartSignOff,
   TestCase, TestCaseDefect, TestCaseListRequest, TestCaseVersion, TestExecution, TestPlan, TestRun, TestRunListRequest,
   TestSuite, TestSuiteTree,
@@ -15,7 +15,10 @@ const ROOT = '/api/test-case-management';
 function query(values: object | undefined): HttpParams {
   let params = new HttpParams();
   for (const [key, value] of Object.entries(values ?? {})) {
-    if (value !== null && value !== undefined && value !== '') {
+    if (Array.isArray(value)) {
+      // A list is sent as a repeated parameter (Tags=a&Tags=b), which is what the API binds.
+      for (const item of value) { params = params.append(key, String(item)); }
+    } else if (value !== null && value !== undefined && value !== '') {
       params = params.set(key, String(value));
     }
   }
@@ -50,6 +53,8 @@ export class TestCaseService {
   changeStatus(id: string, targetStatus: TestCaseStatus, changeSummary?: string | null): Observable<TestCase> {
     return this.http.post<TestCase>(`${ROOT}/test-cases/${id}/status`, { targetStatus, changeSummary });
   }
+  setTags(id: string, tags: string[]): Observable<TestCase> { return this.http.put<TestCase>(`${ROOT}/test-cases/${id}/tags`, { tags }); }
+  tags(): Observable<TagSummary[]> { return this.http.get<TagSummary[]>(`${ROOT}/test-cases/tags`); }
   versions(id: string): Observable<TestCaseVersion[]> { return this.http.get<TestCaseVersion[]>(`${ROOT}/test-cases/${id}/versions`); }
   defects(id: string): Observable<TestCaseDefect[]> { return this.http.get<TestCaseDefect[]>(`${ROOT}/test-cases/${id}/defects`); }
 }

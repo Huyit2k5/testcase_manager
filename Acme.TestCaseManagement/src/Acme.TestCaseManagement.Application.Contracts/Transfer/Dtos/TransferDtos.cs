@@ -28,6 +28,12 @@ public class ExportTestCasesInput
     public TestKind? Kind { get; set; }
 
     public TestLayer? Layer { get; set; }
+
+    /// <summary>Only test cases that have all of these tags (compared ignoring case).</summary>
+    public List<string>? Tags { get; set; }
+
+    /// <summary>True: only test cases with an Automation ID; false: only those without one.</summary>
+    public bool? HasAutomationId { get; set; }
 }
 
 /// <summary>A file of test cases to import (multipart form).</summary>

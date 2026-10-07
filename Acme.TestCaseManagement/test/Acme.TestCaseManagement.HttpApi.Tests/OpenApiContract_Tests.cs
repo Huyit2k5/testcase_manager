@@ -40,6 +40,8 @@ public class OpenApiContract_Tests
         "TestCase_Update PUT /test-cases/{id}",
         "TestCase_Delete DELETE /test-cases/{id}",
         "TestCase_ReorderSteps PUT /test-cases/{id}/steps/order",
+        "TestCase_SetTags PUT /test-cases/{id}/tags",
+        "TestCase_GetTags GET /test-cases/tags",
         "TestCase_ChangeStatus POST /test-cases/{id}/status",
         "TestCase_GetVersions GET /test-cases/{id}/versions",
         "TestCase_GetVersion GET /test-cases/{id}/versions/{versionNumber}",
@@ -220,7 +222,7 @@ public class OpenApiContract_Tests
         }
 
         QueryParameters(document, "TestCaseTransfer_Export").ShouldBe(
-            new[] { "Format", "Filter", "SuiteId", "IncludeDescendantSuites", "Status", "Priority", "Severity", "ExecutionType", "Kind", "Layer" },
+            new[] { "Format", "Filter", "SuiteId", "IncludeDescendantSuites", "Status", "Priority", "Severity", "ExecutionType", "Kind", "Layer", "Tags", "HasAutomationId" },
             ignoreOrder: true);
         QueryParameters(document, "TestResultTransfer_Export").ShouldBe(new[] { "format" });
     }
@@ -274,7 +276,7 @@ public class OpenApiContract_Tests
         QueryParameters(document, "TestCase_GetList").ShouldBe(
             new[]
             {
-                "Filter", "SuiteId", "IncludeDescendantSuites", "Status", "Priority", "Severity", "ExecutionType", "Kind", "Layer",
+                "Filter", "SuiteId", "IncludeDescendantSuites", "Status", "Priority", "Severity", "ExecutionType", "Kind", "Layer", "Tags", "HasAutomationId",
                 "Sorting", "SkipCount", "MaxResultCount",
             },
             ignoreOrder: true);

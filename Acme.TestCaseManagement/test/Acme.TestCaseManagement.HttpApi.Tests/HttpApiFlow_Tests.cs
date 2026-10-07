@@ -306,6 +306,10 @@ public class HttpApiFlow_Tests
         published.Recorded.ShouldBe(1);
         (await qaLead.PostAsync<ApiKeyDto>($"{Root}/api-keys/{apiKey.Id}/revoke")).IsActive.ShouldBeFalse();
 
+        // ---- Tags: label a test case and ask for the tags in use (see HttpApiTags_Tests) ------------------------------------
+        (await qaLead.PutAsync<TestCaseDto>($"{Root}/test-cases/{automated.Id}/tags", new SetTestCaseTagsDto { Tags = { "flow" } })).Tags.ShouldBe(new[] { "flow" });
+        (await qaLead.GetAsync<List<TagSummaryDto>>($"{Root}/test-cases/tags")).ShouldContain(t => t.Name == "flow");
+
         // ---- Insights: the flaky list and the dashboard (see HttpApiInsights_Tests for the detail) ------------------------
         (await qaLead.GetAsync<FlakyTestListDto>($"{Root}/flaky-tests")).Settings.WindowSize.ShouldBeGreaterThan(0);
         (await qaLead.PostAsync<ApplyFlakyFlagsResultDto>($"{Root}/flaky-tests/apply", new ApplyFlakyFlagsInput { ClearRecovered = true })).Flagged.ShouldBe(0);

@@ -11,10 +11,11 @@ import {
 import { AttachmentOwnerType } from '../../proxy/enums';
 import { TestCaseService } from '../../proxy/services';
 import { AttachmentsComponent } from '../attachments/attachments';
+import { TagInputComponent } from '../tags/tag-input';
 
 @Component({
   selector: 'app-test-case-detail',
-  imports: [ModalComponent, FormatDatePipe, TranslatePipe, AttachmentsComponent],
+  imports: [ModalComponent, FormatDatePipe, TranslatePipe, AttachmentsComponent, TagInputComponent],
   template: `
     <app-modal [title]="testCase().code + ' - ' + testCase().title" [wide]="true" (closed)="closed.emit()">
       <div class="row" style="margin-bottom:12px">
@@ -23,6 +24,11 @@ import { AttachmentsComponent } from '../attachments/attachments';
         <span class="badge" [class]="badgeOf('severity', testCase().severity)">{{ 'detail.severityBadge' | t: { value: label(severities, testCase().severity) } }}</span>
         <span class="muted">{{ label(kinds, testCase().kind) }} / {{ label(layers, testCase().layer) }} / {{ label(executions, testCase().executionType) }}</span>
         <span class="muted">{{ 'detail.version' | t: { n: testCase().currentVersion } }}</span>
+      </div>
+
+      <div class="field">
+        <label>{{ 'tags.title' | t }}</label>
+        <app-tag-input [tags]="tags()" (tagsChange)="tags.set($event)" (edited)="saveTags($event)" [suggestions]="suggestions()" [readonly]="!auth.can(perm.TestCases.Update)" />
       </div>
 
       @if (testCase().description) { <p>{{ testCase().description }}</p> }
@@ -98,8 +104,12 @@ export class TestCaseDetailComponent implements OnInit {
   readonly testCase = input.required<TestCase>();
   readonly edit = output<TestCase>();
   readonly changed = output<void>();
+  /** The tags were saved; the list behind the dialog shows them. */
+  readonly tagsSaved = output<void>();
   readonly closed = output<void>();
 
+  protected readonly tags = signal<string[]>([]);
+  protected readonly suggestions = signal<string[]>([]);
   protected readonly versions = signal<TestCaseVersion[]>([]);
   protected readonly defects = signal<TestCaseDefect[]>([]);
 
@@ -114,11 +124,21 @@ export class TestCaseDetailComponent implements OnInit {
 
   ngOnInit(): void {
     const id = this.testCase().id;
+    this.tags.set([...this.testCase().tags]);
+    this.service.tags().subscribe(all => this.suggestions.set(all.map(t => t.name)));
     this.service.versions(id).subscribe(v => this.versions.set(v));
     this.service.defects(id).subscribe(d => this.defects.set(d));
   }
 
   protected label(type: object, value: number): string { return this.i18n.enumText(type, value); }
+
+  /** Tags are labels: saved on their own, with no new version, and the dialog stays open. */
+  protected saveTags(tags: string[]): void {
+    this.service.setTags(this.testCase().id, tags).subscribe({
+      next: saved => { this.tags.set(saved.tags); this.tagsSaved.emit(); },
+      error: () => this.tags.set([...this.testCase().tags]),
+    });
+  }
 
   /** The moves the domain allows, minus those the permissions rule out (approving needs its own permission). */
   protected transitions(): TestCaseStatus[] {

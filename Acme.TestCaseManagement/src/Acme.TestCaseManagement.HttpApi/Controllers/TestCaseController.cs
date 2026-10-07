@@ -61,6 +61,20 @@ public class TestCaseController : TestCaseManagementController, ITestCaseAppServ
     }
 
     /// <inheritdoc />
+    [HttpPut("{id:guid}/tags")]
+    public virtual Task<TestCaseDto> SetTagsAsync(Guid id, SetTestCaseTagsDto input)
+    {
+        return _testCaseAppService.SetTagsAsync(id, input);
+    }
+
+    /// <inheritdoc />
+    [HttpGet("tags")]
+    public virtual Task<List<TagSummaryDto>> GetTagsAsync()
+    {
+        return _testCaseAppService.GetTagsAsync();
+    }
+
+    /// <inheritdoc />
     [HttpPost("{id:guid}/status")]
     public virtual Task<TestCaseDto> ChangeStatusAsync(Guid id, ChangeTestCaseStatusDto input)
     {

@@ -110,6 +110,7 @@ public class HttpApiAutomation_Tests
             (HttpMethod.Get, $"{Root}/api-keys", null),
             (HttpMethod.Post, $"{Root}/api-keys", new CreateApiKeyDto { Name = "Escalate" }),
             (HttpMethod.Get, $"{Root}/dashboard", null),
+            (HttpMethod.Get, $"{Root}/test-cases/tags", null),
             (HttpMethod.Get, $"{Root}/attachments?OwnerType=0&OwnerIds={Guid.NewGuid()}", null),
             (HttpMethod.Get, $"{Root}/flaky-tests", null),
             (HttpMethod.Post, $"{Root}/flaky-tests/apply", new ApplyFlakyFlagsInput()),

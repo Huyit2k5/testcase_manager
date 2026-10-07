@@ -39,6 +39,12 @@ public class CreateUpdateTestCaseDto
 
     public bool IsFlaky { get; set; }
 
+    /// <summary>
+    /// The complete list of tags. Leave it out (null) to keep the tags the test case has; an empty list removes them all.
+    /// Tags are labels: they are not part of a version.
+    /// </summary>
+    public List<string>? Tags { get; set; }
+
     /// <summary>The complete ordered step list. On update, steps that are omitted are removed.</summary>
     public List<TestStepDto> Steps { get; set; } = new();
 

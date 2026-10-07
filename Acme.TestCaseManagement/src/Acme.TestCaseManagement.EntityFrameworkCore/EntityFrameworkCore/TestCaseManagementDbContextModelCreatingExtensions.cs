@@ -64,6 +64,20 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
             b.HasIndex(x => x.AutomationId);
 
             b.HasMany(x => x.Steps).WithOne().HasForeignKey(x => x.TestCaseId).IsRequired().OnDelete(DeleteBehavior.Cascade);
+            b.HasMany(x => x.Tags).WithOne().HasForeignKey(x => x.TestCaseId).IsRequired().OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<TestCaseTag>(b =>
+        {
+            b.ToTable(TableName("TestCaseTags"), TestCaseManagementDbProperties.DbSchema);
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Name).IsRequired().HasMaxLength(TagConsts.MaxLength);
+            b.Property(x => x.NormalizedName).IsRequired().HasMaxLength(TagConsts.MaxLength);
+
+            // A test case has a tag once; and "the test cases with this tag" is the question a filter asks.
+            b.HasIndex(x => new { x.TestCaseId, x.NormalizedName }).IsUnique();
+            b.HasIndex(x => x.NormalizedName);
         });
 
         builder.Entity<TestStep>(b =>

@@ -102,3 +102,10 @@ public static class AttachmentConsts
     /// <summary>Name of the blob container that holds the files.</summary>
     public const string ContainerName = "test-case-management-attachments";
 }
+
+public static class TagConsts
+{
+    public const int MaxLength = 50;
+
+    public const int MaxPerTestCase = 20;
+}

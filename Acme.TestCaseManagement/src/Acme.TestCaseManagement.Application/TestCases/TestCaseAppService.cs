@@ -63,6 +63,8 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
             ExecutionType = input.ExecutionType,
             Kind = input.Kind,
             Layer = input.Layer,
+            Tags = input.Tags,
+            HasAutomationId = input.HasAutomationId,
         };
 
         var totalCount = await _testCaseRepository.GetFilteredCountAsync(filter);
@@ -130,6 +132,25 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
         await _testCaseRepository.UpdateAsync(testCase, autoSave: true);
 
         return ObjectMapper.Map<TestCase, TestCaseDto>(testCase);
+    }
+
+    [Authorize(TestCaseManagementPermissions.TestCases.Update)]
+    public virtual async Task<TestCaseDto> SetTagsAsync(Guid id, SetTestCaseTagsDto input)
+    {
+        var testCase = await _testCaseRepository.GetAsync(id);
+
+        // Labels are not content: no new version, and the status stays as it is.
+        testCase.SetTags(input.Tags);
+        await _testCaseRepository.UpdateAsync(testCase, autoSave: true);
+
+        return ObjectMapper.Map<TestCase, TestCaseDto>(testCase);
+    }
+
+    public virtual async Task<List<TagSummaryDto>> GetTagsAsync()
+    {
+        return (await _testCaseRepository.GetTagSummariesAsync())
+            .Select(t => new TagSummaryDto { Name = t.Name, Count = t.Count })
+            .ToList();
     }
 
     [Authorize(TestCaseManagementPermissions.TestCases.Update)]
@@ -208,6 +229,11 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
             input.Layer,
             TestCaseManager.NormalizeAutomationId(input.AutomationId));
         testCase.SetFlaky(input.IsFlaky);
+        if (input.Tags != null)
+        {
+            testCase.SetTags(input.Tags);
+        }
+
         testCase.SetSteps(
             input.Steps
                 .Select(s => new TestStepInput(s.Id, s.Action, s.ExpectedResult, s.TestData))

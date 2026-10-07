@@ -750,6 +750,40 @@ screenshot (a pasted image is named after the time), thumbnails of images, downl
   its screenshots yet).
 - Tested with the file system provider and an in-memory one only.
 
+### 4.12. Phase 13: tags and the automation facet of search (FR-024)
+
+Added after Phase 12. A test case has free-form tags (`TestCaseTag`, a child entity like a step), and the list, the export and the screen filter
+by them and by whether an Automation ID is linked. The facets of FR-024 are now: text, suite, priority, severity, status, kind, layer, execution
+type, tag and automation. (Reusable steps, FR-005, are a separate piece of work.)
+
+**Model.** Free-text labels, as in the labels of Jira and Xray and the tags of TestRail, rather than a managed catalogue of tags: nothing to
+administer, a new tag costs nothing, and the screen suggests the ones in use (`GET test-cases/tags`: every tag with the number of test cases that
+have it, deleted test cases not counted). The rules, in one place (`TagNames`) so that the screen, the API and the import agree: a tag is cleaned
+(trimmed, runs of white space made one space), is 1 to 50 characters, has no comma, semicolon or control character (the two separate tags in a file
+and on screen), and a test case has at most 20. "Smoke" and "smoke" are one tag; the first spelling is kept and the list shows the spelling most used.
+A refused tag is a `BusinessException` that names the tag, with the message in the language asked for.
+
+**Tags are labels, not content.** They are not in any `TestCaseVersion`. `PUT test-cases/{id}/tags` replaces the tags without publishing a version
+and without leaving the status, also for an approved test case, and needs `TestCases.Update` (a tester can label). On a normal update, `Tags` omitted
+(null) keeps the tags and an empty list removes them, so a client that does not know about tags does not wipe them; sending tags with an update of an
+approved test case still publishes a version, as any update does.
+
+**Filter.** `Tags` (repeat the parameter) means all of them, compared ignoring case; `HasAutomationId` true or false. The same two are on the export,
+so that "export what the filters show" stays true.
+
+**Import and export.** A `Tags` column, tags separated by semicolons. As with every column: absent leaves the tags of an existing test case alone, present
+and blank clears them, the same tags in another case or order are no change, a row may not contradict the first row of its test case, and a tag that cannot
+be used makes that row invalid (nothing is written, as always).
+
+**Front end.** A chip input (Enter, comma or semicolon adds, Backspace removes the last, a pasted list becomes several tags) in the form and, in place,
+in the detail dialog (saved on its own, with no new version), chips in the list, and the tag and automation filters.
+
+**Not covered.**
+- No rename or merge of a tag across test cases, and no colours: a tag is text.
+- Tags are on test cases only, not on runs or plans.
+- The filter takes one tag on screen (the API takes several, all required).
+- Tested on SQLite only.
+
 ## 5. Security, RBAC & Permissions
 
 Defined in `TestCaseManagementPermissions`:

@@ -23,14 +23,14 @@ export interface TestCase {
   preconditions: string | null; postconditions: string | null;
   priority: PriorityLevel; severity: SeverityLevel; status: TestCaseStatus; executionType: ExecutionType;
   kind: TestKind; layer: TestLayer; automationId: string | null; isFlaky: boolean; currentVersion: number;
-  steps: TestStep[]; creationTime: string; lastModificationTime: string | null;
+  tags: string[]; steps: TestStep[]; creationTime: string; lastModificationTime: string | null;
 }
 
 export interface SaveTestCase {
   suiteId: string; code: string; title: string; description?: string | null;
   preconditions?: string | null; postconditions?: string | null;
   priority: PriorityLevel; severity: SeverityLevel; executionType: ExecutionType; kind: TestKind; layer: TestLayer;
-  automationId?: string | null; isFlaky: boolean; steps: TestStep[]; changeSummary?: string | null;
+  automationId?: string | null; isFlaky: boolean; tags?: string[] | null; steps: TestStep[]; changeSummary?: string | null;
 }
 
 export interface TestCaseVersion {
@@ -47,12 +47,13 @@ export interface TestCaseDefect {
 export interface TestCaseListRequest extends PagedRequest {
   filter?: string; suiteId?: string | null; includeDescendantSuites?: boolean;
   status?: TestCaseStatus | null; priority?: PriorityLevel | null; severity?: SeverityLevel | null;
+  tags?: string[]; hasAutomationId?: boolean | null;
 }
 
 /** The filters of an export: those of the test case list, without paging. */
 export interface TestCaseExportRequest {
   format: TransferFormat; filter?: string; suiteId?: string | null; includeDescendantSuites?: boolean;
-  status?: TestCaseStatus | null; priority?: PriorityLevel | null;
+  status?: TestCaseStatus | null; priority?: PriorityLevel | null; tags?: string[]; hasAutomationId?: boolean | null;
 }
 
 export interface ImportItemResult { row: number; code: string | null; outcome: ImportOutcome; messages: string[] }
@@ -244,3 +245,5 @@ export interface Attachment {
   creationTime: string;
   creatorId: string | null;
 }
+
+export interface TagSummary { name: string; count: number }

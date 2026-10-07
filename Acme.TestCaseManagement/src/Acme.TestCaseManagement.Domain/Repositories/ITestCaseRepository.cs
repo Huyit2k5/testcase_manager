@@ -23,7 +23,16 @@ public class TestCaseFilter
     public TestKind? Kind { get; set; }
 
     public TestLayer? Layer { get; set; }
+
+    /// <summary>Tags a test case must have, all of them; compared ignoring case.</summary>
+    public IReadOnlyCollection<string>? Tags { get; set; }
+
+    /// <summary>True: only test cases with an Automation ID; false: only those without one.</summary>
+    public bool? HasAutomationId { get; set; }
 }
+
+/// <summary>A tag and the number of test cases (not deleted) that have it.</summary>
+public record TagSummary(string Name, int Count);
 
 public interface ITestCaseRepository : IRepository<TestCase, Guid>
 {
@@ -44,4 +53,7 @@ public interface ITestCaseRepository : IRepository<TestCase, Guid>
         CancellationToken cancellationToken = default);
 
     Task<long> GetFilteredCountAsync(TestCaseFilter filter, CancellationToken cancellationToken = default);
+
+    /// <summary>Every tag in use, with the number of test cases that have it, the most used first.</summary>
+    Task<List<TagSummary>> GetTagSummariesAsync(CancellationToken cancellationToken = default);
 }

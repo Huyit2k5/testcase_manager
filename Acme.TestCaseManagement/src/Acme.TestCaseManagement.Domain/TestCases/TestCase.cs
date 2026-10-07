@@ -47,11 +47,14 @@ public class TestCase : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public virtual ICollection<TestStep> Steps { get; protected set; }
 
+    public virtual ICollection<TestCaseTag> Tags { get; protected set; }
+
     protected TestCase()
     {
         Code = default!;
         Title = default!;
         Steps = new List<TestStep>();
+        Tags = new List<TestCaseTag>();
     }
 
     public TestCase(Guid id, Guid? tenantId, Guid suiteId, string code, string title)
@@ -66,6 +69,7 @@ public class TestCase : FullAuditedAggregateRoot<Guid>, IMultiTenant
         Kind = TestKind.Functional;
         Layer = TestLayer.Acceptance;
         Steps = new List<TestStep>();
+        Tags = new List<TestCaseTag>();
         Code = NormalizeCode(code);
         Title = NormalizeTitle(title);
     }
@@ -160,6 +164,27 @@ public class TestCase : FullAuditedAggregateRoot<Guid>, IMultiTenant
         foreach (var added in result.Where(s => !Steps.Contains(s)))
         {
             Steps.Add(added);
+        }
+    }
+
+    /// <summary>
+    /// Makes the tags equal to <paramref name="names"/>. Tags are cleaned, doubles (ignoring case) are dropped, and a tag that is
+    /// kept stays the same row, so that nothing is deleted and inserted for a tag that did not change. Not part of any version.
+    /// </summary>
+    public virtual void SetTags(IEnumerable<string?>? names)
+    {
+        var wanted = TagNames.Prepare(names);
+        var wantedKeys = wanted.Select(TagNames.Normalize).ToHashSet();
+
+        foreach (var removed in Tags.Where(t => !wantedKeys.Contains(t.NormalizedName)).ToList())
+        {
+            Tags.Remove(removed);
+        }
+
+        var kept = Tags.Select(t => t.NormalizedName).ToHashSet();
+        foreach (var name in wanted.Where(n => !kept.Contains(TagNames.Normalize(n))))
+        {
+            Tags.Add(new TestCaseTag(Guid.CreateVersion7(), Id, name));
         }
     }
 

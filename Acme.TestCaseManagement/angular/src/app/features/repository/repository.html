@@ -42,6 +42,15 @@
             <option value="">{{ 'common.anyStatus' | t }}</option>
             @for (o of statusOptions; track o.value) { <option [ngValue]="o.value">{{ label(statusEnum, o.value) }}</option> }
           </select>
+          <select name="tag" [(ngModel)]="tag" (ngModelChange)="applyFilters()" [attr.aria-label]="'tags.title' | t" style="width: auto" data-test="tag-filter">
+            <option value="">{{ 'repo.anyTag' | t }}</option>
+            @for (t of tagOptions(); track t.name) { <option [value]="t.name">{{ t.name }} ({{ t.count }})</option> }
+          </select>
+          <select name="automation" [(ngModel)]="automation" (ngModelChange)="applyFilters()" [attr.aria-label]="'repo.automation' | t" style="width: auto">
+            <option value="">{{ 'repo.anyAutomation' | t }}</option>
+            <option value="linked">{{ 'repo.automationLinked' | t }}</option>
+            <option value="unlinked">{{ 'repo.automationUnlinked' | t }}</option>
+          </select>
           <button type="submit" class="btn">{{ 'common.search' | t }}</button>
         </form>
       </div>
@@ -55,7 +64,7 @@
             @for (tc of cases(); track tc.id) {
               <tr class="clickable" tabindex="0" (click)="open(tc)" (keydown.enter)="open(tc)">
                 <td class="mono nowrap">{{ tc.code }}</td>
-                <td>{{ tc.title }}</td>
+                <td>{{ tc.title }}@if (tc.tags.length) { <div class="chips">@for (t of tc.tags; track t) { <span class="chip small">{{ t }}</span> }</div> }</td>
                 <td><span class="badge" [class]="badgeOf('priority', tc.priority)">{{ label(priorityEnum, tc.priority) }}</span></td>
                 <td><span class="badge" [class]="badgeOf('severity', tc.severity)">{{ label(severityEnum, tc.severity) }}</span></td>
                 <td><span class="badge" [class]="badgeOf('case', tc.status)">{{ label(statusEnum, tc.status) }}</span></td>
@@ -105,7 +114,7 @@
 }
 
 @if (detail(); as testCase) {
-  <app-test-case-detail [testCase]="testCase" (edit)="editCase($event)" (changed)="onChanged()" (closed)="detail.set(null)" />
+  <app-test-case-detail [testCase]="testCase" (edit)="editCase($event)" (changed)="onChanged()" (tagsSaved)="loadCases(); loadTagsList()" (closed)="detail.set(null)" />
 }
 
 @if (form(); as f) {

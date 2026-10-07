@@ -22,6 +22,15 @@ public interface ITestCaseAppService : IApplicationService
     Task<TestCaseDto> ReorderStepsAsync(Guid id, ReorderTestStepsDto input);
 
     /// <summary>
+    /// Replaces the tags of a test case. Tags are labels, so this publishes no version and needs no approval, even for an approved
+    /// test case.
+    /// </summary>
+    Task<TestCaseDto> SetTagsAsync(Guid id, SetTestCaseTagsDto input);
+
+    /// <summary>Every tag in use with the number of test cases that have it, the most used first; for a filter or a suggestion.</summary>
+    Task<List<TagSummaryDto>> GetTagsAsync();
+
+    /// <summary>
     /// Moves the test case through its lifecycle (Draft, UnderReview, Approved, Deprecated).
     /// Approving requires the Approve permission and publishes a version snapshot.
     /// </summary>

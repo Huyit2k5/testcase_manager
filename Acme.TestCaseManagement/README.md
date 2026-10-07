@@ -125,7 +125,8 @@ All routes start with `api/test-case-management/`.
 | Route | Purpose |
 |---|---|
 | `suites` | suite tree, create, update, move, delete |
-| `test-cases` | test cases, step ordering, status changes, versions, linked defects |
+| `test-cases` | test cases, step ordering, status changes, versions, linked defects; `GET` filters by text, suite, status, priority, severity, kind, layer, execution type, `Tags` (all of them) and `HasAutomationId` |
+| `test-cases/{id}/tags`, `test-cases/tags` | replace the tags of a test case (no new version), and list the tags in use with their counts |
 | `test-cases/export`, `test-cases/import` | Excel or CSV export (with the list filters) and import of test cases |
 | `runs/{runId}/results/export`, `.../import` | Excel or CSV export of every attempt of a run, and import of results |
 | `plans` | test plans and plan status |
@@ -156,6 +157,12 @@ Group `TestCaseManagement`. Each `...Default` permission allows reading; the chi
 | `TestCaseManagement.SignOff` | `Approve` |
 | `TestCaseManagement.ApiKeys` | `Manage` (create and revoke keys) |
 | `TestCaseManagement.AutomationResults` | `Publish` (the only permission an API key has) |
+
+## Tags
+
+Test cases carry free-form tags (at most 20 of 50 characters, no comma or semicolon, compared ignoring case). Tags are labels: they are not part of a
+version, `PUT test-cases/{id}/tags` changes them without publishing one, and they are filtered with `Tags=a&Tags=b` (all required). The import and export have a
+`Tags` column with the tags separated by semicolons.
 
 ## Import and export
 
@@ -268,6 +275,6 @@ symbol packages. Requires the .NET SDK 10 (see `global.json`).
 ## Angular front end
 
 `angular/` holds a ready-made UI (Angular 22) for the module: test repository with suite tree, versions and defects;
-plans and runs with execution and retest; the traceability matrix; quality gates and two-user sign-off; API keys for pipelines; a dashboard with burn-down, velocity, defect density and flaky tests; attachments with screenshot paste, in English and
+plans and runs with execution and retest; the traceability matrix; quality gates and two-user sign-off; API keys for pipelines; a dashboard with burn-down, velocity, defect density and flaky tests; attachments with screenshot paste; tags and filters, in English and
 Vietnamese with a language switch. See
 [angular/README.md](angular/README.md). It is not packed into the NuGet packages.

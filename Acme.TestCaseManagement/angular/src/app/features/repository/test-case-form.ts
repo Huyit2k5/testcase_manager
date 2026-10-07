@@ -6,11 +6,12 @@ import { I18nService, TranslatePipe } from '../../core/i18n/i18n';
 import { SaveTestCase, TestCase, TestStep } from '../../proxy/dtos';
 import { ExecutionType, PriorityLevel, SeverityLevel, TestKind, TestLayer, enumOptions } from '../../proxy/enums';
 import { TestCaseService } from '../../proxy/services';
+import { TagInputComponent } from '../tags/tag-input';
 import { SuiteOption } from './suite-options';
 
 @Component({
   selector: 'app-test-case-form',
-  imports: [FormsModule, TranslatePipe, ModalComponent],
+  imports: [FormsModule, TranslatePipe, ModalComponent, TagInputComponent],
   template: `
     <app-modal [title]="existing() ? ('form.editCase' | t: { code: existing()!.code }) : ('form.newCase' | t)" [wide]="true" (closed)="closed.emit()">
       <form id="tc-form" (ngSubmit)="save()">
@@ -84,6 +85,10 @@ import { SuiteOption } from './suite-options';
         </div>
         <div class="field">
           <label class="check"><input type="checkbox" name="flaky" [(ngModel)]="model.isFlaky" /> {{ 'form.flaky' | t }}</label>
+          <div class="field">
+            <label>{{ 'tags.title' | t }}</label>
+            <app-tag-input [(tags)]="tags" [suggestions]="suggestions()" />
+          </div>
         </div>
 
         <h3>{{ 'common.steps' | t }}</h3>
@@ -155,9 +160,14 @@ export class TestCaseFormComponent implements OnInit {
     kind: TestKind.Functional, layer: TestLayer.Acceptance, automationId: '', isFlaky: false, steps: [], changeSummary: '',
   };
 
+  protected tags: string[] = [];
+  protected readonly suggestions = signal<string[]>([]);
+
   ngOnInit(): void {
+    this.service.tags().subscribe(all => this.suggestions.set(all.map(t => t.name)));
     const existing = this.existing();
     if (existing) {
+      this.tags = [...existing.tags];
       this.model = {
         suiteId: existing.suiteId, code: existing.code, title: existing.title, description: existing.description,
         preconditions: existing.preconditions, postconditions: existing.postconditions, priority: existing.priority,
@@ -196,6 +206,7 @@ export class TestCaseFormComponent implements OnInit {
       preconditions: this.model.preconditions || null,
       postconditions: this.model.postconditions || null,
       automationId: this.model.automationId || null,
+      tags: this.tags,
       changeSummary: this.model.changeSummary || null,
       steps: this.model.steps.map(s => ({ id: s.id ?? null, action: s.action, expectedResult: s.expectedResult, testData: s.testData || null })),
     };

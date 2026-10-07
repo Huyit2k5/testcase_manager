@@ -5,7 +5,7 @@ import { AuthService, Permissions } from '../../core/auth';
 import { I18nService, TranslatePipe } from '../../core/i18n/i18n';
 import { ToastService } from '../../core/core';
 import { badge } from '../../core/ui';
-import { TestCase, TestSuiteTree } from '../../proxy/dtos';
+import { TagSummary, TestCase, TestSuiteTree } from '../../proxy/dtos';
 import { PriorityLevel, SeverityLevel, TestCaseStatus, TransferFormat, enumOptions } from '../../proxy/enums';
 import { TestCaseService, TestSuiteService } from '../../proxy/services';
 import { TransferService, saveFile } from '../../proxy/transfer';
@@ -43,6 +43,9 @@ export class RepositoryComponent implements OnInit {
   protected search = '';
   protected priority: PriorityLevel | '' = '';
   protected status: TestCaseStatus | '' = '';
+  protected tag = '';
+  protected automation: '' | 'linked' | 'unlinked' = '';
+  protected readonly tagOptions = signal<TagSummary[]>([]);
 
   protected readonly priorityOptions = enumOptions(PriorityLevel);
   protected readonly statusOptions = enumOptions(TestCaseStatus);
@@ -61,6 +64,7 @@ export class RepositoryComponent implements OnInit {
   ngOnInit(): void {
     this.loadTree();
     this.loadCases();
+    this.loadTags();
   }
 
   protected label(type: object, value: number): string { return this.i18n.enumText(type, value); }
@@ -92,6 +96,20 @@ export class RepositoryComponent implements OnInit {
     });
   }
 
+  private hasAutomationId(): boolean | null {
+    return this.automation === 'linked' ? true : this.automation === 'unlinked' ? false : null;
+  }
+
+  protected loadTagsList(): void { this.loadTags(); }
+
+  private loadTags(): void {
+    this.caseService.tags().subscribe(tags => {
+      this.tagOptions.set(tags);
+      // A tag that no test case has any more cannot stay selected.
+      if (this.tag && !tags.some(t => t.name.toLowerCase() === this.tag.toLowerCase())) { this.tag = ''; }
+    });
+  }
+
   protected loadCases(): void {
     this.loading.set(true);
     this.caseService.list({
@@ -100,6 +118,8 @@ export class RepositoryComponent implements OnInit {
       includeDescendantSuites: true,
       priority: this.priority === '' ? null : this.priority,
       status: this.status === '' ? null : this.status,
+      tags: this.tag ? [this.tag] : [],
+      hasAutomationId: this.hasAutomationId(),
       skipCount: this.page() * PAGE_SIZE,
       maxResultCount: PAGE_SIZE,
       sorting: 'code',
@@ -123,6 +143,8 @@ export class RepositoryComponent implements OnInit {
       includeDescendantSuites: true,
       status: this.status === '' ? null : this.status,
       priority: this.priority === '' ? null : this.priority,
+      tags: this.tag ? [this.tag] : [],
+      hasAutomationId: this.hasAutomationId(),
     }).subscribe(file => {
       saveFile(file);
       this.toast.success(this.i18n.t('transfer.exported', { name: file.fileName }));
@@ -189,5 +211,6 @@ export class RepositoryComponent implements OnInit {
   private refresh(): void {
     this.loadTree();
     this.loadCases();
+    this.loadTags();
   }
 }

@@ -482,6 +482,15 @@ export const en = {
   'att.deleted': 'The file is deleted.',
   'enum.AttachmentOwnerType.TestCase': 'Test case',
   'enum.AttachmentOwnerType.TestExecution': 'Attempt',
+  'tags.title': 'Tags',
+  'tags.add': 'Type a tag and press Enter',
+  'tags.addMore': 'Add a tag',
+  'tags.remove': 'Remove the tag {tag}',
+  'repo.anyTag': 'Any tag',
+  'repo.automation': 'Automation',
+  'repo.anyAutomation': 'Any automation',
+  'repo.automationLinked': 'Linked to automation',
+  'repo.automationUnlinked': 'Not linked to automation',
 } as const;
 
 export type MessageKey = keyof typeof en;

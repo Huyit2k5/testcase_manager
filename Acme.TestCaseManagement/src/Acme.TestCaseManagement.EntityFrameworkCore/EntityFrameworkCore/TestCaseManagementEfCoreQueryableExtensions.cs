@@ -9,7 +9,7 @@ public static class TestCaseManagementEfCoreQueryableExtensions
 {
     public static IQueryable<TestCase> IncludeDetails(this IQueryable<TestCase> queryable, bool include = true)
     {
-        return include ? queryable.Include(x => x.Steps) : queryable;
+        return include ? queryable.Include(x => x.Steps).Include(x => x.Tags) : queryable;
     }
 
     public static IQueryable<SignOffReport> IncludeDetails(this IQueryable<SignOffReport> queryable, bool include = true)

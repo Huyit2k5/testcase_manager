@@ -35,6 +35,9 @@ public class TestCaseDto : AuditedEntityDto<Guid>
 
     public int CurrentVersion { get; set; }
 
+    /// <summary>The tags, ordered by name. Not part of any version.</summary>
+    public List<string> Tags { get; set; } = new();
+
     /// <summary>Ordered by <see cref="TestStepDto.StepOrder"/>. Empty in list results; use GetAsync for the full test case.</summary>
     public List<TestStepDto> Steps { get; set; } = new();
 }

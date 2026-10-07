@@ -33,6 +33,8 @@ export class TransferService {
     if (request.includeDescendantSuites !== undefined) { params = params.set('IncludeDescendantSuites', String(request.includeDescendantSuites)); }
     if (request.status !== null && request.status !== undefined) { params = params.set('Status', String(request.status)); }
     if (request.priority !== null && request.priority !== undefined) { params = params.set('Priority', String(request.priority)); }
+    for (const tag of request.tags ?? []) { params = params.append('Tags', tag); }
+    if (request.hasAutomationId !== null && request.hasAutomationId !== undefined) { params = params.set('HasAutomationId', String(request.hasAutomationId)); }
     return this.download(`${ROOT}/test-cases/export`, params, request.format);
   }
 
@@ -85,9 +87,9 @@ export function saveFile(file: DownloadedFile): void {
 export const TEMPLATES = {
   cases: {
     fileName: 'test-cases-template.csv',
-    text: 'Suite,Code,Title,Description,Preconditions,Postconditions,Priority,Severity,Kind,Layer,ExecutionType,AutomationId,Flaky,Action,ExpectedResult,TestData\r\n'
-      + 'Payments/Cards,PAY-001,Pay by card,,,,High,Critical,Functional,Acceptance,Manual,,false,Open the checkout page,The page is shown,\r\n'
-      + 'Payments/Cards,PAY-001,Pay by card,,,,High,Critical,Functional,Acceptance,Manual,,false,Pay with a valid card,The order is confirmed,4111 1111 1111 1111\r\n',
+    text: 'Suite,Code,Title,Description,Preconditions,Postconditions,Priority,Severity,Kind,Layer,ExecutionType,AutomationId,Flaky,Tags,Action,ExpectedResult,TestData\r\n'
+      + 'Payments/Cards,PAY-001,Pay by card,,,,High,Critical,Functional,Acceptance,Manual,,false,smoke; payments,Open the checkout page,The page is shown,\r\n'
+      + 'Payments/Cards,PAY-001,Pay by card,,,,High,Critical,Functional,Acceptance,Manual,,false,smoke; payments,Pay with a valid card,The order is confirmed,4111 1111 1111 1111\r\n',
   },
   results: {
     fileName: 'results-template.csv',

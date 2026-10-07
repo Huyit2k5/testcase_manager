@@ -185,3 +185,16 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 - [x] T074 Host: file system blob storage configured, contract; tests for the manager and the service (limits, permissions, consistency, owners) and over HTTP.
 - [x] T075 Angular: an attachments panel (upload by button, drop or paste of a screenshot; list, download, delete) in the test case dialog and in the attempt history; English and Vietnamese; unit tests and a browser run.
 - [x] T076 Document the decisions (plan.md 4.11, README: storage setup); run the full build.
+
+---
+
+## Phase 13: Tags and the automation facet of search (FR-024)
+
+**Goal**: Classify test cases with free-form tags and filter by them, as the spec's search and filter asks (priority, severity, suite, tag, automation status). Tags are labels, not content: changing them never publishes a version and never needs approval. Following the labels of Jira, Xray and TestRail: free text, case-insensitive, a handful per test case.
+
+- [x] T077 [P] Domain: `TestCaseTag` child entity and `TestCase.SetTags` (trimmed, case-insensitive, at most 20 of 50 characters, no `;` or `,`), `TagNames` parser shared with import; filter by tags (all of them) and by whether an Automation ID is linked; localized messages.
+- [x] T078 [P] EF Core mapping, includes (the list carries tags), filter, tag summaries (name and number of test cases); contracts: tags in the DTOs and the list input, `SetTagsAsync` and `GetTagsAsync`.
+- [x] T079 Application and HttpApi: tags on create and update (omitted leaves them unchanged), `PUT test-cases/{id}/tags` without a new version, `GET test-cases/tags`; import and export of a `Tags` column; contract and convention tests.
+- [x] T080 Tests: tag rules and normalization, filtering, versioning is untouched, import and export round trip, HTTP.
+- [x] T081 Angular: tag chips in the form, the detail dialog (edit in place) and the list; filters by tag and by automation; English and Vietnamese; unit tests and a browser run.
+- [x] T082 Document the decisions (plan.md 4.12, README); run the full build.

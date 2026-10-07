@@ -484,4 +484,13 @@ export const vi: Record<MessageKey, string> = {
   'att.deleted': 'Đã xóa tệp.',
   'enum.AttachmentOwnerType.TestCase': 'Test case',
   'enum.AttachmentOwnerType.TestExecution': 'Lần thực thi',
+  'tags.title': 'Tag',
+  'tags.add': 'Nhập tag rồi nhấn Enter',
+  'tags.addMore': 'Thêm tag',
+  'tags.remove': 'Bỏ tag {tag}',
+  'repo.anyTag': 'Mọi tag',
+  'repo.automation': 'Tự động hóa',
+  'repo.anyAutomation': 'Mọi trạng thái tự động hóa',
+  'repo.automationLinked': 'Đã gắn tự động hóa',
+  'repo.automationUnlinked': 'Chưa gắn tự động hóa',
 };

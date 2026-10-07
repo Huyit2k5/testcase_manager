@@ -51,6 +51,10 @@ public static class TestCaseManagementErrorCodes
     public const string InvalidApiKeyExpiry = "TestCaseManagement:InvalidApiKeyExpiry";
     public const string InvalidAutomationRun = "TestCaseManagement:InvalidAutomationRun";
 
+    // Tags
+    public const string InvalidTag = "TestCaseManagement:InvalidTag";
+    public const string TooManyTags = "TestCaseManagement:TooManyTags";
+
     // Attachments
     public const string AttachmentEmpty = "TestCaseManagement:AttachmentEmpty";
     public const string AttachmentTooLarge = "TestCaseManagement:AttachmentTooLarge";

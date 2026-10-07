@@ -25,6 +25,7 @@ internal static class TestCaseSheet
     public const string ExecutionType = "ExecutionType";
     public const string AutomationId = "AutomationId";
     public const string Flaky = "Flaky";
+    public const string Tags = "Tags";
     public const string Status = "Status";
     public const string Version = "Version";
     public const string StepNo = "StepNo";
@@ -36,7 +37,7 @@ internal static class TestCaseSheet
     public static readonly IReadOnlyList<string> ExportColumns = new[]
     {
         Suite, Code, Title, Description, Preconditions, Postconditions, Priority, Severity, Kind, Layer, ExecutionType,
-        AutomationId, Flaky, Status, Version, StepNo, Action, ExpectedResult, TestData,
+        AutomationId, Flaky, Tags, Status, Version, StepNo, Action, ExpectedResult, TestData,
     };
 
     /// <summary>Columns that an export writes for information and an import reads past: status and version are set by the workflow.</summary>
@@ -46,7 +47,7 @@ internal static class TestCaseSheet
 
     private static readonly string[] TestCaseColumns =
     {
-        Suite, Title, Description, Preconditions, Postconditions, Priority, Severity, Kind, Layer, ExecutionType, AutomationId, Flaky,
+        Suite, Title, Description, Preconditions, Postconditions, Priority, Severity, Kind, Layer, ExecutionType, AutomationId, Flaky, Tags,
     };
 
     public static bool HasStepColumns(Table table) => StepColumns.Any(table.HasColumn);
@@ -63,7 +64,8 @@ internal static class TestCaseSheet
                 suitePath(testCase.SuiteId), testCase.Code, testCase.Title, testCase.Description ?? string.Empty,
                 testCase.Preconditions ?? string.Empty, testCase.Postconditions ?? string.Empty, testCase.Priority.ToString(),
                 testCase.Severity.ToString(), testCase.Kind.ToString(), testCase.Layer.ToString(), testCase.ExecutionType.ToString(),
-                testCase.AutomationId ?? string.Empty, testCase.IsFlaky ? "true" : "false", testCase.Status.ToString(),
+                testCase.AutomationId ?? string.Empty, testCase.IsFlaky ? "true" : "false",
+                string.Join("; ", testCase.Tags.Select(t => t.Name).OrderBy(n => n, StringComparer.OrdinalIgnoreCase)), testCase.Status.ToString(),
                 testCase.CurrentVersion.ToString(CultureInfo.InvariantCulture),
             };
 
@@ -169,6 +171,24 @@ internal static class TestCaseSheet
         draft.Layer = ReadEnum(table, i, Layer, TestLayer.Acceptance, draft, messages);
         draft.ExecutionType = ReadEnum(table, i, ExecutionType, Enums.ExecutionType.Manual, draft, messages);
         draft.IsFlaky = ReadBool(table, i, Flaky, draft, messages);
+        ReadTags(table, i, draft, messages);
+    }
+
+    /// <summary>The Tags cell is a list separated by semicolons. A tag that may not be used is named in the message of its row.</summary>
+    private static void ReadTags(Table table, int i, TestCaseDraft draft, TransferMessages messages)
+    {
+        try
+        {
+            draft.Tags = TagNames.Prepare(TagNames.Split(table.Cell(i, Tags)));
+        }
+        catch (Volo.Abp.BusinessException exception) when (exception.Code == TestCaseManagementErrorCodes.InvalidTag)
+        {
+            draft.Errors.Add(messages.Get("Import:InvalidTag", ("Tag", exception.Data["Tag"] ?? string.Empty), ("Max", TagConsts.MaxLength)));
+        }
+        catch (Volo.Abp.BusinessException exception) when (exception.Code == TestCaseManagementErrorCodes.TooManyTags)
+        {
+            draft.Errors.Add(messages.Get("Import:TooManyTags", ("Count", exception.Data["Count"] ?? 0), ("Max", TagConsts.MaxPerTestCase)));
+        }
     }
 
     /// <summary>A continuation row may leave the test case columns blank, but may not contradict the first row.</summary>
@@ -182,6 +202,18 @@ internal static class TestCaseSheet
                 continue;
             }
 
+            if (column == Tags)
+            {
+                // The same tags in another order or case are the same tags.
+                var wanted = TagNames.Split(value).Select(TagNames.Normalize).Where(t => t.Length > 0).Distinct().Order();
+                if (!wanted.SequenceEqual(draft.Tags.Select(TagNames.Normalize).Order()))
+                {
+                    draft.Errors.Add(messages.Get("Import:Conflict", ("Column", column), ("Code", draft.Code)));
+                }
+
+                continue;
+            }
+
             var first = column switch
             {
                 Suite => draft.SuitePath,
@@ -190,6 +222,7 @@ internal static class TestCaseSheet
                 Preconditions => draft.Preconditions,
                 Postconditions => draft.Postconditions,
                 AutomationId => draft.AutomationId,
+                Tags => string.Join("; ", draft.Tags),
                 Priority => draft.Priority.ToString(),
                 Severity => draft.Severity.ToString(),
                 Kind => draft.Kind.ToString(),
@@ -388,6 +421,8 @@ internal sealed class TestCaseDraft
     public string? AutomationId { get; set; }
 
     public bool IsFlaky { get; set; }
+
+    public List<string> Tags { get; set; } = new();
 
     public List<DraftStep> Steps { get; } = new();
 

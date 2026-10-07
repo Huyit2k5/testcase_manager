@@ -52,6 +52,7 @@ public class EfCoreTestCaseRepository
 
         return await query
             .IncludeDetails(includeDetails)
+            .Include(x => x.Tags)
             .OrderBy(string.IsNullOrWhiteSpace(sorting) ? nameof(TestCase.Code) : sorting)
             .Skip(skipCount)
             .Take(maxResultCount)
@@ -83,12 +84,40 @@ public class EfCoreTestCaseRepository
             query = query.Where(x => suiteIds.Contains(x.SuiteId));
         }
 
+        foreach (var tag in (filter.Tags ?? Array.Empty<string>()).Select(TagNames.Normalize).Where(t => t.Length > 0).Distinct())
+        {
+            var key = tag;
+            query = query.Where(x => x.Tags.Any(t => t.NormalizedName == key));
+        }
+
         return query
+            .WhereIf(filter.HasAutomationId == true, x => x.AutomationId != null && x.AutomationId != string.Empty)
+            .WhereIf(filter.HasAutomationId == false, x => x.AutomationId == null || x.AutomationId == string.Empty)
             .WhereIf(filter.Status.HasValue, x => x.Status == filter.Status)
             .WhereIf(filter.Priority.HasValue, x => x.Priority == filter.Priority)
             .WhereIf(filter.Severity.HasValue, x => x.Severity == filter.Severity)
             .WhereIf(filter.ExecutionType.HasValue, x => x.ExecutionType == filter.ExecutionType)
             .WhereIf(filter.Kind.HasValue, x => x.Kind == filter.Kind)
             .WhereIf(filter.Layer.HasValue, x => x.Layer == filter.Layer);
+    }
+
+    public virtual async Task<List<TagSummary>> GetTagSummariesAsync(CancellationToken cancellationToken = default)
+    {
+        // Joined with the (not deleted) test cases, so the tags of a deleted test case are not counted.
+        var dbContext = await GetDbContextAsync();
+        var testCases = await GetQueryableAsync();
+
+        var rows = await (
+            from tag in dbContext.Set<TestCaseTag>()
+            join testCase in testCases on tag.TestCaseId equals testCase.Id
+            select new { tag.NormalizedName, tag.Name })
+            .ToListAsync(GetCancellationToken(cancellationToken));
+
+        return rows
+            .GroupBy(r => r.NormalizedName)
+            .Select(g => new TagSummary(g.GroupBy(r => r.Name).OrderByDescending(n => n.Count()).ThenBy(n => n.Key, StringComparer.Ordinal).First().Key, g.Count()))
+            .OrderByDescending(t => t.Count)
+            .ThenBy(t => t.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 }

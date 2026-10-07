@@ -24,7 +24,8 @@ public class TestCaseManagementApplicationAutoMapperProfile : Profile
         CreateMap<TestStep, TestStepDto>();
 
         CreateMap<TestCase, TestCaseDto>()
-            .ForMember(d => d.Steps, o => o.MapFrom(s => s.Steps.OrderBy(x => x.StepOrder)));
+            .ForMember(d => d.Steps, o => o.MapFrom(s => s.Steps.OrderBy(x => x.StepOrder)))
+            .ForMember(d => d.Tags, o => o.MapFrom(s => s.Tags.Select(t => t.Name).OrderBy(n => n, StringComparer.OrdinalIgnoreCase)));
 
         CreateMap<TestStepSnapshot, TestStepDto>()
             .ForMember(d => d.StepOrder, o => o.MapFrom(s => s.Order));

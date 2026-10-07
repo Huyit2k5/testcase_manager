@@ -54,6 +54,8 @@ public class TestCaseTransferAppService : TestCaseManagementAppService, ITestCas
             ExecutionType = input.ExecutionType,
             Kind = input.Kind,
             Layer = input.Layer,
+            Tags = input.Tags,
+            HasAutomationId = input.HasAutomationId,
         };
 
         var count = await _testCaseRepository.GetFilteredCountAsync(filter);
@@ -437,6 +439,7 @@ public class TestCaseTransferAppService : TestCaseManagementAppService, ITestCas
             ExecutionType = draft.ExecutionType,
             AutomationId = draft.AutomationId,
             IsFlaky = draft.IsFlaky,
+            Tags = draft.Tags,
             Steps = draft.Steps.Select(s => new TestStepDto { Action = s.Action, ExpectedResult = s.ExpectedResult, TestData = s.TestData }).ToList(),
         };
     }
@@ -458,6 +461,7 @@ public class TestCaseTransferAppService : TestCaseManagementAppService, ITestCas
         if (has.Contains(TestCaseSheet.ExecutionType)) { dto.ExecutionType = draft.ExecutionType; }
         if (has.Contains(TestCaseSheet.AutomationId)) { dto.AutomationId = draft.AutomationId; }
         if (has.Contains(TestCaseSheet.Flaky)) { dto.IsFlaky = draft.IsFlaky; }
+        if (has.Contains(TestCaseSheet.Tags)) { dto.Tags = draft.Tags; }
 
         if (new[] { TestCaseSheet.Action, TestCaseSheet.ExpectedResult, TestCaseSheet.TestData }.Any(has.Contains))
         {
@@ -493,12 +497,16 @@ public class TestCaseTransferAppService : TestCaseManagementAppService, ITestCas
             ExecutionType = testCase.ExecutionType,
             AutomationId = testCase.AutomationId,
             IsFlaky = testCase.IsFlaky,
+            Tags = testCase.Tags.Select(t => t.Name).ToList(),
             Steps = testCase.Steps
                 .OrderBy(s => s.StepOrder)
                 .Select(s => new TestStepDto { Id = s.Id, StepOrder = s.StepOrder, Action = s.Action, ExpectedResult = s.ExpectedResult, TestData = s.TestData })
                 .ToList(),
         };
     }
+
+    private static bool SameTags(IEnumerable<string>? a, IEnumerable<string>? b) =>
+        (a ?? Enumerable.Empty<string>()).Select(TagNames.Normalize).Order().SequenceEqual((b ?? Enumerable.Empty<string>()).Select(TagNames.Normalize).Order());
 
     /// <summary>Whether two test cases have the same content. Blank and missing text are the same; step ids do not count.</summary>
     internal static bool IsSame(CreateUpdateTestCaseDto a, CreateUpdateTestCaseDto b)
@@ -517,6 +525,7 @@ public class TestCaseTransferAppService : TestCaseManagementAppService, ITestCas
                && a.Layer == b.Layer
                && a.ExecutionType == b.ExecutionType
                && a.IsFlaky == b.IsFlaky
+               && SameTags(a.Tags, b.Tags)
                && a.Steps.Count == b.Steps.Count
                && a.Steps.Zip(b.Steps).All(pair =>
                    Clean(pair.First.Action) == Clean(pair.Second.Action)
