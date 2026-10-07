@@ -1,4 +1,5 @@
 using Acme.TestCaseManagement.Enums;
+using Acme.TestCaseManagement.SharedSteps;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
@@ -145,6 +146,12 @@ public class TestCase : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
             if (input.Id.HasValue && existing.TryGetValue(input.Id.Value, out var step) && seen.Add(step.Id))
             {
+                // A step of a shared group that is edited in the test case is the test case's own step from then on.
+                if (step.SharedStepGroupId.HasValue && !step.ContentEquals(input.Action, input.ExpectedResult, input.TestData))
+                {
+                    step.Unlink();
+                }
+
                 step.Update(input.Action, input.ExpectedResult, input.TestData);
                 step.SetOrder(order);
             }
@@ -185,6 +192,98 @@ public class TestCase : FullAuditedAggregateRoot<Guid>, IMultiTenant
         foreach (var name in wanted.Where(n => !kept.Contains(TagNames.Normalize(n))))
         {
             Tags.Add(new TestCaseTag(Guid.CreateVersion7(), Id, name));
+        }
+    }
+
+    /// <summary>
+    /// Puts a copy of the steps of <paramref name="group"/> into the test case, linked to the group at its current revision.
+    /// <paramref name="position"/> is the one-based place of the first copied step; null or past the end means at the end.
+    /// </summary>
+    public virtual void InsertSharedSteps(SharedStepGroup group, int? position)
+    {
+        Check.NotNull(group, nameof(group));
+
+        var ordered = Steps.OrderBy(s => s.StepOrder).ToList();
+        var index = Math.Clamp((position ?? ordered.Count + 1) - 1, 0, ordered.Count);
+
+        ordered.InsertRange(index, CopyOf(group));
+        Renumber(ordered);
+    }
+
+    /// <summary>
+    /// Replaces the steps that came from <paramref name="group"/> by its current steps, at the place of the first of them, and
+    /// links them to the current revision. A test case that does not use the group is refused.
+    /// </summary>
+    public virtual void RefreshSharedSteps(SharedStepGroup group)
+    {
+        Check.NotNull(group, nameof(group));
+
+        var ordered = Steps.OrderBy(s => s.StepOrder).ToList();
+        var first = ordered.FindIndex(s => s.SharedStepGroupId == group.Id);
+        if (first < 0)
+        {
+            throw new BusinessException(TestCaseManagementErrorCodes.SharedStepsNotLinked)
+                .WithData("Code", Code)
+                .WithData("Name", group.Name);
+        }
+
+        // The place is that of the first linked step, counted among the steps that stay.
+        var index = ordered.Take(first).Count(s => s.SharedStepGroupId != group.Id);
+        ordered.RemoveAll(s => s.SharedStepGroupId == group.Id);
+        foreach (var removed in Steps.Where(s => s.SharedStepGroupId == group.Id).ToList())
+        {
+            Steps.Remove(removed);
+        }
+
+        ordered.InsertRange(index, CopyOf(group));
+        Renumber(ordered);
+    }
+
+    /// <summary>Makes the steps that came from the group the test case's own. Their content does not change.</summary>
+    public virtual void DetachSharedSteps(Guid groupId)
+    {
+        var linked = Steps.Where(s => s.SharedStepGroupId == groupId).ToList();
+        if (linked.Count == 0)
+        {
+            throw new BusinessException(TestCaseManagementErrorCodes.SharedStepsNotLinked)
+                .WithData("Code", Code)
+                .WithData("Name", groupId);
+        }
+
+        foreach (var step in linked)
+        {
+            step.Unlink();
+        }
+    }
+
+    /// <summary>The ids of the groups that some step of this test case was copied from.</summary>
+    public virtual IReadOnlyCollection<Guid> SharedStepGroupIds() =>
+        Steps.Where(s => s.SharedStepGroupId.HasValue).Select(s => s.SharedStepGroupId!.Value).Distinct().ToList();
+
+    private List<TestStep> CopyOf(SharedStepGroup group)
+    {
+        return group.Steps
+            .OrderBy(s => s.StepOrder)
+            .Select(s =>
+            {
+                var copy = new TestStep(Guid.CreateVersion7(), Id, s.StepOrder, s.Action, s.ExpectedResult, s.TestData);
+                copy.LinkTo(group.Id, group.Revision);
+                return copy;
+            })
+            .ToList();
+    }
+
+    /// <summary>Gives the steps their positions in the order of the list, and makes the collection hold exactly these steps.</summary>
+    private void Renumber(List<TestStep> ordered)
+    {
+        for (var i = 0; i < ordered.Count; i++)
+        {
+            ordered[i].SetOrder(i + 1);
+        }
+
+        foreach (var added in ordered.Where(s => !Steps.Contains(s)))
+        {
+            Steps.Add(added);
         }
     }
 

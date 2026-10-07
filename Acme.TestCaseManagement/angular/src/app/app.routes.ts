@@ -5,6 +5,7 @@ export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'repository' },
   { path: 'dashboard', canActivate: [authGuard], title: 'title.dashboard', loadComponent: () => import('./features/dashboard/dashboard').then(m => m.DashboardComponent) },
   { path: 'repository', canActivate: [authGuard], title: 'title.repository', loadComponent: () => import('./features/repository/repository').then(m => m.RepositoryComponent) },
+  { path: 'shared-steps', canActivate: [authGuard], title: 'title.sharedSteps', loadComponent: () => import('./features/shared-steps/shared-steps').then(m => m.SharedStepsComponent) },
   { path: 'runs', canActivate: [authGuard], title: 'title.runs', loadComponent: () => import('./features/runs/runs').then(m => m.RunsComponent) },
   { path: 'runs/:id', canActivate: [authGuard], title: 'title.run', loadComponent: () => import('./features/runs/run-detail').then(m => m.RunDetailComponent) },
   { path: 'traceability', canActivate: [authGuard], title: 'title.traceability', loadComponent: () => import('./features/traceability/traceability').then(m => m.TraceabilityComponent) },

@@ -1,21 +1,22 @@
-import { Component, OnInit, inject, input, output, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ModalComponent } from '../../core/modal';
 import { AuthService, Permissions } from '../../core/auth';
 import { ToastService } from '../../core/core';
 import { FormatDatePipe, I18nService, TranslatePipe } from '../../core/i18n/i18n';
 import { badge } from '../../core/ui';
-import { TestCase, TestCaseDefect, TestCaseVersion } from '../../proxy/dtos';
+import { SharedStepGroupSummary, TestCase, TestCaseDefect, TestCaseVersion } from '../../proxy/dtos';
 import {
   ExecutionType, PriorityLevel, SeverityLevel, TEST_CASE_TRANSITIONS, TestCaseStatus, TestKind, TestLayer,
 } from '../../proxy/enums';
 import { AttachmentOwnerType } from '../../proxy/enums';
-import { TestCaseService } from '../../proxy/services';
+import { SharedStepGroupService, TestCaseService } from '../../proxy/services';
 import { AttachmentsComponent } from '../attachments/attachments';
 import { TagInputComponent } from '../tags/tag-input';
 
 @Component({
   selector: 'app-test-case-detail',
-  imports: [ModalComponent, FormatDatePipe, TranslatePipe, AttachmentsComponent, TagInputComponent],
+  imports: [FormsModule, ModalComponent, FormatDatePipe, TranslatePipe, AttachmentsComponent, TagInputComponent],
   template: `
     <app-modal [title]="testCase().code + ' - ' + testCase().title" [wide]="true" (closed)="closed.emit()">
       <div class="row" style="margin-bottom:12px">
@@ -42,10 +43,48 @@ import { TagInputComponent } from '../tags/tag-input';
         <thead><tr><th style="width:36px">#</th><th>{{ 'form.action' | t }}</th><th>{{ 'form.expected' | t }}</th><th>{{ 'form.testData' | t }}</th></tr></thead>
         <tbody>
           @for (step of testCase().steps; track step.id) {
-            <tr><td>{{ step.stepOrder }}</td><td>{{ step.action }}</td><td>{{ step.expectedResult }}</td><td>{{ step.testData }}</td></tr>
+            <tr>
+              <td>{{ step.stepOrder }}</td>
+              <td>
+                @if (step.sharedStepGroupId && step.sharedStepGroupName) { <span class="chip small">{{ 'shared.fromGroup' | t: { name: step.sharedStepGroupName } }}</span> }
+                {{ step.action }}
+              </td>
+              <td>{{ step.expectedResult }}</td><td>{{ step.testData }}</td>
+            </tr>
           }
         </tbody>
       </table>
+
+      <h3>{{ 'shared.sectionTitle' | t }}</h3>
+      @if (groupsUsed().length) {
+        <table>
+          <tbody>
+            @for (g of groupsUsed(); track g.id) {
+              <tr>
+                <td>{{ g.name }}<div class="muted">{{ 'shared.copiedLine' | t: { count: g.count, revision: g.revision } }}</div></td>
+                <td><span class="badge" [class]="g.outdated ? 'warn' : 'ok'">{{ (g.outdated ? 'shared.behind' : 'shared.upToDate') | t }}</span></td>
+                <td class="right nowrap">
+                  @if (auth.can(perm.TestCases.Update)) {
+                    @if (g.outdated) { <button type="button" class="btn sm primary" (click)="refreshGroup(g.id)">{{ 'shared.update' | t }}</button> }
+                    <button type="button" class="btn sm" (click)="detachGroup(g.id)">{{ 'shared.detach' | t }}</button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      } @else {
+        <p class="muted">{{ 'shared.notUsed' | t }}</p>
+      }
+      @if (auth.can(perm.TestCases.Update) && auth.can(perm.SharedSteps.Default) && library().length) {
+        <div class="row">
+          <select [(ngModel)]="pick" name="pick" [attr.aria-label]="'shared.pick' | t" style="width: auto; min-width: 220px">
+            <option value="">{{ 'shared.pickPlaceholder' | t }}</option>
+            @for (g of library(); track g.id) { <option [value]="g.id">{{ g.name }} ({{ 'shared.stepsCount' | t: { n: g.stepCount } }})</option> }
+          </select>
+          <button type="button" class="btn" [disabled]="!pick" (click)="insertGroup()">{{ 'shared.insert' | t }}</button>
+        </div>
+      }
 
       <h3>{{ 'detail.history' | t }}</h3>
       @if (versions().length) {
@@ -94,8 +133,9 @@ import { TagInputComponent } from '../tags/tag-input';
     </app-modal>
   `,
 })
-export class TestCaseDetailComponent implements OnInit {
+export class TestCaseDetailComponent {
   private readonly service = inject(TestCaseService);
+  private readonly groupService = inject(SharedStepGroupService);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(I18nService);
   protected readonly auth = inject(AuthService);
@@ -104,10 +144,31 @@ export class TestCaseDetailComponent implements OnInit {
   readonly testCase = input.required<TestCase>();
   readonly edit = output<TestCase>();
   readonly changed = output<void>();
+  /** The test case after its shared steps were inserted, refreshed or detached; the dialog shows it. */
+  readonly stepsChanged = output<TestCase>();
   /** The tags were saved; the list behind the dialog shows them. */
   readonly tagsSaved = output<void>();
   readonly closed = output<void>();
 
+  protected readonly library = signal<SharedStepGroupSummary[]>([]);
+  protected pick = '';
+  /** The groups the steps of this test case were copied from, with how far behind each copy is. */
+  protected readonly groupsUsed = computed(() => {
+    const groups = new Map<string, { id: string; name: string; count: number; revision: number; outdated: boolean }>();
+    for (const step of this.testCase().steps) {
+      if (!step.sharedStepGroupId) { continue; }
+      const known = groups.get(step.sharedStepGroupId);
+      const revision = step.sharedStepRevision ?? 0;
+      groups.set(step.sharedStepGroupId, {
+        id: step.sharedStepGroupId,
+        name: step.sharedStepGroupName ?? this.i18n.t('shared.unknownGroup'),
+        count: (known?.count ?? 0) + 1,
+        revision: Math.min(known?.revision ?? revision, revision),
+        outdated: (known?.outdated ?? false) || !!step.sharedStepOutdated,
+      });
+    }
+    return [...groups.values()];
+  });
   protected readonly tags = signal<string[]>([]);
   protected readonly suggestions = signal<string[]>([]);
   protected readonly versions = signal<TestCaseVersion[]>([]);
@@ -122,12 +183,20 @@ export class TestCaseDetailComponent implements OnInit {
   protected readonly badgeOf = badge;
   protected readonly ownerType = AttachmentOwnerType.TestCase;
 
-  ngOnInit(): void {
-    const id = this.testCase().id;
-    this.tags.set([...this.testCase().tags]);
+  constructor() {
+    // The dialog shows a new test case when steps are inserted or refreshed (and a new version may exist), so it reloads then.
+    effect(() => {
+      const testCase = this.testCase();
+      untracked(() => this.load(testCase));
+    });
+    this.groupService.list().subscribe({ next: groups => this.library.set(groups), error: () => undefined });
+  }
+
+  private load(testCase: TestCase): void {
+    this.tags.set([...testCase.tags]);
     this.service.tags().subscribe(all => this.suggestions.set(all.map(t => t.name)));
-    this.service.versions(id).subscribe(v => this.versions.set(v));
-    this.service.defects(id).subscribe(d => this.defects.set(d));
+    this.service.versions(testCase.id).subscribe(v => this.versions.set(v));
+    this.service.defects(testCase.id).subscribe(d => this.defects.set(d));
   }
 
   protected label(type: object, value: number): string { return this.i18n.enumText(type, value); }
@@ -154,6 +223,37 @@ export class TestCaseDetailComponent implements OnInit {
       case TestCaseStatus.Deprecated: return this.i18n.t('detail.deprecate');
       default: return this.i18n.t('detail.backToDraft');
     }
+  }
+
+  // ---- shared steps
+  /** An approved test case gets a new version from these, so the person is asked first. */
+  private confirmVersion(): boolean {
+    return this.testCase().status !== TestCaseStatus.Approved || confirm(this.i18n.t('shared.confirmVersion'));
+  }
+
+  protected insertGroup(): void {
+    if (!this.pick || !this.confirmVersion()) { return; }
+    this.service.insertSharedSteps(this.testCase().id, this.pick).subscribe(saved => {
+      this.pick = '';
+      this.toast.success(this.i18n.t('shared.inserted'));
+      this.stepsChanged.emit(saved);
+    });
+  }
+
+  protected refreshGroup(groupId: string): void {
+    if (!this.confirmVersion()) { return; }
+    this.service.refreshSharedSteps(this.testCase().id, groupId).subscribe(saved => {
+      this.toast.success(this.i18n.t('shared.refreshed'));
+      this.stepsChanged.emit(saved);
+    });
+  }
+
+  protected detachGroup(groupId: string): void {
+    if (!confirm(this.i18n.t('shared.confirmDetach'))) { return; }
+    this.service.detachSharedSteps(this.testCase().id, groupId).subscribe(saved => {
+      this.toast.success(this.i18n.t('shared.detached'));
+      this.stepsChanged.emit(saved);
+    });
   }
 
   protected changeStatus(target: TestCaseStatus): void {

@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import {
-  AddDefect, ApiKey, Attachment, TagSummary, ApiKeyCreated, ApplyFlakyFlagsResult, CreateRun, Dashboard, FlakyTestList, DefectLink, EvaluateInput, ExecuteItem, PagedResult, QualityGate, QualityGateEvaluation,
+  AddDefect, ApiKey, Attachment, SaveSharedStepGroup, SharedStepGroup, SharedStepGroupSummary, SharedStepUsage, TagSummary, UpdateSharedStepUsersResult, ApiKeyCreated, ApplyFlakyFlagsResult, CreateRun, Dashboard, FlakyTestList, DefectLink, EvaluateInput, ExecuteItem, PagedResult, QualityGate, QualityGateEvaluation,
   Requirement, RtmMatrix, RtmRequest, SavePlan, SaveQualityGate, SaveRequirement, SaveTestCase, SignOffReport, StartSignOff,
   TestCase, TestCaseDefect, TestCaseListRequest, TestCaseVersion, TestExecution, TestPlan, TestRun, TestRunListRequest,
   TestSuite, TestSuiteTree,
@@ -52,6 +52,15 @@ export class TestCaseService {
   delete(id: string): Observable<void> { return this.http.delete<void>(`${ROOT}/test-cases/${id}`); }
   changeStatus(id: string, targetStatus: TestCaseStatus, changeSummary?: string | null): Observable<TestCase> {
     return this.http.post<TestCase>(`${ROOT}/test-cases/${id}/status`, { targetStatus, changeSummary });
+  }
+  insertSharedSteps(id: string, sharedStepGroupId: string, position?: number | null, changeSummary?: string | null): Observable<TestCase> {
+    return this.http.post<TestCase>(`${ROOT}/test-cases/${id}/shared-steps`, { sharedStepGroupId, position: position ?? null, changeSummary: changeSummary ?? null });
+  }
+  refreshSharedSteps(id: string, groupId: string): Observable<TestCase> {
+    return this.http.post<TestCase>(`${ROOT}/test-cases/${id}/shared-steps/${groupId}/refresh`, {});
+  }
+  detachSharedSteps(id: string, groupId: string): Observable<TestCase> {
+    return this.http.delete<TestCase>(`${ROOT}/test-cases/${id}/shared-steps/${groupId}`);
   }
   setTags(id: string, tags: string[]): Observable<TestCase> { return this.http.put<TestCase>(`${ROOT}/test-cases/${id}/tags`, { tags }); }
   tags(): Observable<TagSummary[]> { return this.http.get<TagSummary[]>(`${ROOT}/test-cases/tags`); }
@@ -217,4 +226,21 @@ export class AttachmentService {
   }
 
   remove(id: string): Observable<void> { return this.http.delete<void>(`${ROOT}/attachments/${id}`); }
+}
+
+@Injectable({ providedIn: 'root' })
+export class SharedStepGroupService {
+  private readonly http = inject(HttpClient);
+
+  list(filter?: string): Observable<SharedStepGroupSummary[]> {
+    return this.http.get<SharedStepGroupSummary[]>(`${ROOT}/shared-step-groups`, { params: query({ Filter: filter }) });
+  }
+  get(id: string): Observable<SharedStepGroup> { return this.http.get<SharedStepGroup>(`${ROOT}/shared-step-groups/${id}`); }
+  create(input: SaveSharedStepGroup): Observable<SharedStepGroup> { return this.http.post<SharedStepGroup>(`${ROOT}/shared-step-groups`, input); }
+  update(id: string, input: SaveSharedStepGroup): Observable<SharedStepGroup> { return this.http.put<SharedStepGroup>(`${ROOT}/shared-step-groups/${id}`, input); }
+  remove(id: string): Observable<void> { return this.http.delete<void>(`${ROOT}/shared-step-groups/${id}`); }
+  usage(id: string): Observable<SharedStepUsage[]> { return this.http.get<SharedStepUsage[]>(`${ROOT}/shared-step-groups/${id}/usage`); }
+  updateTestCases(id: string, testCaseIds?: string[] | null): Observable<UpdateSharedStepUsersResult> {
+    return this.http.post<UpdateSharedStepUsersResult>(`${ROOT}/shared-step-groups/${id}/update-test-cases`, { testCaseIds: testCaseIds ?? null });
+  }
 }

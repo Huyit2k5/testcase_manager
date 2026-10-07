@@ -5,6 +5,7 @@ using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Acme.TestCaseManagement.Attachments.Dtos;
 using Acme.TestCaseManagement.Automation.Dtos;
+using Acme.TestCaseManagement.SharedSteps.Dtos;
 using Acme.TestCaseManagement.Insights.Dtos;
 using Acme.TestCaseManagement.Enums;
 using Acme.TestCaseManagement.Plans.Dtos;
@@ -309,6 +310,24 @@ public class HttpApiFlow_Tests
         // ---- Tags: label a test case and ask for the tags in use (see HttpApiTags_Tests) ------------------------------------
         (await qaLead.PutAsync<TestCaseDto>($"{Root}/test-cases/{automated.Id}/tags", new SetTestCaseTagsDto { Tags = { "flow" } })).Tags.ShouldBe(new[] { "flow" });
         (await qaLead.GetAsync<List<TagSummaryDto>>($"{Root}/test-cases/tags")).ShouldContain(t => t.Name == "flow");
+
+        // ---- Shared steps: a group in the library, copied into a test case, and taken out again (see HttpApiSharedSteps_Tests) --
+        var sharedGroup = await qaLead.PostAsync<SharedStepGroupDto>($"{Root}/shared-step-groups", new CreateUpdateSharedStepGroupDto
+        {
+            Name = "Flow login", Steps = { new SharedStepDto { Action = "Sign in", ExpectedResult = "Home page" } },
+        });
+        (await qaLead.GetAsync<List<SharedStepGroupSummaryDto>>($"{Root}/shared-step-groups")).ShouldContain(g => g.Id == sharedGroup.Id);
+        (await qaLead.GetAsync<SharedStepGroupDto>($"{Root}/shared-step-groups/{sharedGroup.Id}")).Revision.ShouldBe(1);
+        await qaLead.PostAsync<TestCaseDto>($"{Root}/test-cases/{automated.Id}/shared-steps", new InsertSharedStepsDto { SharedStepGroupId = sharedGroup.Id });
+        (await qaLead.PutAsync<SharedStepGroupDto>($"{Root}/shared-step-groups/{sharedGroup.Id}", new CreateUpdateSharedStepGroupDto
+        {
+            Name = "Flow login", Steps = { new SharedStepDto { Action = "Sign in with a code", ExpectedResult = "Home page" } },
+        })).Revision.ShouldBe(2);
+        (await qaLead.GetAsync<List<SharedStepUsageDto>>($"{Root}/shared-step-groups/{sharedGroup.Id}/usage")).Single().IsOutdated.ShouldBeTrue();
+        (await qaLead.PostAsync<UpdateSharedStepUsersResultDto>($"{Root}/shared-step-groups/{sharedGroup.Id}/update-test-cases", new UpdateSharedStepUsersInput())).Updated.ShouldBe(1);
+        await qaLead.PostAsync<TestCaseDto>($"{Root}/test-cases/{automated.Id}/shared-steps/{sharedGroup.Id}/refresh", new RefreshSharedStepsDto());
+        await qaLead.SendAsync(HttpMethod.Delete, $"{Root}/test-cases/{automated.Id}/shared-steps/{sharedGroup.Id}");
+        await qaLead.SendAsync(HttpMethod.Delete, $"{Root}/shared-step-groups/{sharedGroup.Id}");
 
         // ---- Insights: the flaky list and the dashboard (see HttpApiInsights_Tests for the detail) ------------------------
         (await qaLead.GetAsync<FlakyTestListDto>($"{Root}/flaky-tests")).Settings.WindowSize.ShouldBeGreaterThan(0);

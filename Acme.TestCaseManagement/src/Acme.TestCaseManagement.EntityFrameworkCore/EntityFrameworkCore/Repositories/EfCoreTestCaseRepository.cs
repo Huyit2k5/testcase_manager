@@ -101,6 +101,31 @@ public class EfCoreTestCaseRepository
             .WhereIf(filter.Layer.HasValue, x => x.Layer == filter.Layer);
     }
 
+    public virtual async Task<List<TestCase>> GetListBySharedStepGroupAsync(Guid groupId, CancellationToken cancellationToken = default)
+    {
+        return await (await GetQueryableAsync())
+            .IncludeDetails()
+            .Where(x => x.Steps.Any(s => s.SharedStepGroupId == groupId))
+            .OrderBy(x => x.Code)
+            .ToListAsync(GetCancellationToken(cancellationToken));
+    }
+
+    public virtual async Task<Dictionary<Guid, int>> GetSharedStepUsageCountsAsync(CancellationToken cancellationToken = default)
+    {
+        var dbContext = await GetDbContextAsync();
+        var testCases = await GetQueryableAsync();
+
+        var rows = await (
+            from step in dbContext.Set<TestStep>()
+            join testCase in testCases on step.TestCaseId equals testCase.Id
+            where step.SharedStepGroupId != null
+            select new { GroupId = step.SharedStepGroupId!.Value, step.TestCaseId })
+            .Distinct()
+            .ToListAsync(GetCancellationToken(cancellationToken));
+
+        return rows.GroupBy(r => r.GroupId).ToDictionary(g => g.Key, g => g.Count());
+    }
+
     public virtual async Task<List<TagSummary>> GetTagSummariesAsync(CancellationToken cancellationToken = default)
     {
         // Joined with the (not deleted) test cases, so the tags of a deleted test case are not counted.

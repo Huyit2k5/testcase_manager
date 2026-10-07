@@ -114,7 +114,7 @@
 }
 
 @if (detail(); as testCase) {
-  <app-test-case-detail [testCase]="testCase" (edit)="editCase($event)" (changed)="onChanged()" (tagsSaved)="loadCases(); loadTagsList()" (closed)="detail.set(null)" />
+  <app-test-case-detail [testCase]="testCase" (edit)="editCase($event)" (changed)="onChanged()" (tagsSaved)="loadCases(); loadTagsList()" (stepsChanged)="detail.set($event); loadCases()" (closed)="detail.set(null)" />
 }
 
 @if (form(); as f) {

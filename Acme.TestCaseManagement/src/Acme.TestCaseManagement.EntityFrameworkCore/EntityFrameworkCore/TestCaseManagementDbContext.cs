@@ -1,4 +1,5 @@
 using Acme.TestCaseManagement.Attachments;
+using Acme.TestCaseManagement.SharedSteps;
 using Acme.TestCaseManagement.Automation;
 using Acme.TestCaseManagement.Plans;
 using Acme.TestCaseManagement.Quality;
@@ -42,6 +43,8 @@ public class TestCaseManagementDbContext : AbpDbContext<TestCaseManagementDbCont
     public DbSet<ApiKey> ApiKeys { get; set; } = null!;
 
     public DbSet<Attachment> Attachments { get; set; } = null!;
+
+    public DbSet<SharedStepGroup> SharedStepGroups { get; set; } = null!;
 
     public DbSet<AutomationPublication> AutomationPublications { get; set; } = null!;
 

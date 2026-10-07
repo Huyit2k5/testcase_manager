@@ -1,4 +1,5 @@
 using Acme.TestCaseManagement.Attachments;
+using Acme.TestCaseManagement.SharedSteps;
 using Acme.TestCaseManagement.Automation;
 using Acme.TestCaseManagement.Plans;
 using Acme.TestCaseManagement.Quality;
@@ -90,6 +91,35 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
             b.Property(x => x.TestData).HasMaxLength(TestStepConsts.MaxTextLength);
 
             b.HasIndex(x => new { x.TestCaseId, x.StepOrder });
+
+            // The steps that came from a group of shared steps; "which test cases use this group" is asked from here.
+            b.HasIndex(x => x.SharedStepGroupId);
+        });
+
+        builder.Entity<SharedStepGroup>(b =>
+        {
+            b.ToTable(TableName("SharedStepGroups"), TestCaseManagementDbProperties.DbSchema);
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Name).IsRequired().HasMaxLength(SharedStepGroupConsts.MaxNameLength);
+            b.Property(x => x.Description).HasMaxLength(SharedStepGroupConsts.MaxDescriptionLength);
+
+            // Not unique at database level: soft-deleted rows keep their name, so SharedStepGroupManager checks against the live rows.
+            b.HasIndex(x => new { x.TenantId, x.Name });
+
+            b.HasMany(x => x.Steps).WithOne().HasForeignKey(x => x.SharedStepGroupId).IsRequired().OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<SharedStep>(b =>
+        {
+            b.ToTable(TableName("SharedSteps"), TestCaseManagementDbProperties.DbSchema);
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Action).IsRequired().HasMaxLength(TestStepConsts.MaxTextLength);
+            b.Property(x => x.ExpectedResult).IsRequired().HasMaxLength(TestStepConsts.MaxTextLength);
+            b.Property(x => x.TestData).HasMaxLength(TestStepConsts.MaxTextLength);
+
+            b.HasIndex(x => new { x.SharedStepGroupId, x.StepOrder });
         });
 
         builder.Entity<TestCaseVersion>(b =>

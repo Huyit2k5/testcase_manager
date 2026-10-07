@@ -54,6 +54,12 @@ public interface ITestCaseRepository : IRepository<TestCase, Guid>
 
     Task<long> GetFilteredCountAsync(TestCaseFilter filter, CancellationToken cancellationToken = default);
 
+    /// <summary>The test cases (not deleted) with at least one step copied from the group, with their steps.</summary>
+    Task<List<TestCase>> GetListBySharedStepGroupAsync(Guid groupId, CancellationToken cancellationToken = default);
+
+    /// <summary>For each group of shared steps, the number of test cases (not deleted) that use it.</summary>
+    Task<Dictionary<Guid, int>> GetSharedStepUsageCountsAsync(CancellationToken cancellationToken = default);
+
     /// <summary>Every tag in use, with the number of test cases that have it, the most used first.</summary>
     Task<List<TagSummary>> GetTagSummariesAsync(CancellationToken cancellationToken = default);
 }

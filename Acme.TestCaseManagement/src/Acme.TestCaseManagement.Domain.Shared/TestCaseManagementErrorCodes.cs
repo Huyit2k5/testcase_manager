@@ -51,6 +51,13 @@ public static class TestCaseManagementErrorCodes
     public const string InvalidApiKeyExpiry = "TestCaseManagement:InvalidApiKeyExpiry";
     public const string InvalidAutomationRun = "TestCaseManagement:InvalidAutomationRun";
 
+    // Shared steps
+    public const string DuplicateSharedStepGroupName = "TestCaseManagement:DuplicateSharedStepGroupName";
+    public const string SharedStepGroupHasNoSteps = "TestCaseManagement:SharedStepGroupHasNoSteps";
+    public const string SharedStepGroupTooLarge = "TestCaseManagement:SharedStepGroupTooLarge";
+    public const string SharedStepGroupInUse = "TestCaseManagement:SharedStepGroupInUse";
+    public const string SharedStepsNotLinked = "TestCaseManagement:SharedStepsNotLinked";
+
     // Tags
     public const string InvalidTag = "TestCaseManagement:InvalidTag";
     public const string TooManyTags = "TestCaseManagement:TooManyTags";

@@ -33,7 +33,7 @@ public class HostDataSeedContributor : IDataSeedContributor, ITransientDependenc
         TestCaseManagementPermissions.TestPlans.Default, TestCaseManagementPermissions.TestRuns.Default,
         TestCaseManagementPermissions.Requirements.Default, TestCaseManagementPermissions.Requirements.Manage,
         TestCaseManagementPermissions.QualityGates.Default, TestCaseManagementPermissions.SignOff.Default,
-        TestCaseManagementPermissions.SignOff.Approve,
+        TestCaseManagementPermissions.SignOff.Approve, TestCaseManagementPermissions.SharedSteps.Default,
     };
 
     private static readonly string[] TesterPermissions =
@@ -43,6 +43,7 @@ public class HostDataSeedContributor : IDataSeedContributor, ITransientDependenc
         TestCaseManagementPermissions.TestPlans.Default, TestCaseManagementPermissions.TestRuns.Default,
         TestCaseManagementPermissions.TestRuns.Execute, TestCaseManagementPermissions.Requirements.Default,
         TestCaseManagementPermissions.QualityGates.Default, TestCaseManagementPermissions.SignOff.Default,
+        TestCaseManagementPermissions.SharedSteps.Default,
     };
 
     private readonly IConfiguration _configuration;

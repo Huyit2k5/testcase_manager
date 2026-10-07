@@ -784,6 +784,46 @@ in the detail dialog (saved on its own, with no new version), chips in the list,
 - The filter takes one tag on screen (the API takes several, all required).
 - Tested on SQLite only.
 
+### 4.13. Phase 14: reusable steps (FR-005)
+
+Added after Phase 13. `SharedStepGroupAppService` (`shared-step-groups`) is the library: a group (`SharedStepGroup`, name, description, a revision
+and ordered `SharedStep`s). A test case uses a group through three operations on `ITestCaseAppService`: insert, refresh and detach.
+
+**The decision: copy with a link, not a live reference.** Two designs were weighed. A live reference (the test case holds only "include group X" and the
+steps are read from the group when needed) is what the word "by reference" suggests, but it breaks FR-004 and the constitution: an approved test case,
+its immutable version and every historical run would change when somebody edits the group, so a run could show steps that were never tested. The
+chosen design copies the steps into the test case, as ordinary `TestStep`s, and records on each copied step which group it came from and at which
+revision (`SharedStepGroupId`, `SharedStepRevision`). Everything downstream is untouched: versions snapshot the copied steps, run items bind to the
+version, history, import and export see plain steps. Changing a group raises its revision (only when the steps change; a name or description does not)
+and changes no test case; the test cases that copied an older revision are *behind*, which the screen shows, and a person (or one bulk action) brings
+them up to date. Here the freeze is at the time of the copy, which keeps the question "what was tested?" answerable from the version alone and is simple to audit; the cost is that bringing a test case up to date is an act, not automatic, which is what the behind marker and the bulk update are for.
+
+**Rules.**
+- A group has 1 to 50 steps and a name that is unique ignoring case (among groups not deleted). Deleting is refused while a test case uses the group
+  (detach it first), so that no link points to nothing.
+- Insert puts a copy at a position (default: the end), refresh replaces the copy by the current steps at the place of the first copied step, detach
+  drops the link and keeps the steps. Insert and refresh change content, so an approved test case gets a new version like for any edit of steps (the
+  screen asks first); detach changes no content, so it publishes nothing.
+- A copied step edited inside the test case becomes the test case's own (its link is dropped); a save that leaves it alone keeps the link, and so do reordering
+  and an import of an unchanged file. New steps are never linked, whatever a client sends: the link is made only by insert and refresh.
+- Bulk update (`POST shared-step-groups/{id}/update-test-cases`): refreshes all test cases that are behind, or the chosen ones; approved ones get a version
+  whose change summary says which group and revision. It needs `SharedSteps.Manage` and `TestCases.Update`.
+
+**Permissions.** `SharedSteps` reads the library (the demo roles QA lead, tester and product owner have it) and `SharedSteps.Manage` changes it (QA lead):
+a change can put many test cases behind. Using a group in a test case needs `TestCases.Update`. An API key has none.
+
+**Front end.** A Shared steps page (list, edit with revision note, usage with the test cases that are behind selected and a bulk update). In the test
+case dialog the steps carry a "Shared: name" chip, a section lists the groups used with Behind or Up to date and Update or Detach, and a selector adds a
+group; in the edit form copied steps are read-only.
+
+**Not covered.**
+- The version snapshot does not record that a step came from a group (it holds the steps as tested); the link is on the live test case only.
+- No nesting of groups in groups, and no parameters in a group (a "Log in as {user}" with a value chosen per test case); the test data column of a step is
+  the place for a value.
+- Refreshing after somebody removed one step of a group by hand puts all the group's steps back, at the place of the first remaining one.
+- Import and export carry the steps, not the link (an import of a test case that is new has no links).
+- Tested on SQLite only.
+
 ## 5. Security, RBAC & Permissions
 
 Defined in `TestCaseManagementPermissions`:

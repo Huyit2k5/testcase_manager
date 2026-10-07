@@ -36,6 +36,9 @@ public class TestCaseManagementPermissionDefinitionProvider : PermissionDefiniti
         var signOff = group.AddPermission(TestCaseManagementPermissions.SignOff.Default, L("Permission:SignOff"));
         signOff.AddChild(TestCaseManagementPermissions.SignOff.Approve, L("Permission:SignOff.Approve"));
 
+        var sharedSteps = group.AddPermission(TestCaseManagementPermissions.SharedSteps.Default, L("Permission:SharedSteps"));
+        sharedSteps.AddChild(TestCaseManagementPermissions.SharedSteps.Manage, L("Permission:SharedSteps.Manage"));
+
         var apiKeys = group.AddPermission(TestCaseManagementPermissions.ApiKeys.Default, L("Permission:ApiKeys"));
         apiKeys.AddChild(TestCaseManagementPermissions.ApiKeys.Manage, L("Permission:ApiKeys.Manage"));
 

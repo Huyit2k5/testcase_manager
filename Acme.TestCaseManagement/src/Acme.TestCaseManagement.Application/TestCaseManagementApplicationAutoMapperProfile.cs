@@ -21,14 +21,22 @@ public class TestCaseManagementApplicationAutoMapperProfile : Profile
     {
         CreateMap<TestSuite, TestSuiteDto>();
 
-        CreateMap<TestStep, TestStepDto>();
+        // The name of the group and whether the copy is behind are filled in by the application service, which looks the groups up.
+        CreateMap<TestStep, TestStepDto>()
+            .ForMember(d => d.SharedStepGroupName, o => o.Ignore())
+            .ForMember(d => d.SharedStepOutdated, o => o.Ignore());
 
         CreateMap<TestCase, TestCaseDto>()
             .ForMember(d => d.Steps, o => o.MapFrom(s => s.Steps.OrderBy(x => x.StepOrder)))
             .ForMember(d => d.Tags, o => o.MapFrom(s => s.Tags.Select(t => t.Name).OrderBy(n => n, StringComparer.OrdinalIgnoreCase)));
 
+        // A version holds the steps as they were tested; where they came from is not part of the snapshot.
         CreateMap<TestStepSnapshot, TestStepDto>()
-            .ForMember(d => d.StepOrder, o => o.MapFrom(s => s.Order));
+            .ForMember(d => d.StepOrder, o => o.MapFrom(s => s.Order))
+            .ForMember(d => d.SharedStepGroupId, o => o.Ignore())
+            .ForMember(d => d.SharedStepRevision, o => o.Ignore())
+            .ForMember(d => d.SharedStepGroupName, o => o.Ignore())
+            .ForMember(d => d.SharedStepOutdated, o => o.Ignore());
 
         CreateMap<TestCaseVersion, TestCaseVersionDto>()
             .ForMember(d => d.Steps, o => o.MapFrom(s => TestStepSnapshot.Deserialize(s.StepsJson)));

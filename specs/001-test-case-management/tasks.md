@@ -198,3 +198,17 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 - [x] T080 Tests: tag rules and normalization, filtering, versioning is untouched, import and export round trip, HTTP.
 - [x] T081 Angular: tag chips in the form, the detail dialog (edit in place) and the list; filters by tag and by automation; English and Vietnamese; unit tests and a browser run.
 - [x] T082 Document the decisions (plan.md 4.12, README); run the full build.
+
+---
+
+## Phase 14: Reusable steps (FR-005)
+
+**Goal**: Let a team write a group of steps once ("Log in") and put it into many test cases, and then see which test cases are behind when the group changes, and bring them up to date in one action. The design keeps the versioning of FR-004 intact: a test case holds a *copy* of the steps of the group, with a link (group and revision), so every version and every run still holds exactly the steps that were tested. Changing a group never changes an approved test case behind a person's back.
+
+- [x] T083 [P] Domain: `SharedStepGroup` aggregate (name, description, revision, steps) and `SharedStepGroupManager` (unique name); the link on `TestStep` (group and revision), and on `TestCase`: insert a group at a position, refresh from the group, detach, and unlinking of a step whose content is edited.
+- [x] T084 [P] EF Core mappings and DbSet (module, interface, host); repository: test cases that use a group, usage counts; permissions `SharedSteps` and `SharedSteps.Manage`; localized messages (en, vi).
+- [x] T085 Contracts and application: `SharedStepGroupAppService` (list with usage, get, create, update with revision, delete refused while used, usage, bulk update of test cases); insert, refresh and detach on `ITestCaseAppService`; the link, the name and the "outdated" flag in the step DTO.
+- [x] T086 [P] HttpApi: `SharedStepGroupController` and the three test case routes; host seed (tester reads, QA lead manages); contract and convention tests.
+- [x] T087 Tests: group rules, the link surviving edits and reorders, unlinking on content change, insert and refresh at the right position, approved test cases get a version, versions and runs keep the copy, usage and bulk update, permissions, import and export of linked test cases.
+- [x] T088 Angular: a Shared steps page (list, edit, usage, bulk update); in the test case dialog the groups as blocks with "outdated", update and detach, and a button to insert a group; the form shows linked steps as read-only; English and Vietnamese; unit tests and a browser run.
+- [x] T089 Document the decisions (plan.md 4.13, README); run the full build.

@@ -139,6 +139,8 @@ All routes start with `api/test-case-management/`.
 | `api-keys` | list, create (secret shown once) and revoke API keys |
 | `dashboard` | `GET`: pass rate, execution velocity, burn-down and defect density of a plan or of every run |
 | `flaky-tests` | `GET` the flakiness score of test cases, `POST flaky-tests/apply` to flag them in the library |
+| `shared-step-groups` | the library of reusable groups of steps: list, get, create, update, delete, usage, and a bulk update of the test cases that are behind |
+| `test-cases/{id}/shared-steps` | `POST` copies a group into a test case, `.../{groupId}/refresh` brings the copy up to date, `DELETE .../{groupId}` detaches it |
 | `attachments` | upload (multipart), list, download and delete files of test cases and of execution attempts |
 | `automation/results` | `POST`: a pipeline publishes automated results (API key, or a user with `AutomationResults.Publish`) |
 
@@ -155,8 +157,17 @@ Group `TestCaseManagement`. Each `...Default` permission allows reading; the chi
 | `TestCaseManagement.Requirements` | `Manage` |
 | `TestCaseManagement.QualityGates` | `Manage` |
 | `TestCaseManagement.SignOff` | `Approve` |
+| `TestCaseManagement.SharedSteps` | `Manage` (create, change and delete groups, and bulk update test cases) |
 | `TestCaseManagement.ApiKeys` | `Manage` (create and revoke keys) |
 | `TestCaseManagement.AutomationResults` | `Publish` (the only permission an API key has) |
+
+## Shared steps
+
+A group of steps ("Log in as a customer") is written once in the library and copied into many test cases. The test case keeps **its own copy**, with a
+link to the group and the revision copied, so changing a group never changes an approved test case, a version or a run by itself: the test cases that
+copied an older revision show as behind, and `POST shared-step-groups/{id}/update-test-cases` (or the refresh of one test case) brings them up to date, with
+a new version for the approved ones. Editing a copied step inside a test case, or detaching, makes it the test case's own. A group in use cannot be deleted.
+A host that embeds the model in its own DbContext also needs `DbSet<SharedStepGroup>`. The reasoning is in `specs/001-test-case-management/plan.md`, section 4.13.
 
 ## Tags
 
@@ -210,7 +221,7 @@ Give either `run` (a new run) or `runId` (an existing one). Results whose Automa
 and the others are still recorded (`failOnUnmatched: true` rejects the whole request). Approved test cases missing from the run are
 added (`addMissingToRun`). The same test case twice in a request counts as retries; a test that fails and then passes is marked flaky.
 A request holds at most 2000 results. Send an `Idempotency-Key` so that retrying a request does not record twice. A host that embeds
-the module's model in its own DbContext needs the new `DbSet`s (`ApiKey`, `AutomationPublication`, `Attachment`).
+the module's model in its own DbContext needs the new `DbSet`s (`ApiKey`, `AutomationPublication`, `Attachment`, `SharedStepGroup`).
 
 ## Flaky tests and the dashboard
 
@@ -275,6 +286,6 @@ symbol packages. Requires the .NET SDK 10 (see `global.json`).
 ## Angular front end
 
 `angular/` holds a ready-made UI (Angular 22) for the module: test repository with suite tree, versions and defects;
-plans and runs with execution and retest; the traceability matrix; quality gates and two-user sign-off; API keys for pipelines; a dashboard with burn-down, velocity, defect density and flaky tests; attachments with screenshot paste; tags and filters, in English and
+plans and runs with execution and retest; the traceability matrix; quality gates and two-user sign-off; API keys for pipelines; a dashboard with burn-down, velocity, defect density and flaky tests; attachments with screenshot paste; tags and filters; shared steps, in English and
 Vietnamese with a language switch. See
 [angular/README.md](angular/README.md). It is not packed into the NuGet packages.

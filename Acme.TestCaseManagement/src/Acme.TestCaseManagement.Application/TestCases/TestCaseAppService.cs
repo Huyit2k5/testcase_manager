@@ -1,6 +1,7 @@
 using Acme.TestCaseManagement.Enums;
 using Acme.TestCaseManagement.Permissions;
 using Acme.TestCaseManagement.Repositories;
+using Acme.TestCaseManagement.SharedSteps;
 using Acme.TestCaseManagement.Suites;
 using Acme.TestCaseManagement.TestCases.Dtos;
 using Microsoft.AspNetCore.Authorization;
@@ -30,6 +31,7 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
     private readonly IRepository<TestCaseVersion, Guid> _versionRepository;
     private readonly IRepository<TestSuite, Guid> _suiteRepository;
     private readonly IDefectLinkRepository _defectLinkRepository;
+    private readonly IRepository<SharedStepGroup, Guid> _sharedStepGroups;
     private readonly TestCaseManager _testCaseManager;
 
     public TestCaseAppService(
@@ -37,18 +39,20 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
         IRepository<TestCaseVersion, Guid> versionRepository,
         IRepository<TestSuite, Guid> suiteRepository,
         IDefectLinkRepository defectLinkRepository,
+        IRepository<SharedStepGroup, Guid> sharedStepGroups,
         TestCaseManager testCaseManager)
     {
         _testCaseRepository = testCaseRepository;
         _versionRepository = versionRepository;
         _suiteRepository = suiteRepository;
         _defectLinkRepository = defectLinkRepository;
+        _sharedStepGroups = sharedStepGroups;
         _testCaseManager = testCaseManager;
     }
 
     public virtual async Task<TestCaseDto> GetAsync(Guid id)
     {
-        return ObjectMapper.Map<TestCase, TestCaseDto>(await _testCaseRepository.GetAsync(id));
+        return await MapAsync(await _testCaseRepository.GetAsync(id));
     }
 
     public virtual async Task<PagedResultDto<TestCaseDto>> GetListAsync(GetTestCaseListInput input)
@@ -88,7 +92,7 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
 
         await _testCaseRepository.InsertAsync(testCase, autoSave: true);
 
-        return ObjectMapper.Map<TestCase, TestCaseDto>(testCase);
+        return await MapAsync(testCase);
     }
 
     [Authorize(TestCaseManagementPermissions.TestCases.Update)]
@@ -111,7 +115,7 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
         await PublishVersionIfApprovedAsync(testCase, input.ChangeSummary);
         await _testCaseRepository.UpdateAsync(testCase, autoSave: true);
 
-        return ObjectMapper.Map<TestCase, TestCaseDto>(testCase);
+        return await MapAsync(testCase);
     }
 
     [Authorize(TestCaseManagementPermissions.TestCases.Delete)]
@@ -131,7 +135,48 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
         await PublishVersionIfApprovedAsync(testCase, input.ChangeSummary);
         await _testCaseRepository.UpdateAsync(testCase, autoSave: true);
 
-        return ObjectMapper.Map<TestCase, TestCaseDto>(testCase);
+        return await MapAsync(testCase);
+    }
+
+    [Authorize(TestCaseManagementPermissions.TestCases.Update)]
+    public virtual async Task<TestCaseDto> InsertSharedStepsAsync(Guid id, InsertSharedStepsDto input)
+    {
+        var testCase = await _testCaseRepository.GetAsync(id);
+        var group = await _sharedStepGroups.GetAsync(input.SharedStepGroupId);
+
+        testCase.InsertSharedSteps(group, input.Position);
+
+        await PublishVersionIfApprovedAsync(testCase, input.ChangeSummary);
+        await _testCaseRepository.UpdateAsync(testCase, autoSave: true);
+
+        return await MapAsync(testCase);
+    }
+
+    [Authorize(TestCaseManagementPermissions.TestCases.Update)]
+    public virtual async Task<TestCaseDto> RefreshSharedStepsAsync(Guid id, Guid groupId, RefreshSharedStepsDto input)
+    {
+        var testCase = await _testCaseRepository.GetAsync(id);
+        var group = await _sharedStepGroups.GetAsync(groupId);
+
+        testCase.RefreshSharedSteps(group);
+
+        await PublishVersionIfApprovedAsync(
+            testCase, string.IsNullOrWhiteSpace(input.ChangeSummary) ? L["TestCaseManagement:SharedStepsUpdatedSummary", group.Name, group.Revision].Value : input.ChangeSummary);
+        await _testCaseRepository.UpdateAsync(testCase, autoSave: true);
+
+        return await MapAsync(testCase);
+    }
+
+    [Authorize(TestCaseManagementPermissions.TestCases.Update)]
+    public virtual async Task<TestCaseDto> DetachSharedStepsAsync(Guid id, Guid groupId)
+    {
+        var testCase = await _testCaseRepository.GetAsync(id);
+
+        // Only the link is removed: the steps are the same, so there is nothing to version.
+        testCase.DetachSharedSteps(groupId);
+        await _testCaseRepository.UpdateAsync(testCase, autoSave: true);
+
+        return await MapAsync(testCase);
     }
 
     [Authorize(TestCaseManagementPermissions.TestCases.Update)]
@@ -143,7 +188,7 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
         testCase.SetTags(input.Tags);
         await _testCaseRepository.UpdateAsync(testCase, autoSave: true);
 
-        return ObjectMapper.Map<TestCase, TestCaseDto>(testCase);
+        return await MapAsync(testCase);
     }
 
     public virtual async Task<List<TagSummaryDto>> GetTagsAsync()
@@ -166,7 +211,7 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
         await _testCaseManager.ChangeStatusAsync(testCase, input.TargetStatus, input.ChangeSummary);
         await _testCaseRepository.UpdateAsync(testCase, autoSave: true);
 
-        return ObjectMapper.Map<TestCase, TestCaseDto>(testCase);
+        return await MapAsync(testCase);
     }
 
     public virtual async Task<List<TestCaseVersionDto>> GetVersionsAsync(Guid id)
@@ -214,6 +259,30 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
             TestRunTitle = x.TestRunTitle,
             Environment = x.Environment,
         }).ToList();
+    }
+
+    /// <summary>The test case as a DTO, with the name of each shared group its steps came from and whether the copy is behind.</summary>
+    protected virtual async Task<TestCaseDto> MapAsync(TestCase testCase)
+    {
+        var dto = ObjectMapper.Map<TestCase, TestCaseDto>(testCase);
+
+        var ids = testCase.SharedStepGroupIds();
+        if (ids.Count == 0)
+        {
+            return dto;
+        }
+
+        var groups = (await _sharedStepGroups.GetListAsync(g => ids.Contains(g.Id))).ToDictionary(g => g.Id);
+        foreach (var step in dto.Steps.Where(s => s.SharedStepGroupId.HasValue))
+        {
+            if (groups.TryGetValue(step.SharedStepGroupId!.Value, out var group))
+            {
+                step.SharedStepGroupName = group.Name;
+                step.SharedStepOutdated = (step.SharedStepRevision ?? 0) < group.Revision;
+            }
+        }
+
+        return dto;
     }
 
     protected virtual void ApplyContent(TestCase testCase, CreateUpdateTestCaseDto input)

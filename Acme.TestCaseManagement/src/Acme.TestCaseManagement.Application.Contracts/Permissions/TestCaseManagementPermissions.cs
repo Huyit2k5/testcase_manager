@@ -52,6 +52,13 @@ public static class TestCaseManagementPermissions
         public const string Approve = Default + ".Approve";
     }
 
+    /// <summary>The library of reusable groups of steps: reading it, and changing it (which can put many test cases behind).</summary>
+    public static class SharedSteps
+    {
+        public const string Default = GroupName + ".SharedSteps";
+        public const string Manage = Default + ".Manage";
+    }
+
     /// <summary>Creating, listing and revoking the API keys of CI/CD pipelines.</summary>
     public static class ApiKeys
     {

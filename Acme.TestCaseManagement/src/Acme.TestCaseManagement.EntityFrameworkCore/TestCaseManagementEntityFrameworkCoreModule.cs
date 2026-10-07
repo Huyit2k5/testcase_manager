@@ -2,6 +2,7 @@ using Acme.TestCaseManagement.EntityFrameworkCore;
 using Acme.TestCaseManagement.EntityFrameworkCore.Repositories;
 using Acme.TestCaseManagement.Quality;
 using Acme.TestCaseManagement.Runs;
+using Acme.TestCaseManagement.SharedSteps;
 using Acme.TestCaseManagement.TestCases;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.EntityFrameworkCore;
@@ -28,6 +29,7 @@ public class TestCaseManagementEntityFrameworkCoreModule : AbpModule
             options.Entity<TestCase>(o => o.DefaultWithDetailsFunc = q => q.IncludeDetails());
             options.Entity<TestRun>(o => o.DefaultWithDetailsFunc = q => q.IncludeDetails());
             options.Entity<SignOffReport>(o => o.DefaultWithDetailsFunc = q => q.IncludeDetails());
+            options.Entity<SharedStepGroup>(o => o.DefaultWithDetailsFunc = q => q.IncludeDetails());
         });
     }
 }

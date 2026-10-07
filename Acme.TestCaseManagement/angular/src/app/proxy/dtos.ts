@@ -16,7 +16,11 @@ export interface TestSuiteTree {
 }
 
 // ---- Test cases
-export interface TestStep { id?: string | null; stepOrder?: number; action: string; expectedResult: string; testData?: string | null }
+export interface TestStep {
+  id?: string | null; stepOrder?: number; action: string; expectedResult: string; testData?: string | null;
+  /** Set by the server when the step is a copy of a shared step; read-only. */
+  sharedStepGroupId?: string | null; sharedStepRevision?: number | null; sharedStepGroupName?: string | null; sharedStepOutdated?: boolean;
+}
 
 export interface TestCase {
   id: string; suiteId: string; code: string; title: string; description: string | null;
@@ -247,3 +251,16 @@ export interface Attachment {
 }
 
 export interface TagSummary { name: string; count: number }
+
+// ---- Shared steps -----------------------------------------------------------------------------------------------------
+
+export interface SharedStep { id?: string | null; stepOrder?: number; action: string; expectedResult: string; testData?: string | null }
+export interface SharedStepGroup {
+  id: string; name: string; description: string | null; revision: number; steps: SharedStep[]; creationTime: string; lastModificationTime: string | null;
+}
+export interface SharedStepGroupSummary { id: string; name: string; description: string | null; revision: number; stepCount: number; usedByCount: number }
+export interface SaveSharedStepGroup { name: string; description?: string | null; steps: SharedStep[] }
+export interface SharedStepUsage {
+  testCaseId: string; code: string; title: string; status: number; linkedRevision: number; linkedStepCount: number; isOutdated: boolean;
+}
+export interface UpdateSharedStepUsersResult { updated: number; codes: string[]; newVersions: number }

@@ -3,9 +3,9 @@
   border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; flex-wrap: wrap;
 }
 .brand { font-weight: 800; padding: 14px 0; }
-nav { display: flex; gap: 4px; flex: 1; flex-wrap: wrap; }
+nav { display: flex; gap: 2px; flex: 1; flex-wrap: wrap; }
 nav a {
-  padding: 15px 9px; white-space: nowrap; font-size: .92rem; text-decoration: none; color: var(--muted); font-weight: 600; border-bottom: 3px solid transparent;
+  padding: 15px 7px; white-space: nowrap; font-size: .88rem; text-decoration: none; color: var(--muted); font-weight: 600; border-bottom: 3px solid transparent;
   &:hover { color: var(--text); }
   &.active { color: var(--primary); border-bottom-color: var(--primary); }
 }

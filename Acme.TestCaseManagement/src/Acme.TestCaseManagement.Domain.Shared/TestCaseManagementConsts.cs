@@ -109,3 +109,12 @@ public static class TagConsts
 
     public const int MaxPerTestCase = 20;
 }
+
+public static class SharedStepGroupConsts
+{
+    public const int MaxNameLength = 128;
+
+    public const int MaxDescriptionLength = 1000;
+
+    public const int MaxSteps = 50;
+}

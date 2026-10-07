@@ -68,6 +68,27 @@ public class TestCaseController : TestCaseManagementController, ITestCaseAppServ
     }
 
     /// <inheritdoc />
+    [HttpPost("{id:guid}/shared-steps")]
+    public virtual Task<TestCaseDto> InsertSharedStepsAsync(Guid id, InsertSharedStepsDto input)
+    {
+        return _testCaseAppService.InsertSharedStepsAsync(id, input);
+    }
+
+    /// <inheritdoc />
+    [HttpPost("{id:guid}/shared-steps/{groupId:guid}/refresh")]
+    public virtual Task<TestCaseDto> RefreshSharedStepsAsync(Guid id, Guid groupId, RefreshSharedStepsDto input)
+    {
+        return _testCaseAppService.RefreshSharedStepsAsync(id, groupId, input);
+    }
+
+    /// <inheritdoc />
+    [HttpDelete("{id:guid}/shared-steps/{groupId:guid}")]
+    public virtual Task<TestCaseDto> DetachSharedStepsAsync(Guid id, Guid groupId)
+    {
+        return _testCaseAppService.DetachSharedStepsAsync(id, groupId);
+    }
+
+    /// <inheritdoc />
     [HttpGet("tags")]
     public virtual Task<List<TagSummaryDto>> GetTagsAsync()
     {

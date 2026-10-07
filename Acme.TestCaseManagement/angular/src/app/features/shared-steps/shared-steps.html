@@ -1,0 +1,125 @@
+<div class="page">
+  <div class="page-head">
+    <h1>{{ 'shared.title' | t }}</h1>
+    @if (auth.can(perm.SharedSteps.Manage)) {
+      <button type="button" class="btn primary" (click)="newGroup()">{{ 'shared.newGroup' | t }}</button>
+    }
+  </div>
+
+  <section class="card">
+    <p class="muted">{{ 'shared.intro' | t }}</p>
+    <form class="row" (ngSubmit)="reload()">
+      <input class="grow" name="search" [(ngModel)]="search" [placeholder]="'shared.searchPlaceholder' | t" [attr.aria-label]="'common.search' | t" />
+      <button type="submit" class="btn">{{ 'common.search' | t }}</button>
+    </form>
+  </section>
+
+  <div class="card flush">
+    <table>
+      <thead>
+        <tr>
+          <th>{{ 'common.name' | t }}</th><th>{{ 'common.steps' | t }}</th><th>{{ 'shared.colRevision' | t }}</th><th>{{ 'shared.colUsedBy' | t }}</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (group of groups(); track group.id) {
+          <tr>
+            <td>{{ group.name }}@if (group.description) { <div class="muted">{{ group.description }}</div> }</td>
+            <td>{{ group.stepCount }}</td>
+            <td>{{ 'shared.revision' | t: { n: group.revision } }}</td>
+            <td>{{ group.usedByCount }}</td>
+            <td class="right nowrap">
+              <button type="button" class="btn sm" (click)="openUsage(group)">{{ 'shared.usage' | t }}</button>
+              @if (auth.can(perm.SharedSteps.Manage)) {
+                <button type="button" class="btn sm" (click)="edit(group)">{{ 'common.edit' | t }}</button>
+                <button type="button" class="btn sm danger" (click)="remove(group)">{{ 'common.delete' | t }}</button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    @if (!groups().length) {
+      <div class="empty">{{ (loading() ? 'common.loading' : 'shared.none') | t }}</div>
+    }
+  </div>
+</div>
+
+@if (form(); as f) {
+  <app-modal [title]="(f.id ? 'shared.editTitle' : 'shared.newGroup') | t" [wide]="true" (closed)="form.set(null)">
+    <form id="groupForm" (ngSubmit)="save()">
+      <div class="field">
+        <label for="sg-name">{{ 'common.name' | t }}</label>
+        <input id="sg-name" name="name" required maxlength="128" [(ngModel)]="f.name" [placeholder]="'shared.namePlaceholder' | t" />
+      </div>
+      <div class="field">
+        <label for="sg-desc">{{ 'common.description' | t }}</label>
+        <input id="sg-desc" name="description" maxlength="1000" [(ngModel)]="f.description" />
+      </div>
+      @if (f.id) { <p class="muted">{{ 'shared.editNote' | t }}</p> }
+
+      <h3>{{ 'common.steps' | t }}</h3>
+      <table>
+        <thead><tr><th style="width:36px">#</th><th>{{ 'form.action' | t }}</th><th>{{ 'form.expected' | t }}</th><th>{{ 'form.testData' | t }}</th><th style="width:96px"></th></tr></thead>
+        <tbody>
+          @for (step of f.steps; track $index; let i = $index) {
+            <tr>
+              <td>{{ i + 1 }}</td>
+              <td><textarea [name]="'action' + i" required [(ngModel)]="step.action" [attr.aria-label]="'form.action' | t"></textarea></td>
+              <td><textarea [name]="'expected' + i" required [(ngModel)]="step.expectedResult" [attr.aria-label]="'form.expected' | t"></textarea></td>
+              <td><textarea [name]="'data' + i" [(ngModel)]="step.testData" [attr.aria-label]="'form.testData' | t"></textarea></td>
+              <td class="nowrap">
+                <button type="button" class="btn sm" [disabled]="i === 0" (click)="move(f, i, -1)" [attr.aria-label]="'form.moveUp' | t">&uarr;</button>
+                <button type="button" class="btn sm" [disabled]="i === f.steps.length - 1" (click)="move(f, i, 1)" [attr.aria-label]="'form.moveDown' | t">&darr;</button>
+                <button type="button" class="btn sm danger" (click)="removeStep(f, i)" [attr.aria-label]="'form.removeStep' | t">&times;</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <div class="row" style="margin-top:8px"><button type="button" class="btn sm" (click)="addStep(f)">{{ 'form.addStep' | t }}</button></div>
+    </form>
+    <ng-container slot="footer">
+      <button type="button" class="btn" (click)="form.set(null)">{{ 'common.cancel' | t }}</button>
+      <button type="submit" form="groupForm" class="btn primary">{{ 'common.save' | t }}</button>
+    </ng-container>
+  </app-modal>
+}
+
+@if (usage(); as u) {
+  <app-modal [title]="'shared.usageTitle' | t: { name: u.group.name }" [wide]="true" (closed)="usage.set(null)">
+    <p class="muted">{{ 'shared.usageNote' | t: { revision: u.group.revision } }}</p>
+    @if (u.items.length) {
+      <table>
+        <thead><tr><th></th><th>{{ 'common.code' | t }}</th><th>{{ 'common.title' | t }}</th><th>{{ 'common.status' | t }}</th><th>{{ 'shared.colCopied' | t }}</th><th></th></tr></thead>
+        <tbody>
+          @for (item of u.items; track item.testCaseId) {
+            <tr>
+              <td>
+                @if (item.isOutdated && auth.can(perm.TestCases.Update)) {
+                  <input type="checkbox" [checked]="u.selected.has(item.testCaseId)" (change)="toggle(u, item.testCaseId)" [attr.aria-label]="'shared.selectCase' | t: { code: item.code }" />
+                }
+              </td>
+              <td class="mono nowrap">{{ item.code }}</td>
+              <td>{{ item.title }}</td>
+              <td><span class="badge" [class]="badgeOf('case', item.status)">{{ label(statusEnum, item.status) }}</span></td>
+              <td>{{ 'shared.revision' | t: { n: item.linkedRevision } }}</td>
+              <td><span class="badge" [class]="item.isOutdated ? 'warn' : 'ok'">{{ (item.isOutdated ? 'shared.behind' : 'shared.upToDate') | t }}</span></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      @if (behind(u) > 0 && auth.can(perm.SharedSteps.Manage) && auth.can(perm.TestCases.Update)) {
+        <p class="muted">{{ 'shared.bulkNote' | t }}</p>
+      }
+    } @else {
+      <p class="muted">{{ 'shared.noUsage' | t }}</p>
+    }
+    <ng-container slot="footer">
+      <button type="button" class="btn" (click)="usage.set(null)">{{ 'common.close' | t }}</button>
+      @if (behind(u) > 0 && auth.can(perm.SharedSteps.Manage) && auth.can(perm.TestCases.Update)) {
+        <button type="button" class="btn primary" [disabled]="u.selected.size === 0" (click)="updateSelected()">{{ 'shared.updateSelected' | t: { count: u.selected.size } }}</button>
+      }
+    </ng-container>
+  </app-modal>
+}

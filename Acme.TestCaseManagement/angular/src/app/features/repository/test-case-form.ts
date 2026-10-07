@@ -98,9 +98,12 @@ import { SuiteOption } from './suite-options';
             @for (step of model.steps; track $index; let i = $index) {
               <tr>
                 <td>{{ i + 1 }}</td>
-                <td><textarea [name]="'action' + i" required [(ngModel)]="step.action" [attr.aria-label]="'form.action' | t"></textarea></td>
-                <td><textarea [name]="'expected' + i" required [(ngModel)]="step.expectedResult" [attr.aria-label]="'form.expected' | t"></textarea></td>
-                <td><textarea [name]="'data' + i" [(ngModel)]="step.testData" [attr.aria-label]="'form.testData' | t"></textarea></td>
+                <td>
+                  @if (step.sharedStepGroupId) { <span class="chip small" [title]="'shared.linkedHint' | t">{{ 'shared.fromGroup' | t: { name: step.sharedStepGroupName ?? '' } }}</span> }
+                  <textarea [name]="'action' + i" required [(ngModel)]="step.action" [readOnly]="!!step.sharedStepGroupId" [attr.aria-label]="'form.action' | t"></textarea>
+                </td>
+                <td><textarea [name]="'expected' + i" required [(ngModel)]="step.expectedResult" [readOnly]="!!step.sharedStepGroupId" [attr.aria-label]="'form.expected' | t"></textarea></td>
+                <td><textarea [name]="'data' + i" [(ngModel)]="step.testData" [readOnly]="!!step.sharedStepGroupId" [attr.aria-label]="'form.testData' | t"></textarea></td>
                 <td class="nowrap">
                   <button type="button" class="btn sm" [disabled]="i === 0" (click)="move(i, -1)" [attr.aria-label]="'form.moveUp' | t">&uarr;</button>
                   <button type="button" class="btn sm" [disabled]="i === model.steps.length - 1" (click)="move(i, 1)" [attr.aria-label]="'form.moveDown' | t">&darr;</button>
@@ -173,7 +176,10 @@ export class TestCaseFormComponent implements OnInit {
         preconditions: existing.preconditions, postconditions: existing.postconditions, priority: existing.priority,
         severity: existing.severity, executionType: existing.executionType, kind: existing.kind, layer: existing.layer,
         automationId: existing.automationId, isFlaky: existing.isFlaky, changeSummary: '',
-        steps: existing.steps.map(s => ({ id: s.id, action: s.action, expectedResult: s.expectedResult, testData: s.testData })),
+        steps: existing.steps.map(s => ({
+          id: s.id, action: s.action, expectedResult: s.expectedResult, testData: s.testData,
+          sharedStepGroupId: s.sharedStepGroupId, sharedStepGroupName: s.sharedStepGroupName,
+        })),
       };
     } else {
       this.model.suiteId = this.defaultSuiteId() ?? this.suites()[0]?.id ?? '';

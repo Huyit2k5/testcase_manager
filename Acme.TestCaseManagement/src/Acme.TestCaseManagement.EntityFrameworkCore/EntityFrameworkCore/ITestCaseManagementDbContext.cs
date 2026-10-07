@@ -1,4 +1,5 @@
 using Acme.TestCaseManagement.Attachments;
+using Acme.TestCaseManagement.SharedSteps;
 using Acme.TestCaseManagement.Automation;
 using Acme.TestCaseManagement.Plans;
 using Acme.TestCaseManagement.Quality;
@@ -47,6 +48,8 @@ public interface ITestCaseManagementDbContext : IEfCoreDbContext
     DbSet<ApiKey> ApiKeys { get; }
 
     DbSet<Attachment> Attachments { get; }
+
+    DbSet<SharedStepGroup> SharedStepGroups { get; }
 
     DbSet<AutomationPublication> AutomationPublications { get; }
 }

@@ -16,6 +16,7 @@ export const Permissions = {
   Requirements: { Default: 'TestCaseManagement.Requirements', Manage: 'TestCaseManagement.Requirements.Manage' },
   QualityGates: { Default: 'TestCaseManagement.QualityGates', Manage: 'TestCaseManagement.QualityGates.Manage' },
   SignOff: { Default: 'TestCaseManagement.SignOff', Approve: 'TestCaseManagement.SignOff.Approve' },
+  SharedSteps: { Default: 'TestCaseManagement.SharedSteps', Manage: 'TestCaseManagement.SharedSteps.Manage' },
   ApiKeys: { Default: 'TestCaseManagement.ApiKeys', Manage: 'TestCaseManagement.ApiKeys.Manage' },
 } as const;
 

@@ -27,6 +27,20 @@ public interface ITestCaseAppService : IApplicationService
     /// </summary>
     Task<TestCaseDto> SetTagsAsync(Guid id, SetTestCaseTagsDto input);
 
+    /// <summary>
+    /// Copies the steps of a group of shared steps into the test case, linked to the group's current revision. An approved test case
+    /// gets a new version, as for any change of its steps.
+    /// </summary>
+    Task<TestCaseDto> InsertSharedStepsAsync(Guid id, InsertSharedStepsDto input);
+
+    /// <summary>Replaces the steps that came from the group by its current steps. An approved test case gets a new version.</summary>
+    Task<TestCaseDto> RefreshSharedStepsAsync(Guid id, Guid groupId, RefreshSharedStepsDto input);
+
+    /// <summary>
+    /// Makes the steps that came from the group the test case's own. Their content does not change, so no version is published.
+    /// </summary>
+    Task<TestCaseDto> DetachSharedStepsAsync(Guid id, Guid groupId);
+
     /// <summary>Every tag in use with the number of test cases that have it, the most used first; for a filter or a suggestion.</summary>
     Task<List<TagSummaryDto>> GetTagsAsync();
 
