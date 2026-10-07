@@ -5,7 +5,7 @@ import localeVi from '@angular/common/locales/vi';
 import { Title } from '@angular/platform-browser';
 import { RouterStateSnapshot, TitleStrategy } from '@angular/router';
 import {
-  ExecutionType, ImportConflictMode, ImportOutcome, PlanStatus, PriorityLevel, RequirementCoverageStatus, RunStatus, SeverityLevel,
+  AttachmentOwnerType, ExecutionType, FlakinessLevel, ImportConflictMode, ImportOutcome, PlanStatus, PriorityLevel, RequirementCoverageStatus, RunStatus, SeverityLevel,
   SignOffStatus, TestCaseStatus, TestKind, TestLayer, TestResultStatus, TransferFormat, enumLabel,
 } from '../../proxy/enums';
 import { words } from '../ui';
@@ -32,6 +32,7 @@ const ENUM_NAMES = new Map<object, string>([
   [TestResultStatus, 'TestResultStatus'], [ExecutionType, 'ExecutionType'], [TestKind, 'TestKind'], [TestLayer, 'TestLayer'],
   [PlanStatus, 'PlanStatus'], [RunStatus, 'RunStatus'], [RequirementCoverageStatus, 'RequirementCoverageStatus'],
   [SignOffStatus, 'SignOffStatus'], [TransferFormat, 'TransferFormat'], [ImportConflictMode, 'ImportConflictMode'], [ImportOutcome, 'ImportOutcome'],
+  [FlakinessLevel, 'FlakinessLevel'], [AttachmentOwnerType, 'AttachmentOwnerType'],
 ]);
 
 function isLang(value: unknown): value is Lang {

@@ -8,11 +8,13 @@ import { TestCase, TestCaseDefect, TestCaseVersion } from '../../proxy/dtos';
 import {
   ExecutionType, PriorityLevel, SeverityLevel, TEST_CASE_TRANSITIONS, TestCaseStatus, TestKind, TestLayer,
 } from '../../proxy/enums';
+import { AttachmentOwnerType } from '../../proxy/enums';
 import { TestCaseService } from '../../proxy/services';
+import { AttachmentsComponent } from '../attachments/attachments';
 
 @Component({
   selector: 'app-test-case-detail',
-  imports: [ModalComponent, FormatDatePipe, TranslatePipe],
+  imports: [ModalComponent, FormatDatePipe, TranslatePipe, AttachmentsComponent],
   template: `
     <app-modal [title]="testCase().code + ' - ' + testCase().title" [wide]="true" (closed)="closed.emit()">
       <div class="row" style="margin-bottom:12px">
@@ -52,6 +54,9 @@ import { TestCaseService } from '../../proxy/services';
       } @else {
         <p class="muted">{{ 'detail.noVersion' | t }}</p>
       }
+
+      <h3>{{ 'att.title' | t }}</h3>
+      <app-attachments [ownerType]="ownerType" [ownerId]="testCase().id" [canWrite]="auth.can(perm.TestCases.Update)" />
 
       <h3>{{ 'detail.defects' | t }}</h3>
       @if (defects().length) {
@@ -105,6 +110,7 @@ export class TestCaseDetailComponent implements OnInit {
   protected readonly layers = TestLayer;
   protected readonly executions = ExecutionType;
   protected readonly badgeOf = badge;
+  protected readonly ownerType = AttachmentOwnerType.TestCase;
 
   ngOnInit(): void {
     const id = this.testCase().id;

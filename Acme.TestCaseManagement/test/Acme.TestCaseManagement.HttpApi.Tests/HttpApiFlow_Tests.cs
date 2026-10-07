@@ -3,7 +3,9 @@ using System.Net;
 using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using Acme.TestCaseManagement.Attachments.Dtos;
 using Acme.TestCaseManagement.Automation.Dtos;
+using Acme.TestCaseManagement.Insights.Dtos;
 using Acme.TestCaseManagement.Enums;
 using Acme.TestCaseManagement.Plans.Dtos;
 using Acme.TestCaseManagement.QualityGates.Dtos;
@@ -303,6 +305,20 @@ public class HttpApiFlow_Tests
         });
         published.Recorded.ShouldBe(1);
         (await qaLead.PostAsync<ApiKeyDto>($"{Root}/api-keys/{apiKey.Id}/revoke")).IsActive.ShouldBeFalse();
+
+        // ---- Insights: the flaky list and the dashboard (see HttpApiInsights_Tests for the detail) ------------------------
+        (await qaLead.GetAsync<FlakyTestListDto>($"{Root}/flaky-tests")).Settings.WindowSize.ShouldBeGreaterThan(0);
+        (await qaLead.PostAsync<ApplyFlakyFlagsResultDto>($"{Root}/flaky-tests/apply", new ApplyFlakyFlagsInput { ClearRecovered = true })).Flagged.ShouldBe(0);
+        (await qaLead.GetAsync<DashboardDto>($"{Root}/dashboard?Days=7")).Velocity.Points.Count.ShouldBe(7);
+
+        // ---- Attachments: a file on the test case, listed, downloaded and deleted (see HttpApiAttachments_Tests) --------------
+        var attached = await qaLead.UploadAsync<AttachmentDto>($"{Root}/attachments", "evidence.txt", Encoding.UTF8.GetBytes("evidence"), new Dictionary<string, string>
+        {
+            ["OwnerType"] = ((int)AttachmentOwnerType.TestCase).ToString(), ["OwnerId"] = automated.Id.ToString(),
+        });
+        (await qaLead.GetAsync<List<AttachmentDto>>($"{Root}/attachments?OwnerType=0&OwnerIds={automated.Id}")).Single().Id.ShouldBe(attached.Id);
+        (await qaLead.DownloadAsync($"{Root}/attachments/{attached.Id}/content")).Bytes.ShouldBe(Encoding.UTF8.GetBytes("evidence"));
+        await qaLead.SendAsync(HttpMethod.Delete, $"{Root}/attachments/{attached.Id}");
 
         await AssertEveryOperationWasCalledAsync(calls);
     }

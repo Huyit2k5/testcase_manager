@@ -15,6 +15,7 @@ export class App {
   protected readonly auth = inject(AuthService);
 
   protected readonly tabs = [
+    { path: '/dashboard', label: 'nav.dashboard', permission: Permissions.TestRuns.Default },
     { path: '/repository', label: 'nav.repository' },
     { path: '/runs', label: 'nav.runs' },
     { path: '/traceability', label: 'nav.traceability' },

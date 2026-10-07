@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json.Nodes;
 using Acme.TestCaseManagement.Automation.Dtos;
 using Acme.TestCaseManagement.Enums;
+using Acme.TestCaseManagement.Insights.Dtos;
 using Acme.TestCaseManagement.Runs.Dtos;
 using Acme.TestCaseManagement.Suites.Dtos;
 using Acme.TestCaseManagement.TestCases.Dtos;
@@ -108,6 +109,10 @@ public class HttpApiAutomation_Tests
             (HttpMethod.Post, $"{Root}/suites", new CreateSuiteBody { Name = "Mine" }),
             (HttpMethod.Get, $"{Root}/api-keys", null),
             (HttpMethod.Post, $"{Root}/api-keys", new CreateApiKeyDto { Name = "Escalate" }),
+            (HttpMethod.Get, $"{Root}/dashboard", null),
+            (HttpMethod.Get, $"{Root}/attachments?OwnerType=0&OwnerIds={Guid.NewGuid()}", null),
+            (HttpMethod.Get, $"{Root}/flaky-tests", null),
+            (HttpMethod.Post, $"{Root}/flaky-tests/apply", new ApplyFlakyFlagsInput()),
         };
 
         foreach (var (method, url, body) in forbidden)

@@ -1,3 +1,4 @@
+using Acme.TestCaseManagement.Attachments;
 using Acme.TestCaseManagement.Automation;
 using Acme.TestCaseManagement.Plans;
 using Acme.TestCaseManagement.Quality;
@@ -44,6 +45,8 @@ public interface ITestCaseManagementDbContext : IEfCoreDbContext
 
     // Automation (CI/CD)
     DbSet<ApiKey> ApiKeys { get; }
+
+    DbSet<Attachment> Attachments { get; }
 
     DbSet<AutomationPublication> AutomationPublications { get; }
 }

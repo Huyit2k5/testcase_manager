@@ -14,6 +14,8 @@ export enum SignOffStatus { Pending = 0, Approved = 1, Superseded = 2 }
 export enum TransferFormat { Csv = 0, Xlsx = 1 }
 export enum ImportConflictMode { Skip = 0, Update = 1 }
 export enum ImportOutcome { Created = 0, Updated = 1, Skipped = 2, Recorded = 3, Invalid = 4 }
+export enum AttachmentOwnerType { TestCase = 0, TestExecution = 1 }
+export enum FlakinessLevel { Insufficient = 0, Stable = 1, Watch = 2, Flaky = 3 }
 
 export interface EnumOption { value: number; label: string }
 

@@ -9,6 +9,8 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Volo.Abp;
 using Volo.Abp.Autofac;
+using Volo.Abp.BlobStoring;
+using Volo.Abp.BlobStoring.FileSystem;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.Sqlite;
@@ -31,6 +33,7 @@ namespace Acme.TestCaseManagement;
 /// </summary>
 [DependsOn(
     typeof(AbpAutofacModule),
+    typeof(AbpBlobStoringFileSystemModule),
     typeof(AbpSwashbuckleModule),
     typeof(AbpEntityFrameworkCoreSqliteModule),
     typeof(AbpIdentityDomainModule),
@@ -59,6 +62,20 @@ public class TestCaseManagementHttpApiHostModule : AbpModule
         Configure<AbpDbContextOptions>(options =>
         {
             options.UseSqlite();
+        });
+
+        // Attachments are kept in a folder (Storage:Path, relative to the content root unless absolute). A production host
+        // chooses its own provider here: database, S3, Azure Blob Storage...
+        var storagePath = configuration["Storage:Path"] ?? "App_Data/attachments";
+        Configure<AbpBlobStoringOptions>(options =>
+        {
+            options.Containers.ConfigureDefault(container =>
+            {
+                container.UseFileSystem(fileSystem =>
+                {
+                    fileSystem.BasePath = Path.IsPathRooted(storagePath) ? storagePath : Path.Combine(AppContext.BaseDirectory, storagePath);
+                });
+            });
         });
 
         // Permission definitions come from code; the grants are what live in the database.

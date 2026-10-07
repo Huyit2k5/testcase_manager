@@ -96,6 +96,15 @@ public class OpenApiContract_Tests
         "ApiKey_Revoke POST /api-keys/{id}/revoke",
         "AutomationResults_Publish POST /automation/results",
 
+        "FlakyTest_GetList GET /flaky-tests",
+        "FlakyTest_Apply POST /flaky-tests/apply",
+        "Dashboard_Get GET /dashboard",
+
+        "Attachment_GetList GET /attachments",
+        "Attachment_Upload POST /attachments",
+        "Attachment_Download GET /attachments/{id}/content",
+        "Attachment_Delete DELETE /attachments/{id}",
+
         // Outside the module: the host's own login endpoint, so that Swagger UI can obtain a token.
         "Auth_Login POST /api/auth/login",
     };
@@ -181,7 +190,7 @@ public class OpenApiContract_Tests
             takesBody.ShouldBe(method is "POST" or "PUT" && id is not ("TestRun_Complete" or "ApiKey_Revoke"), $"{where}: request body");
             if (takesBody)
             {
-                var bodyType = id is "TestCaseTransfer_Import" or "TestResultTransfer_Import" ? "multipart/form-data" : "application/json";
+                var bodyType = id is "TestCaseTransfer_Import" or "TestResultTransfer_Import" or "Attachment_Upload" ? "multipart/form-data" : "application/json";
                 operation["requestBody"]!["content"]!.AsObject().ContainsKey(bodyType).ShouldBeTrue($"{where} body is not {bodyType}");
             }
         }
@@ -309,7 +318,7 @@ public class OpenApiContract_Tests
         var schemas = Schemas(await GetDocumentAsync());
 
         var documented = schemas.Where(schema => schema.Key.StartsWith("Acme.TestCaseManagement.Enums.")).ToList();
-        documented.Count.ShouldBe(15);
+        documented.Count.ShouldBe(17);
 
         foreach (var (name, schema) in documented)
         {

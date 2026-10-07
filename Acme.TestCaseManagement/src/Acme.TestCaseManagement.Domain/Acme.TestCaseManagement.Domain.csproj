@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Volo.Abp.Ddd.Domain" />
+    <PackageReference Include="Volo.Abp.BlobStoring" />
     <ProjectReference Include="..\Acme.TestCaseManagement.Domain.Shared\Acme.TestCaseManagement.Domain.Shared.csproj" />
   </ItemGroup>
 

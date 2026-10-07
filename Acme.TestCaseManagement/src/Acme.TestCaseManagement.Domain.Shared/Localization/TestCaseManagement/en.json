@@ -60,6 +60,12 @@
     "TestCaseManagement:InvalidApiKeyExpiry": "The expiry of an API key must be in the future.",
     "TestCaseManagement:InvalidAutomationRun": "Give either RunId (an existing run) or Run (a new one), not both and not neither.",
     "TestCaseManagement:ExportTooLarge": "The export would have {Count} test cases, and the limit is {Limit}. Narrow it down with the filters.",
+    "TestCaseManagement:AttachmentEmpty": "The file is empty.",
+    "TestCaseManagement:AttachmentTooLarge": "The file is {Size} MB, and the limit is {Limit} MB.",
+    "TestCaseManagement:AttachmentTypeNotAllowed": "Files of type '{Extension}' are not accepted. Accepted: {Allowed}.",
+    "TestCaseManagement:AttachmentTooMany": "This item already has {Count} files, which is the most it can have.",
+    "TestCaseManagement:AttachmentOwnerNotFound": "The test case or execution to attach the file to was not found.",
+    "TestCaseManagement:AttachmentFileMissing": "The file '{FileName}' is no longer in the storage.",
 
     "QualityGate:Criterion:PassRate": "Pass rate (%)",
     "QualityGate:Criterion:P1Executed": "P1 tests executed (%)",

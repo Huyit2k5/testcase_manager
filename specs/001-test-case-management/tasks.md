@@ -158,3 +158,30 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 - [x] T061 Tests: key generation and validation, publishing rules (matching, ambiguity, strictness, retries and flaky, run creation and completion, idempotency), Automation ID uniqueness, HTTP with real keys (valid, revoked, expired, wrong, scope limits, roles).
 - [x] T062 Angular: an Automation page to create, list and revoke API keys (secret shown once, copy button) with a ready-made curl and CI example; English and Vietnamese; unit tests and a browser run.
 - [x] T063 Document the contract and the decisions (plan.md 4.9, README with a GitHub Actions example); run the full build.
+
+---
+
+## Phase 11: Flaky detection and dashboard (FR-012, FR-025)
+
+**Goal**: Find tests whose results flip between pass and fail from their history, and show the metrics of the spec's dashboard (pass rate, execution velocity, burn-down, defect density). Third of three follow-up phases. Formulas follow industry practice (plan.md 4.10): the flakiness score is the transition score used by Buildkite Test Engine (status changes between consecutive outcomes in a window), the burn-down has the ideal line of QA Touch and AIO Tests, and defect density is counted per 100 executed test cases.
+
+- [x] T064 [P] Domain: `FlakinessCalculator` (window, minimum observations, transition score, level), `DashboardCalculator` (velocity, burn-down with ideal line and projection, defect density), models and the `FlakinessLevel` enum; `IInsightsRepository`.
+- [x] T065 [P] EF Core: `EfCoreInsightsRepository` (items with first execution time, attempts in a lookback window, defect links of the scope runs).
+- [x] T066 Application and contracts: `FlakyTestAppService` (list with scores, apply flags to the library, optional un-flag of recovered tests) and `DashboardAppService`; DTOs; options (window, thresholds, lookback); localized messages.
+- [x] T067 [P] HttpApi: `FlakyTestController`, `DashboardController`; contract and convention tests.
+- [x] T068 Tests: calculators (patterns, window, ignored statuses, boundaries, burn-down edge cases, projection), services with real history, HTTP.
+- [x] T069 Angular: a Dashboard page (cards, burn-down and velocity charts in SVG, flaky table with apply button), English and Vietnamese, unit tests and a browser run.
+- [x] T070 Document the formulas and decisions (plan.md 4.10, README); run the full build.
+
+---
+
+## Phase 12: Attachments (FR-015)
+
+**Goal**: Let a tester attach a screenshot, a crash log or a video to the test case or to an execution attempt. Files live in an ABP blob container (the host chooses the storage), the database holds only the metadata; the type, the size and the number of files are limited; downloads are always served as the fixed type of their extension. No new permission: an attachment follows the permission of what it is attached to.
+
+- [x] T071 [P] Domain: `Attachment` aggregate (owner type and id, name, type, size, SHA-256), `AttachmentManager` (file name, extension whitelist, size and count limits), blob container, options, `AttachmentOwnerType`; `Volo.Abp.BlobStoring` dependency.
+- [x] T072 [P] EF Core mapping and DbSet (module context, interface, host context); contracts: DTOs, `IAttachmentAppService`; localized messages (en, vi).
+- [x] T073 `AttachmentAppService` (upload, list for several owners, download, delete) with the permission of the owner, blob and row kept consistent; `AttachmentController` (multipart upload, stream download with safe headers); contract and convention tests.
+- [x] T074 Host: file system blob storage configured, contract; tests for the manager and the service (limits, permissions, consistency, owners) and over HTTP.
+- [x] T075 Angular: an attachments panel (upload by button, drop or paste of a screenshot; list, download, delete) in the test case dialog and in the attempt history; English and Vietnamese; unit tests and a browser run.
+- [x] T076 Document the decisions (plan.md 4.11, README: storage setup); run the full build.

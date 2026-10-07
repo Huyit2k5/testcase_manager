@@ -1,0 +1,172 @@
+<div class="page">
+  <div class="page-head">
+    <h1>{{ 'dash.title' | t }}</h1>
+    <form class="row" (ngSubmit)="reload()">
+      <select name="plan" [(ngModel)]="planId" (ngModelChange)="reload()" [attr.aria-label]="'common.plan' | t" style="width: auto; min-width: 200px">
+        <option value="">{{ 'dash.allRuns' | t }}</option>
+        @for (plan of plans(); track plan.id) { <option [value]="plan.id">{{ plan.name }}</option> }
+      </select>
+      <select name="days" [(ngModel)]="days" (ngModelChange)="reload()" [attr.aria-label]="'dash.days' | t" style="width: auto">
+        @for (option of dayOptions; track option) { <option [ngValue]="option">{{ 'dash.lastDays' | t: { days: option } }}</option> }
+      </select>
+    </form>
+  </div>
+
+  @if (dashboard(); as d) {
+    @if (d.progress.totalItems === 0) {
+      <p class="muted">{{ 'dash.empty' | t }}</p>
+    }
+
+    <div class="stats" data-test="stats">
+      <div class="stat"><b>{{ percent(d.progress.passRate) }}</b><span>{{ 'dash.passRate' | t }}</span></div>
+      <div class="stat"><b>{{ percent(d.progress.completionPercentage) }}</b><span>{{ 'dash.completion' | t }}</span></div>
+      <div class="stat">
+        <b>{{ d.velocity.last7DaysAverage }}</b>
+        <span>{{ 'dash.velocityCard' | t }} @if (d.velocity.trendPercent !== null) { <em [class]="d.velocity.trendPercent >= 0 ? 'good' : 'low'">{{ trendText(d.velocity.trendPercent) }}</em> }</span>
+      </div>
+      <div class="stat"><b>{{ d.defectDensity.defectsPer100Executed === null ? ('common.na' | t) : d.defectDensity.defectsPer100Executed }}</b><span>{{ 'dash.densityCard' | t }}</span></div>
+      <div class="stat"><b>{{ d.flaky.flaky }}</b><span>{{ 'dash.flakyCard' | t }}</span></div>
+    </div>
+
+    <div class="grid-2">
+      <section class="card">
+        <h2>{{ 'dash.burnTitle' | t }}</h2>
+        @if (burn(); as b) {
+          <svg class="chart" [attr.viewBox]="'0 0 ' + chart.width + ' ' + chart.height" role="img" [attr.aria-label]="'dash.burnTitle' | t">
+            @for (t of b.yTicks; track t.position) {
+              <line [attr.x1]="chart.left" [attr.x2]="chart.width - chart.right" [attr.y1]="t.position" [attr.y2]="t.position" class="grid" />
+              <text [attr.x]="chart.left - 6" [attr.y]="t.position + 4" text-anchor="end">{{ t.label }}</text>
+            }
+            @for (t of b.xTicks; track t.position) {
+              <text [attr.x]="t.position" [attr.y]="chart.height - 8" text-anchor="middle">{{ t.label }}</text>
+            }
+            @if (b.todayX !== null) {
+              <line [attr.x1]="b.todayX" [attr.x2]="b.todayX" [attr.y1]="chart.top" [attr.y2]="chart.height - chart.bottom" class="today" />
+            }
+            <path [attr.d]="b.ideal" class="ideal" />
+            <path [attr.d]="b.actual" class="actual" />
+          </svg>
+          <div class="legend">
+            <span><i class="swatch actual"></i>{{ 'dash.remaining' | t }}</span>
+            <span><i class="swatch ideal"></i>{{ 'dash.ideal' | t }}</span>
+          </div>
+        }
+        <p>
+          <b>{{ d.burnDown.remainingNow }}</b> / {{ d.burnDown.totalItems }} {{ 'dash.remainingOf' | t }}
+          @if (d.burnDown.onTrack !== null) {
+            <span class="badge" [class]="d.burnDown.onTrack ? 'ok' : 'bad'">{{ (d.burnDown.onTrack ? 'dash.onTrack' : 'dash.behind') | t }}</span>
+          }
+        </p>
+        <p class="muted">
+          {{ 'dash.pace' | t: { pace: d.burnDown.itemsPerDay } }}
+          @if (d.burnDown.projectedFinish) { · {{ 'dash.projected' | t: { date: (d.burnDown.projectedFinish | fdate: 'mediumDate') } }} }
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>{{ 'dash.velocityTitle' | t }}</h2>
+        @if (velocity(); as v) {
+          <svg class="chart" [attr.viewBox]="'0 0 ' + chart.width + ' ' + chart.height" role="img" [attr.aria-label]="'dash.velocityTitle' | t">
+            @for (t of v.yTicks; track t.position) {
+              <line [attr.x1]="chart.left" [attr.x2]="chart.width - chart.right" [attr.y1]="t.position" [attr.y2]="t.position" class="grid" />
+              <text [attr.x]="chart.left - 6" [attr.y]="t.position + 4" text-anchor="end">{{ t.label }}</text>
+            }
+            @for (t of v.xTicks; track t.position) {
+              <text [attr.x]="t.position" [attr.y]="chart.height - 8" text-anchor="middle">{{ t.label }}</text>
+            }
+            @for (bar of v.bars; track bar.date) {
+              <g>
+                <title>{{ bar.date | fdate: 'mediumDate' }}: {{ bar.attempts }}</title>
+                <rect [attr.x]="bar.x" [attr.y]="bar.failed.y" [attr.width]="bar.width" [attr.height]="bar.failed.height" class="failed" />
+                <rect [attr.x]="bar.x" [attr.y]="bar.other.y" [attr.width]="bar.width" [attr.height]="bar.other.height" class="other" />
+                <rect [attr.x]="bar.x" [attr.y]="bar.passed.y" [attr.width]="bar.width" [attr.height]="bar.passed.height" class="passed" />
+              </g>
+            }
+          </svg>
+          <div class="legend">
+            <span><i class="swatch passed"></i>{{ 'dash.passed' | t }}</span>
+            <span><i class="swatch failed"></i>{{ 'dash.failed' | t }}</span>
+            <span><i class="swatch other"></i>{{ 'dash.otherResults' | t }}</span>
+          </div>
+        }
+        <p class="muted">
+          {{ 'dash.velocityLine' | t: { total: d.velocity.totalAttempts, avg: d.velocity.averagePerDay, days: d.days } }}
+        </p>
+      </section>
+    </div>
+
+    <div class="grid-2">
+      <section class="card">
+        <h2>{{ 'dash.densityTitle' | t }}</h2>
+        <div class="stats">
+          <div class="stat"><b>{{ d.defectDensity.defects }}</b><span>{{ 'dash.defects' | t }}</span></div>
+          <div class="stat"><b>{{ d.defectDensity.openDefects }}</b><span>{{ 'dash.openDefects' | t }}</span></div>
+          <div class="stat"><b>{{ d.defectDensity.executedTests }}</b><span>{{ 'dash.executedTests' | t }}</span></div>
+          <div class="stat"><b>{{ percent(d.defectDensity.testsWithDefectsPercent) }}</b><span>{{ 'dash.testsWithDefects' | t }}</span></div>
+        </div>
+        <p class="muted">
+          {{ 'dash.openBySeverity' | t: { critical: d.defectDensity.openCritical, high: d.defectDensity.openHigh, medium: d.defectDensity.openMedium, low: d.defectDensity.openLow } }}
+        </p>
+        <p class="muted">{{ 'dash.densityNote' | t }}</p>
+      </section>
+
+      <section class="card">
+        <h2>{{ 'dash.progressTitle' | t }}</h2>
+        <div class="stats">
+          <div class="stat"><b>{{ d.progress.passed }}</b><span>{{ 'dash.passed' | t }}</span></div>
+          <div class="stat"><b>{{ d.progress.failed }}</b><span>{{ 'dash.failed' | t }}</span></div>
+          <div class="stat"><b>{{ d.progress.blocked + d.progress.skipped }}</b><span>{{ 'dash.otherResults' | t }}</span></div>
+          <div class="stat"><b>{{ d.progress.untested }}</b><span>{{ 'dash.untested' | t }}</span></div>
+        </div>
+        <p class="muted">{{ 'dash.firstTime' | t: { rate: percent(d.progress.firstTimePassRate), runs: d.runCount } }}</p>
+      </section>
+    </div>
+  } @else if (loading()) {
+    <p class="muted">{{ 'common.loading' | t }}</p>
+  }
+
+  <section class="card" data-test="flaky">
+    <div class="page-head">
+      <h2>{{ 'dash.flakyTitle' | t }}</h2>
+      @if (auth.can(perm.TestCases.Update)) {
+        <div class="row">
+          <label class="inline"><input type="checkbox" name="clear" [(ngModel)]="clearRecovered" /> {{ 'dash.clearRecovered' | t }}</label>
+          <button type="button" class="btn primary" (click)="apply()">{{ 'dash.apply' | t }}</button>
+        </div>
+      }
+    </div>
+    @if (flaky(); as f) {
+      <p class="muted">{{ 'dash.flakyIntro' | t: { window: f.settings.windowSize, min: f.settings.minimumObservations, watch: f.settings.watchScore, flaky: f.settings.flakyScore } }}</p>
+      @if (f.items.length === 0) {
+        <p class="muted">{{ 'dash.noFlaky' | t }}</p>
+      } @else {
+        <table>
+          <thead>
+            <tr>
+              <th>{{ 'common.code' | t }}</th><th>{{ 'common.title' | t }}</th><th>{{ 'dash.colScore' | t }}</th>
+              <th>{{ 'dash.colOutcomes' | t }}</th><th>{{ 'dash.colLevel' | t }}</th><th>{{ 'dash.colFlagged' | t }}</th><th>{{ 'dash.colLastFailed' | t }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of f.items; track t.testCaseId) {
+              <tr>
+                <td class="nowrap">{{ t.code }}</td>
+                <td>{{ t.title }}@if (t.automationId) { <div class="muted">{{ t.automationId }}</div> }</td>
+                <td class="nowrap">
+                  <span class="scorebar"><i [class]="levelClass(t.level)" [style.width]="scoreWidth(t.score)"></i></span> {{ t.score }}
+                </td>
+                <td class="nowrap">{{ 'dash.outcomesLine' | t: { passes: t.passes, failures: t.failures, flips: t.flips } }}</td>
+                <td><span class="badge" [class]="levelClass(t.level)">{{ label(levelEnum, t.level) }}</span></td>
+                <td>{{ (t.isFlagged ? 'dash.yes' : 'dash.no') | t }}</td>
+                <td class="nowrap">{{ t.lastFailedAt ? (t.lastFailedAt | fdate: 'short') : '-' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        @if (f.totalCount > f.items.length) {
+          <p class="muted">{{ 'dash.moreFlaky' | t: { shown: f.items.length, total: f.totalCount } }}</p>
+        }
+      }
+    }
+  </section>
+</div>

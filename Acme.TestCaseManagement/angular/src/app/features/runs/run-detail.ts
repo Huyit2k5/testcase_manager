@@ -7,9 +7,10 @@ import { ToastService } from '../../core/core';
 import { FormatDatePipe, I18nService, TranslatePipe } from '../../core/i18n/i18n';
 import { badge } from '../../core/ui';
 import { AddDefect, DefectLink, TestExecution, TestRun, TestRunItem } from '../../proxy/dtos';
-import { RunStatus, SeverityLevel, TestResultStatus, TransferFormat, enumOptions } from '../../proxy/enums';
+import { AttachmentOwnerType, RunStatus, SeverityLevel, TestResultStatus, TransferFormat, enumOptions } from '../../proxy/enums';
 import { TestRunService } from '../../proxy/services';
 import { TransferService, saveFile } from '../../proxy/transfer';
+import { AttachmentsComponent } from '../attachments/attachments';
 import { ImportDialogComponent } from '../transfer/import-dialog';
 import { CasePickerComponent } from './case-picker';
 
@@ -19,7 +20,7 @@ interface ExecuteForm {
 
 @Component({
   selector: 'app-run-detail',
-  imports: [FormsModule, RouterLink, FormatDatePipe, TranslatePipe, ModalComponent, CasePickerComponent, ImportDialogComponent],
+  imports: [FormsModule, RouterLink, FormatDatePipe, TranslatePipe, ModalComponent, CasePickerComponent, ImportDialogComponent, AttachmentsComponent],
   templateUrl: './run-detail.html',
 })
 export class RunDetailComponent {
@@ -41,6 +42,7 @@ export class RunDetailComponent {
   protected readonly formats = TransferFormat;
 
   protected readonly resultEnum = TestResultStatus;
+  protected readonly executionOwner = AttachmentOwnerType.TestExecution;
   protected readonly severityEnum = SeverityLevel;
   protected readonly runEnum = RunStatus;
   protected readonly badgeOf = badge;

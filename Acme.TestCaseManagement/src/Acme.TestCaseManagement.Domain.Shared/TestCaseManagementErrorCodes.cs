@@ -51,6 +51,14 @@ public static class TestCaseManagementErrorCodes
     public const string InvalidApiKeyExpiry = "TestCaseManagement:InvalidApiKeyExpiry";
     public const string InvalidAutomationRun = "TestCaseManagement:InvalidAutomationRun";
 
+    // Attachments
+    public const string AttachmentEmpty = "TestCaseManagement:AttachmentEmpty";
+    public const string AttachmentTooLarge = "TestCaseManagement:AttachmentTooLarge";
+    public const string AttachmentTypeNotAllowed = "TestCaseManagement:AttachmentTypeNotAllowed";
+    public const string AttachmentTooMany = "TestCaseManagement:AttachmentTooMany";
+    public const string AttachmentOwnerNotFound = "TestCaseManagement:AttachmentOwnerNotFound";
+    public const string AttachmentFileMissing = "TestCaseManagement:AttachmentFileMissing";
+
     // Import and export
     public const string ExportTooLarge = "TestCaseManagement:ExportTooLarge";
 }

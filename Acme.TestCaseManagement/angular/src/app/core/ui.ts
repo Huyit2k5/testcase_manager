@@ -47,3 +47,13 @@ export function toDateInput(value: string | null | undefined): string {
 export function shortId(id: string | null | undefined): string {
   return id ? id.substring(0, 8) : '';
 }
+
+/** A file size for people: 532 B, 4.2 KB, 12 MB. */
+export function formatSize(bytes: number): string {
+  if (bytes < 1024) { return `${bytes} B`; }
+  const units = ['KB', 'MB', 'GB'];
+  let value = bytes / 1024;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) { value /= 1024; unit++; }
+  return `${value >= 10 || Number.isInteger(value) ? Math.round(value) : value.toFixed(1)} ${units[unit]}`;
+}

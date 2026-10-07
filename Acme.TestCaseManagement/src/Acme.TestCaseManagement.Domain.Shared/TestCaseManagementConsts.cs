@@ -90,3 +90,15 @@ public static class AutomationConsts
 
     public const int MaxRunTitleLength = TestRunConsts.MaxTitleLength;
 }
+
+public static class AttachmentConsts
+{
+    public const int MaxFileNameLength = 255;
+
+    public const int MaxContentTypeLength = 128;
+
+    public const int MaxDescriptionLength = 512;
+
+    /// <summary>Name of the blob container that holds the files.</summary>
+    public const string ContainerName = "test-case-management-attachments";
+}

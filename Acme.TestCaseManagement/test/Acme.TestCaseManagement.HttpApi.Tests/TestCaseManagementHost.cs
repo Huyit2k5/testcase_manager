@@ -12,6 +12,7 @@ namespace Acme.TestCaseManagement;
 public class TestCaseManagementHost : WebApplicationFactory<Program>
 {
     private readonly string _databaseFile = Path.Combine(Path.GetTempPath(), $"tcm-http-tests-{Guid.NewGuid():N}.db");
+    private readonly string _storageFolder = Path.Combine(Path.GetTempPath(), $"tcm-http-tests-{Guid.NewGuid():N}-files");
 
     /// <summary>Development is the only environment in which the host signs callers in and creates the schema.</summary>
     protected virtual string EnvironmentName => "Development";
@@ -24,6 +25,7 @@ public class TestCaseManagementHost : WebApplicationFactory<Program>
     {
         builder.UseEnvironment(EnvironmentName);
         builder.UseSetting("ConnectionStrings:Default", $"Data Source={_databaseFile}");
+        builder.UseSetting("Storage:Path", _storageFolder);
         ConfigureTestHost(builder);
     }
 
@@ -38,6 +40,18 @@ public class TestCaseManagementHost : WebApplicationFactory<Program>
 
         // Pooled connections keep the file locked on Windows.
         SqliteConnection.ClearAllPools();
+
+        try
+        {
+            Directory.Delete(_storageFolder, recursive: true);
+        }
+        catch (IOException)
+        {
+            // A leftover temp folder is harmless.
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
 
         foreach (var file in Directory.GetFiles(Path.GetTempPath(), Path.GetFileName(_databaseFile) + "*"))
         {

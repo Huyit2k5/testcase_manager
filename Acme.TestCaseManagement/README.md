@@ -136,6 +136,9 @@ All routes start with `api/test-case-management/`.
 | `quality-gates` | gate CRUD and `POST quality-gates/evaluate` (dry run with per-criterion breakdown) |
 | `sign-off` | start a sign-off, add approvals, read reports |
 | `api-keys` | list, create (secret shown once) and revoke API keys |
+| `dashboard` | `GET`: pass rate, execution velocity, burn-down and defect density of a plan or of every run |
+| `flaky-tests` | `GET` the flakiness score of test cases, `POST flaky-tests/apply` to flag them in the library |
+| `attachments` | upload (multipart), list, download and delete files of test cases and of execution attempts |
 | `automation/results` | `POST`: a pipeline publishes automated results (API key, or a user with `AutomationResults.Publish`) |
 
 ## Permissions
@@ -200,7 +203,32 @@ Give either `run` (a new run) or `runId` (an existing one). Results whose Automa
 and the others are still recorded (`failOnUnmatched: true` rejects the whole request). Approved test cases missing from the run are
 added (`addMissingToRun`). The same test case twice in a request counts as retries; a test that fails and then passes is marked flaky.
 A request holds at most 2000 results. Send an `Idempotency-Key` so that retrying a request does not record twice. A host that embeds
-the module's model in its own DbContext needs the two new `DbSet`s (`ApiKey`, `AutomationPublication`).
+the module's model in its own DbContext needs the new `DbSet`s (`ApiKey`, `AutomationPublication`, `Attachment`).
+
+## Flaky tests and the dashboard
+
+`GET dashboard?TestPlanId=&Days=14` returns the pass rate, the execution velocity, the burn-down and the defect density of one plan,
+or of every run (runs without a plan, such as CI runs, included). `GET flaky-tests` scores every test case by how often its latest
+Passed or Failed outcomes change (the score is changes divided by outcomes minus one, over the last 20 outcomes; 0.15 is Watch and
+0.30 is Flaky), and `POST flaky-tests/apply` writes the Flaky flag into the library (`ClearRecovered` also removes it from tests that
+became stable). Thresholds, window and lookback are `TestCaseManagementInsightsOptions`. The definitions and the research behind them
+are in `specs/001-test-case-management/plan.md`, section 4.10.
+
+## Attachments
+
+Screenshots, logs and videos can be attached to a test case or to an execution attempt (`POST attachments`, multipart with `OwnerType`
+0 = test case, 1 = attempt, `OwnerId` and `File`). The bytes live in an ABP blob container, so **the host must configure a provider**; without
+one the first upload fails. The sample host keeps them in a folder:
+
+```csharp
+Configure<AbpBlobStoringOptions>(options =>
+    options.Containers.ConfigureDefault(container => container.UseFileSystem(fileSystem => fileSystem.BasePath = "/data/attachments")));
+```
+
+(add `Volo.Abp.BlobStoring.FileSystem`; for S3, Azure or the database use the matching ABP provider.) A host that embeds the model in its own
+DbContext also needs `DbSet<Attachment>`. Limits are `TestCaseManagementAttachmentOptions`: 25 MB a file, 25 files an owner, and an extension
+whitelist (images, PDF, text and logs, archives, Office files, short videos; no SVG or HTML). A file follows the permission of what it is attached to:
+`TestCases` / `TestCases.Update` for a test case, `TestRuns` / `TestRuns.Execute` for an attempt. Downloads are always attachments with a fixed content type.
 
 ## Quality gate rules in one place
 
@@ -230,6 +258,8 @@ symbol packages. Requires the .NET SDK 10 (see `global.json`).
 - Sign-off approvals carry a SHA-256 integrity digest that detects tampering; they are not asymmetric digital
   signatures and do not give non-repudiation.
 - The module contains no user interface and no EF Core migrations.
+- Deleting a test case does not delete its attachments; a pipeline cannot attach files yet; files are held in memory while stored (25 MB limit).
+- Flaky detection and the dashboard read the attempts of the lookback window into memory and work on the dates of the server clock.
 - Results published with an API key have no creator, there is no rate limiting on the publish endpoint, stored idempotency records
   are never cleaned up, and publishing was tested on SQLite with a single tenant only. Requests that share an idempotency key are
   serialized by an in-process lock; with several server nodes register a distributed lock provider. The Automation ID is unique by
@@ -238,6 +268,6 @@ symbol packages. Requires the .NET SDK 10 (see `global.json`).
 ## Angular front end
 
 `angular/` holds a ready-made UI (Angular 22) for the module: test repository with suite tree, versions and defects;
-plans and runs with execution and retest; the traceability matrix; quality gates and two-user sign-off; API keys for pipelines, in English and
+plans and runs with execution and retest; the traceability matrix; quality gates and two-user sign-off; API keys for pipelines; a dashboard with burn-down, velocity, defect density and flaky tests; attachments with screenshot paste, in English and
 Vietnamese with a language switch. See
 [angular/README.md](angular/README.md). It is not packed into the NuGet packages.

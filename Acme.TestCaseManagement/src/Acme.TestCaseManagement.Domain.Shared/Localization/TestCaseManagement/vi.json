@@ -60,6 +60,12 @@
     "TestCaseManagement:InvalidApiKeyExpiry": "Ngày hết hạn của API key phải ở tương lai.",
     "TestCaseManagement:InvalidAutomationRun": "Hãy cho RunId (test run có sẵn) hoặc Run (test run mới), không cho cả hai và không bỏ trống cả hai.",
     "TestCaseManagement:ExportTooLarge": "Tệp xuất sẽ có {Count} test case, trong khi giới hạn là {Limit}. Hãy thu hẹp bằng bộ lọc.",
+    "TestCaseManagement:AttachmentEmpty": "Tệp rỗng.",
+    "TestCaseManagement:AttachmentTooLarge": "Tệp nặng {Size} MB, trong khi giới hạn là {Limit} MB.",
+    "TestCaseManagement:AttachmentTypeNotAllowed": "Không nhận tệp loại '{Extension}'. Các loại được nhận: {Allowed}.",
+    "TestCaseManagement:AttachmentTooMany": "Mục này đã có {Count} tệp, là số tệp tối đa.",
+    "TestCaseManagement:AttachmentOwnerNotFound": "Không tìm thấy test case hoặc lần thực thi để đính kèm tệp.",
+    "TestCaseManagement:AttachmentFileMissing": "Tệp '{FileName}' không còn trong kho lưu trữ.",
 
     "QualityGate:Criterion:PassRate": "Tỷ lệ đạt (%)",
     "QualityGate:Criterion:P1Executed": "Test P1 đã thực thi (%)",

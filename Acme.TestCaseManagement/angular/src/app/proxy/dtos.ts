@@ -176,3 +176,71 @@ export interface ApiKey {
 
 /** The only answer that carries the secret; it cannot be read again. */
 export interface ApiKeyCreated extends ApiKey { key: string }
+
+// ---- Insights (flaky tests and the dashboard) ---------------------------------------------------------------------
+
+export interface FlakyTest {
+  testCaseId: string;
+  code: string;
+  title: string;
+  suiteId: string;
+  automationId: string | null;
+  observations: number;
+  passes: number;
+  failures: number;
+  flips: number;
+  score: number;
+  level: number;
+  isFlagged: boolean;
+  lastResultAt: string | null;
+  lastFailedAt: string | null;
+}
+
+export interface FlakySettings { windowSize: number; minimumObservations: number; watchScore: number; flakyScore: number; lookbackDays: number }
+
+export interface FlakyTestList {
+  items: FlakyTest[];
+  totalCount: number;
+  flakyCount: number;
+  watchCount: number;
+  settings: FlakySettings;
+}
+
+export interface ApplyFlakyFlagsResult { flagged: number; cleared: number; flaggedCodes: string[]; clearedCodes: string[] }
+
+export interface DashboardProgress {
+  totalItems: number; passed: number; failed: number; blocked: number; skipped: number; untested: number;
+  completionPercentage: number; passRate: number | null; firstTimePassRate: number | null;
+}
+export interface VelocityPoint { date: string; attempts: number; itemsCompleted: number; passed: number; failed: number }
+export interface Velocity { points: VelocityPoint[]; totalAttempts: number; averagePerDay: number; last7DaysAverage: number; trendPercent: number | null }
+export interface BurnDownPoint { date: string; remaining: number | null; ideal: number }
+export interface BurnDown {
+  start: string; end: string; totalItems: number; remainingAtStart: number; remainingNow: number;
+  points: BurnDownPoint[]; itemsPerDay: number; projectedFinish: string | null; onTrack: boolean | null;
+}
+export interface DefectDensity {
+  defects: number; openDefects: number; resolvedDefects: number; executedTests: number; defectsPer100Executed: number | null;
+  testsWithDefects: number; testsWithDefectsPercent: number | null;
+  openCritical: number; openHigh: number; openMedium: number; openLow: number;
+}
+export interface FlakySummary { flaky: number; watch: number; scored: number }
+export interface Dashboard {
+  testPlanId: string | null; testPlanName: string | null; days: number; generatedAt: string; runCount: number;
+  progress: DashboardProgress; velocity: Velocity; burnDown: BurnDown; defectDensity: DefectDensity; flaky: FlakySummary;
+}
+
+// ---- Attachments ----------------------------------------------------------------------------------------------------
+
+export interface Attachment {
+  id: string;
+  ownerType: number;
+  ownerId: string;
+  fileName: string;
+  contentType: string;
+  size: number;
+  sha256: string;
+  description: string | null;
+  creationTime: string;
+  creatorId: string | null;
+}

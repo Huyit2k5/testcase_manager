@@ -649,6 +649,107 @@ chain: create a key, publish with it, a wrong key gets 401, revoke it, the revok
 - Publications are never cleaned up, there is no rate limiting, and `LastUsedAt` can lag by a minute.
 - Tested on SQLite only.
 
+### 4.10. Phase 11: flaky detection and dashboard (FR-012, FR-025)
+
+Added after Phase 10. Two read-mostly services, `FlakyTestAppService` (`GET flaky-tests`, `POST flaky-tests/apply`) and
+`DashboardAppService` (`GET dashboard`), on one repository, `IInsightsRepository`, that loads the run items, the attempts of a
+lookback window and the defect links of a scope (the runs of one plan, or every run, CI runs without a plan included). The figures
+are calculated when asked, by pure functions in the domain (`FlakinessCalculator`, `DashboardCalculator`), so nothing is stored and
+nothing can drift. No new permission: the dashboard needs `TestRuns` (read), the flaky list needs `TestCases` (read), and `apply`
+needs `TestCases.Update`. An API key can call none of them.
+
+**Flakiness score (FR-012).** Take the latest `WindowSize` (20) Passed or Failed outcomes of a test case, from every run, in time
+order (ties by attempt number), and count how often neighbouring outcomes differ. Score = changes / (outcomes - 1), from 0 to 1,
+rounded down to two decimals. Research: Buildkite Test Engine's transition score counts the same changes in a window (PPPPP and
+FFFFF have none, PPFFF one, PFPFF three), "flip rate" is the common name of it (Testkube combines it with the pass rate), and
+Katalon uses a probabilistic model that needs far more history than a library of this size has. Why not the pass rate: a test that
+always fails is broken, not flaky, and a test that was fixed once has a middling pass rate but no instability; only changes back
+and forth show intermittence. A retry that passes after a failure is two attempts one after the other, so it counts as a flip with no
+special rule. Blocked and Skipped are not outcomes of the test and are left out.
+
+| Level | Rule | Meaning |
+|---|---|---|
+| Insufficient | fewer than 5 outcomes | not scored |
+| Stable | score below 0.15 | always passing, always failing, or one real change (a regression or a fix) |
+| Watch | 0.15 or more | 3 changes in 20 outcomes |
+| Flaky | 0.30 or more | 6 changes in 20 outcomes (a lone failure inside passes is 2 changes) |
+
+The thresholds are defaults (`TestCaseManagementInsightsOptions`: window, minimum, watch, flaky, lookback of 90 days) and the answer
+carries the settings the scores were made with. `apply` writes the finding into the library: a test case that scores Flaky gets
+the Flaky flag; with `ClearRecovered`, a flagged one that now scores Stable loses it. Nothing clears a flag by itself, and a flag set
+by a runner or a person on a test with too little history is never touched.
+
+**Dashboard (FR-025).** All days are dates of the server clock (the clock that stamps the attempts).
+- *Pass rate*: passed over items that are not skipped, exactly the quality gate's definition (plan 4.5), with the completion
+  percentage and the first-time pass rate beside it.
+- *Execution velocity*: attempts per day for the last 7 to 90 days (passed, failed, other), the average per day, the average of the
+  last 7 days and, when the window has 14 days, the change against the 7 days before. Items first executed per day are returned
+  too, because that is the pace the burn-down needs.
+- *Burn-down*: items without any attempt, at the end of each day, against an ideal straight line from the items left before the first
+  day to zero at the end of the end day. Industry tools (QA Touch, AIO Tests) draw the same two lines; above the ideal line means
+  behind. The chart runs over the dates of the plan (start to end, then on to today when the plan is late) or, with no plan or no
+  start date, over the velocity window; it is cut to the latest 120 days. A projected finish is today plus remaining items divided by
+  the items first executed per day over the last 7 days; there is none when nothing is left or nothing moved. Items stay in scope
+  when their test case is later deleted, as in the quality gate.
+- *Defect density*: distinct defects (tracker and key, ignoring case, one ticket linked from many tests is one defect) per 100
+  executed test cases, with the open and resolved counts, the open ones by severity (the worst severity of the open links), and the
+  share of executed test cases that have a defect (the "test case defect density" of the test-metrics literature). A defect is open
+  while any of its links is.
+
+**Front end.** The Dashboard page shows five cards, the burn-down and velocity charts (inline SVG, no chart library; the geometry is
+a pure function with unit tests), the defect density, and the flaky table with the score bar, the level and a button to apply the flags
+(only with `TestCases.Update`). The tab needs `TestRuns`.
+
+**Not covered.**
+- Flakiness is judged per test case across all runs and environments: a test that fails only on one environment shows as flaky.
+- The attempts of the lookback window are read into memory (fine for thousands of tests, not for millions; a database side
+  aggregation would be the next step).
+- The days follow the server clock, not the time zone of the viewer.
+- The burn-down counts items as they are today: an item added to a run later does not appear in the earlier days' total.
+- Tested on SQLite only.
+
+### 4.11. Phase 12: attachments (FR-015)
+
+Added after Phase 11. `AttachmentAppService` behind `GET attachments`, `POST attachments` (multipart), `GET attachments/{id}/content` and
+`DELETE attachments/{id}`. A file belongs to a test case (a reference file, an example input) or to one execution attempt (the
+screenshot, the crash log or the video of a failure).
+
+**Storage.** The bytes go into an ABP blob container (`AttachmentContainer`, name `test-case-management-attachments`) and the database holds
+only the record (`Attachment`: owner type and id, clean name, content type, size, SHA-256, description, audit columns). The module depends on
+`Volo.Abp.BlobStoring` and leaves the provider to the host, so a company chooses a folder, the database, S3 or Azure Blob Storage with one
+`Configure<AbpBlobStoringOptions>`; the sample host uses the file system provider (`Storage:Path`, default `App_Data/attachments` next to the
+binaries). Why not a binary column: videos would grow the main database and its backups, and a blob store can move to the cloud later with no
+change in the module. Blob name = the id of the record, so a name from the user never reaches a path.
+
+**Rules** (`AttachmentManager`, `TestCaseManagementAttachmentOptions`):
+- Type: an extension whitelist, each with the content type that downloads are served as; the content type of the upload is ignored. The
+  default is what a tester gathers (png, jpg, gif, webp, bmp, pdf, txt, log, md, csv, json, xml, har, zip, gz, docx, xlsx, pptx, mp4, webm, mov).
+  SVG and HTML are out on purpose (a browser runs the scripts in them); so are programs and scripts.
+- Size: 25 MB a file (the declared length is checked before reading, and the bytes read are counted, so a wrong declared length does not
+  get past); 25 files an owner. Both are options.
+- Name: path (either slash), control and reserved characters and leading dots are removed, at most 255 characters with the extension kept.
+- Download: `Content-Disposition: attachment`, the fixed content type, `X-Content-Type-Options: nosniff` and a sandboxing
+  `Content-Security-Policy`, so a file is never shown as a page of this site. No magic-byte check of the content: the whitelist and these
+  headers are what protect the reader, and a renamed program stays a download.
+
+**Permissions.** No new permission: an attachment follows what it is attached to. Reading needs `TestCases` (or `TestRuns` for an attempt);
+adding and deleting needs `TestCases.Update` (or `TestRuns.Execute`). A pipeline's API key has none of them.
+
+**Consistency.** Upload saves the content first and the record second, and removes the content if the record fails, so nothing points to a missing
+file. Delete is a soft delete of the record (who deleted stays in the audit columns) and the content is removed after the commit. A file lost from the storage
+is answered with a clear message, not a server error. Attachments of attempts stay editable in a completed run: the evidence of an attempt may
+arrive later, and the attempt itself is not changed (the append-only rule of execution history concerns the attempt).
+
+**Front end.** One panel, `app-attachments`, in the test case dialog and in each attempt of the history: upload by button, drag and drop or paste of a
+screenshot (a pasted image is named after the time), thumbnails of images, download, delete with confirmation; read-only without the permission.
+
+**Not covered.**
+- Deleting a test case does not delete its attachments (the records and the files stay, unreachable from any screen).
+- The file is read into memory for the limit and the hash (fine up to the 25 MB default; a larger limit needs a streaming upload).
+- No virus scan, no thumbnails made on the server, no preview of video or PDF inside the page, no upload from the CI endpoint (a pipeline cannot attach
+  its screenshots yet).
+- Tested with the file system provider and an in-memory one only.
+
 ## 5. Security, RBAC & Permissions
 
 Defined in `TestCaseManagementPermissions`:

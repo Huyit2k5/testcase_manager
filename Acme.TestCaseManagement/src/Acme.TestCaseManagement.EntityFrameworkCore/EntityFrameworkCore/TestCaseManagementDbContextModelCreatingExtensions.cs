@@ -1,3 +1,4 @@
+using Acme.TestCaseManagement.Attachments;
 using Acme.TestCaseManagement.Automation;
 using Acme.TestCaseManagement.Plans;
 using Acme.TestCaseManagement.Quality;
@@ -113,6 +114,21 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
 
             // The lookup of a request: the prefix narrows the keys to compare to one or two.
             b.HasIndex(x => x.KeyPrefix);
+        });
+
+        builder.Entity<Attachment>(b =>
+        {
+            b.ToTable(TableName("Attachments"), TestCaseManagementDbProperties.DbSchema);
+            b.ConfigureByConvention();
+
+            b.Property(x => x.FileName).IsRequired().HasMaxLength(AttachmentConsts.MaxFileNameLength);
+            b.Property(x => x.ContentType).IsRequired().HasMaxLength(AttachmentConsts.MaxContentTypeLength);
+            b.Property(x => x.Sha256).IsRequired().HasMaxLength(SignOffConsts.HashLength);
+            b.Property(x => x.Description).HasMaxLength(AttachmentConsts.MaxDescriptionLength);
+            b.Ignore(x => x.BlobName);
+
+            // Everything a screen asks is "the files of this owner".
+            b.HasIndex(x => new { x.OwnerType, x.OwnerId });
         });
 
         builder.Entity<AutomationPublication>(b =>

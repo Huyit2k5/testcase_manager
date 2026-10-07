@@ -5,6 +5,7 @@
 
   <ItemGroup>
     <PackageReference Include="Volo.Abp.Autofac" />
+    <PackageReference Include="Volo.Abp.BlobStoring.FileSystem" />
     <PackageReference Include="Volo.Abp.Swashbuckle" />
     <PackageReference Include="Volo.Abp.EntityFrameworkCore.Sqlite" />
     <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" />

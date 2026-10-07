@@ -1,8 +1,8 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import {
-  AddDefect, ApiKey, ApiKeyCreated, CreateRun, DefectLink, EvaluateInput, ExecuteItem, PagedResult, QualityGate, QualityGateEvaluation,
+  AddDefect, ApiKey, Attachment, ApiKeyCreated, ApplyFlakyFlagsResult, CreateRun, Dashboard, FlakyTestList, DefectLink, EvaluateInput, ExecuteItem, PagedResult, QualityGate, QualityGateEvaluation,
   Requirement, RtmMatrix, RtmRequest, SavePlan, SaveQualityGate, SaveRequirement, SaveTestCase, SignOffReport, StartSignOff,
   TestCase, TestCaseDefect, TestCaseListRequest, TestCaseVersion, TestExecution, TestPlan, TestRun, TestRunListRequest,
   TestSuite, TestSuiteTree,
@@ -162,4 +162,54 @@ export class ApiKeyService {
     return this.http.post<ApiKeyCreated>(`${ROOT}/api-keys`, input);
   }
   revoke(id: string): Observable<ApiKey> { return this.http.post<ApiKey>(`${ROOT}/api-keys/${id}/revoke`, {}); }
+}
+
+@Injectable({ providedIn: 'root' })
+export class DashboardService {
+  private readonly http = inject(HttpClient);
+
+  get(request: { testPlanId?: string | null; days: number }): Observable<Dashboard> {
+    return this.http.get<Dashboard>(`${ROOT}/dashboard`, { params: query({ TestPlanId: request.testPlanId, Days: request.days }) });
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class FlakyTestService {
+  private readonly http = inject(HttpClient);
+
+  list(request: { minimumLevel?: number; filter?: string; maxResultCount?: number }): Observable<FlakyTestList> {
+    return this.http.get<FlakyTestList>(`${ROOT}/flaky-tests`, {
+      params: query({ MinimumLevel: request.minimumLevel, Filter: request.filter, MaxResultCount: request.maxResultCount }),
+    });
+  }
+  apply(clearRecovered: boolean): Observable<ApplyFlakyFlagsResult> {
+    return this.http.post<ApplyFlakyFlagsResult>(`${ROOT}/flaky-tests/apply`, { clearRecovered });
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class AttachmentService {
+  private readonly http = inject(HttpClient);
+
+  list(ownerType: number, ownerIds: string[]): Observable<Attachment[]> {
+    let params = new HttpParams().set('OwnerType', String(ownerType));
+    for (const id of ownerIds) { params = params.append('OwnerIds', id); }
+    return this.http.get<Attachment[]>(`${ROOT}/attachments`, { params });
+  }
+
+  upload(ownerType: number, ownerId: string, file: File, description?: string | null): Observable<Attachment> {
+    const form = new FormData();
+    form.append('OwnerType', String(ownerType));
+    form.append('OwnerId', ownerId);
+    if (description) { form.append('Description', description); }
+    form.append('File', file, file.name);
+    return this.http.post<Attachment>(`${ROOT}/attachments`, form);
+  }
+
+  /** The bytes of a file. The request carries the token, so a link to the address would not work; the screen saves or shows the blob. */
+  content(id: string): Observable<Blob> {
+    return this.http.get(`${ROOT}/attachments/${id}/content`, { responseType: 'blob' }).pipe(map(body => body as Blob));
+  }
+
+  remove(id: string): Observable<void> { return this.http.delete<void>(`${ROOT}/attachments/${id}`); }
 }

@@ -14,5 +14,8 @@ artifacts/
 *.db-shm
 *.db-wal
 
+## Attachments stored by the development host
+App_Data/
+
 ## Test results
 TestResults/

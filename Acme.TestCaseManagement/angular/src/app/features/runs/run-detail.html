@@ -130,6 +130,7 @@
           }
         </div>
         @if (attempt.actualResult) { <p>{{ attempt.actualResult }}</p> }
+        <app-attachments [ownerType]="executionOwner" [ownerId]="attempt.id" [canWrite]="auth.can(perm.TestRuns.Execute)" />
         @if (attempt.defectLinks.length) {
           <table>
             <tbody>
