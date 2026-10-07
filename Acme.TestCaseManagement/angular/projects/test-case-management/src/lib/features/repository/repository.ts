@@ -90,6 +90,8 @@ export class RepositoryComponent implements OnInit {
   }
 
   private loadTree(): void {
+    // A person without the permission to read suites gets no tree, not an error on every visit.
+    if (!this.auth.can(Permissions.TestSuites.Default)) { return; }
     this.suiteService.tree().subscribe(tree => {
       this.tree.set(tree);
       this.suites.set(flattenSuites(tree));

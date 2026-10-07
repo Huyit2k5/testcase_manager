@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Acme.TestCaseManagement.Automation;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -64,6 +65,23 @@ public static class ApiKeyAuthenticationExtensions
     public static AuthenticationBuilder AddTestCaseManagementApiKey(this AuthenticationBuilder builder)
     {
         return builder.AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(ApiKeyDefaults.Scheme, displayName: null, configureOptions: _ => { });
+    }
+
+    /// <summary>
+    /// For a host built from an ABP application template, whose default scheme is the ASP.NET Core Identity scheme
+    /// (<c>Identity.Application</c>) that forwards bearer tokens to the token validation: adds the API key scheme and makes
+    /// the default scheme forward a request that names an API key to it, and anything else as it did before. Call it
+    /// after the host's own authentication set-up (<c>ForwardIdentityAuthenticationForBearer</c>).
+    /// </summary>
+    public static IServiceCollection AddTestCaseManagementApiKeyAuthentication(this IServiceCollection services, string defaultScheme = "Identity.Application")
+    {
+        services.AddAuthentication().AddTestCaseManagementApiKey();
+        services.PostConfigure<CookieAuthenticationOptions>(defaultScheme, options =>
+        {
+            var inner = options.ForwardDefaultSelector;
+            options.ForwardDefaultSelector = context => context.Request.IsApiKeyRequest() ? ApiKeyDefaults.Scheme : inner?.Invoke(context);
+        });
+        return services;
     }
 
     /// <summary>True when the request names an API key, which a host's policy scheme uses to pick this scheme over a bearer token.</summary>

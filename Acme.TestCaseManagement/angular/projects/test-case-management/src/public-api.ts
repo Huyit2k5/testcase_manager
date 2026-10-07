@@ -1,0 +1,12 @@
+export { AuthService, Permissions } from './lib/core/auth';
+export type { TcmUser } from './lib/core/auth';
+export { ToastService, describeError, errorInterceptor } from './lib/core/core';
+export { TCM_API_URL, TCM_BASE_PATH, TCM_FOLLOW_OS_THEME, TCM_LANGUAGE, TCM_NOTIFIER } from './lib/core/host';
+export type { TcmNotifier } from './lib/core/host';
+export { I18nService, LANGUAGES, LanguageSwitchComponent, TranslatePipe, TranslatedTitleStrategy, languageInterceptor } from './lib/core/i18n/i18n';
+export type { Lang } from './lib/core/i18n/i18n';
+export { TCM_MENU } from './lib/menu';
+export type { TcmMenuItem } from './lib/menu';
+export { createTestCaseManagementRoutes } from './lib/routes';
+export type { TcmRouteOptions } from './lib/routes';
+export { TcmShellComponent } from './lib/shell';

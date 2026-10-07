@@ -824,6 +824,76 @@ group; in the edit form copied steps are read-only.
 - Import and export carry the steps, not the link (an import of a test case that is new has no links).
 - Tested on SQLite only.
 
+### 4.14. Phase 15: plugging into a host application (an ABP Angular app)
+
+The module is meant to be added to a company's main web application, which is an ABP application with its own sign-in, left
+sidebar, user and role screens. Until now it had only been run in its own sample host, so this phase built a second host that
+looks like the real one (`abp new` with the application template, Angular UI, LeptonX theme, OpenIddict sign-in, one SQLite
+database; kept outside the repository), added the module to it as a person would, and ran the browser against it.
+
+**The decision: a library folder with a thin adapter per host, not a rewrite on the ABP services.** The Angular pages used to
+depend on their own sign-in, language service, toasts and the address `/api`. They now depend on four small contracts in
+`core/host.ts` and `core/auth.ts`: `AuthService` (who is signed in, may they), `TCM_LANGUAGE` (the language of the host),
+`TCM_NOTIFIER` (the host's notifications) and `TCM_API_URL` / `TCM_BASE_PATH` (where the API and the pages are). Each host
+supplies them: the standalone app keeps its JWT sign-in (`LocalAuthService`), and an ABP application uses
+`provideTestCaseManagementForAbp()` (entry point `test-case-management/abp`), which reads the user and permissions from ABP's
+application configuration, follows ABP's language switch, shows messages through ABP's toaster and takes the API address from
+ABP's environment. The pages themselves were not rewritten, which kept the 73 unit tests and the whole browser script valid.
+The alternative (using ABP's `RestService`, `LocalizationService` and components inside the pages) would have tied the module to
+ABP Angular and thrown away the standalone app.
+
+**Layout.** `angular/projects/test-case-management/` is the library: `src/lib/{core,features,proxy,styles}`, `src/public-api.ts`
+and `abp/`. The standalone app in `angular/src` is now a small host of that library (login page, top bar, `LocalAuthService`).
+The library is shared **as source** through a TypeScript path alias, not as an npm package: a package compiled with another Angular
+minor version, the second copy of `@angular/core` that a linked folder would bring, and the extra build step were more risk than
+the plan needed; the host compiles the folder with its own Angular. Packing it with ng-packagr is a later, mechanical step.
+
+**What the host needs to do (README, "Using the module in an ABP application").** On the server: reference the six projects and
+depend on their modules, embed the model in its DbContext and add a migration, call `AddTestCaseManagementApiKeyAuthentication()`.
+On the client: copy the library folder, add two path aliases, two providers and one lazy route.
+
+**What running the module in a real template showed, and what was changed because of it.**
+- The module needs ABP 10.6.1; a template generated with 10.6.0 packages stops with a NuGet downgrade error (NU1605). The sample
+  host's packages were raised to 10.6.1. The ABP Angular packages declare a peer of Angular 21.2 although the template installs 22.0,
+  so `npm install` needed `--legacy-peer-deps` there; that is the template's inconsistency, not the module's.
+- The template's default scheme is the ASP.NET Core Identity scheme forwarding bearer tokens, so a request with `X-Api-Key` was
+  unauthenticated. `AddTestCaseManagementApiKeyAuthentication()` adds the key scheme and makes that scheme forward a key request to it
+  and everything else as before (3 tests). A pipeline sends no cookie, so ABP's anti-forgery check (which applies to requests that
+  carry the sign-in cookie) does not affect it; a first attempt to exempt the endpoint was dropped after a client without cookies proved
+  it unnecessary.
+- ABP shows an error dialog only for calls made with its `RestService`; the module uses `HttpClient`, so a refused request showed
+  nothing. The ABP adapter registers an interceptor, for the module's API only, that turns the failed response into a message in the
+  host's toaster (in the language of the user: ABP sends `Accept-Language`).
+- LeptonX's Bootstrap also defines `.row`, `.card`, `.btn`, `.badge` and `.alert`; its `.row` has negative margins and makes children 100%
+  wide, which stacked the buttons of every page header. The module's styles now live under `.tcm` (the pages are wrapped by
+  `TcmShellComponent`, which also loads them, so the host adds no stylesheet) and put back what they rely on for those classes.
+- LeptonX's sidebar has `z-index: 1000`, above the dialogs (50). The dialog is now at 1055, the value Bootstrap uses for its modals.
+- The tab title showed the raw key (`title.repository | MainApp`) because the page titles were dictionary keys that only the standalone app
+  translated. Each route now resolves its title to the text in the user's language, and keeps the key in its data so that the standalone
+  app still retitles the tab when the language is switched (2 tests).
+- The run page took its id from router input binding, which only the standalone app had switched on; it now reads the route itself.
+- A reader with only `TestCases` got 403 toasts because the repository asked for the suite tree and the shared steps without the
+  permission to read them. Those two calls now wait for `TestSuites` and `SharedSteps`.
+- The module's menu: a group and seven entries added to ABP's `RoutesService`, each with the permission that opens its page (the
+  standalone app keeps showing the pages a signed-in user may open). The labels come from the module's localization resource
+  (`Menu:*` in `Localization/TestCaseManagement/*.json`), so ABP's language switch translates the sidebar too.
+- Attachments need no setup in the template: it already includes ABP's database BlobStoring provider, and the files went there.
+
+**Verified in the browser against that host** (the admin of the template, then a user with three permissions): the sidebar group and the
+seven pages; a suite, two test cases and their approval; attachments (upload, an `.exe` refused with the message in the host's toaster,
+download); a plan and a run with an execution; an API key created, a result published with it from a client without cookies, a wrong
+key and a revoked key refused; the dashboard; the module's permissions listed in the host's Roles screen; a role with
+`TestCases`, `TestRuns` and `TestPlans` sees exactly Dashboard, Test repository and Plans and runs and no management buttons; switching
+the host to Tiếng Việt translates the sidebar and the pages. The standalone app passes the whole earlier browser script again.
+
+**Not covered.**
+- The UI is shared as source, not as an npm package; the sample host compiled it with Angular 22.0. A host on Angular 21 (which the
+  ABP 10.6 packages declare as a peer) was not tried.
+- Only ABP's LeptonX Lite side menu was tried. The pages keep their own light palette: they do not follow the host's dark mode or theme
+  colours, and the standalone dark mode switches only when the host asks for it (`TCM_FOLLOW_OS_THEME`).
+- A host with MVC or Blazor UI can use the API but not these pages.
+- One SQLite database and one tenant, as before; SQL Server and PostgreSQL were not run.
+
 ## 5. Security, RBAC & Permissions
 
 Defined in `TestCaseManagementPermissions`:

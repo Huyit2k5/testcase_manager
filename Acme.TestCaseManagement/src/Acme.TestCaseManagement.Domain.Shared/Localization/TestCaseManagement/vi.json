@@ -2,6 +2,13 @@
   "culture": "vi",
   "texts": {
     "Menu:TestCaseManagement": "Quản lý Test Case",
+    "Menu:Dashboard": "Bảng điều khiển",
+    "Menu:Repository": "Kho test case",
+    "Menu:SharedSteps": "Bước dùng chung",
+    "Menu:Runs": "Test plan và run",
+    "Menu:Traceability": "Truy vết",
+    "Menu:Quality": "Quality và sign-off",
+    "Menu:Automation": "Tự động hóa",
 
     "Permission:TestCaseManagement": "Quản lý Test Case",
     "Permission:TestCases": "Test case",

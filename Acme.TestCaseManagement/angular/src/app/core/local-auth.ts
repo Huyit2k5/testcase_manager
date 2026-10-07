@@ -2,29 +2,19 @@ import { HttpClient, HttpErrorResponse, HttpInterceptorFn } from '@angular/commo
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { catchError, firstValueFrom, tap, throwError } from 'rxjs';
-import { ToastService } from './core';
-import { I18nService } from './i18n/i18n';
+import { AuthService, I18nService, ToastService } from 'test-case-management';
 
 export interface Session { accessToken: string; expiresAt: string; userId: string; userName: string; roles: string[] }
-
-/** The permission names of the module, as ABP defines them (TestCaseManagementPermissions). */
-export const Permissions = {
-  TestCases: { Default: 'TestCaseManagement.TestCases', Create: 'TestCaseManagement.TestCases.Create', Update: 'TestCaseManagement.TestCases.Update', Delete: 'TestCaseManagement.TestCases.Delete', Approve: 'TestCaseManagement.TestCases.Approve' },
-  TestSuites: { Default: 'TestCaseManagement.TestSuites', Manage: 'TestCaseManagement.TestSuites.Manage' },
-  TestPlans: { Default: 'TestCaseManagement.TestPlans', Manage: 'TestCaseManagement.TestPlans.Manage' },
-  TestRuns: { Default: 'TestCaseManagement.TestRuns', Execute: 'TestCaseManagement.TestRuns.Execute' },
-  Requirements: { Default: 'TestCaseManagement.Requirements', Manage: 'TestCaseManagement.Requirements.Manage' },
-  QualityGates: { Default: 'TestCaseManagement.QualityGates', Manage: 'TestCaseManagement.QualityGates.Manage' },
-  SignOff: { Default: 'TestCaseManagement.SignOff', Approve: 'TestCaseManagement.SignOff.Approve' },
-  SharedSteps: { Default: 'TestCaseManagement.SharedSteps', Manage: 'TestCaseManagement.SharedSteps.Manage' },
-  ApiKeys: { Default: 'TestCaseManagement.ApiKeys', Manage: 'TestCaseManagement.ApiKeys.Manage' },
-} as const;
 
 const STORAGE_KEY = 'tcm.session';
 const LOGIN_URL = '/api/auth/login';
 
+/**
+ * The sign-in of the sample host (a JWT from /api/auth/login, kept in local storage). An application that has its own
+ * sign-in does not use this: it provides an AuthService over what it already has.
+ */
 @Injectable({ providedIn: 'root' })
-export class AuthService {
+export class LocalAuthService extends AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
 
@@ -39,8 +29,6 @@ export class AuthService {
    */
   readonly ready = signal(false);
   readonly user = computed(() => this.session());
-  /** What to show as the user's role: the first role, or the user name when there is none. */
-  readonly roleLabel = computed(() => this.session()?.roles[0] ?? this.session()?.userName ?? '');
 
   get token(): string | null { return this.session()?.accessToken ?? null; }
 
@@ -113,7 +101,7 @@ export class AuthService {
 
 /** Sends the bearer token to the API and signs the user out when the API says the token is no longer good. */
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
-  const auth = inject(AuthService);
+  const auth = inject(LocalAuthService);
   // Resolved here: the error callback below runs after the injection context is gone.
   const toast = inject(ToastService);
   const i18n = inject(I18nService);
@@ -134,6 +122,6 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
 };
 
 export const authGuard: CanActivateFn = (_route, state) => {
-  const auth = inject(AuthService);
+  const auth = inject(LocalAuthService);
   return auth.isAuthenticated() ? true : inject(Router).createUrlTree(['/login'], { queryParams: { returnUrl: state.url } });
 };

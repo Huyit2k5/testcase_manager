@@ -189,6 +189,7 @@ export class TestCaseDetailComponent {
       const testCase = this.testCase();
       untracked(() => this.load(testCase));
     });
+    if (!this.auth.can(Permissions.SharedSteps.Default)) { return; }
     this.groupService.list().subscribe({ next: groups => this.library.set(groups), error: () => undefined });
   }
 

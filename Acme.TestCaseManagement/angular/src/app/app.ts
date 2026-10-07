@@ -1,8 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { AuthService, Permissions } from './core/auth';
-import { ToastService } from './core/core';
-import { LanguageSwitchComponent, TranslatePipe } from './core/i18n/i18n';
+import { LanguageSwitchComponent, TCM_MENU, ToastService, TranslatePipe } from 'test-case-management';
+import { LocalAuthService } from './core/local-auth';
 
 @Component({
   selector: 'app-root',
@@ -12,17 +11,9 @@ import { LanguageSwitchComponent, TranslatePipe } from './core/i18n/i18n';
 })
 export class App {
   protected readonly toasts = inject(ToastService);
-  protected readonly auth = inject(AuthService);
+  protected readonly auth = inject(LocalAuthService);
 
-  protected readonly tabs = [
-    { path: '/dashboard', label: 'nav.dashboard', permission: Permissions.TestRuns.Default },
-    { path: '/repository', label: 'nav.repository' },
-    { path: '/shared-steps', label: 'nav.sharedSteps', permission: Permissions.SharedSteps.Default },
-    { path: '/runs', label: 'nav.runs' },
-    { path: '/traceability', label: 'nav.traceability' },
-    { path: '/quality', label: 'nav.quality' },
-    { path: '/automation', label: 'nav.automation', permission: Permissions.ApiKeys.Default },
-  ];
+  protected readonly tabs = TCM_MENU.map(item => ({ path: `/${item.path}`, label: item.label, permission: item.permission }));
 
   /** The tabs the signed-in user may open; a tab without a permission is open to everyone who is signed in. */
   protected readonly visibleTabs = computed(() => this.tabs.filter(tab => !tab.permission || this.auth.can(tab.permission)));

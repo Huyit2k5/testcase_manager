@@ -16,7 +16,7 @@
       <tbody>
         @for (run of runs(); track run.id) {
           <tr>
-            <td><a [routerLink]="['/runs', run.id]">{{ run.title }}</a></td>
+            <td><a [routerLink]="[base + '/runs', run.id]">{{ run.title }}</a></td>
             <td>{{ planName(run.testPlanId) }}</td>
             <td>{{ run.environment }}</td>
             <td><span class="badge" [class]="badgeOf('run', run.status)">{{ label(runEnum, run.status) }}</span></td>

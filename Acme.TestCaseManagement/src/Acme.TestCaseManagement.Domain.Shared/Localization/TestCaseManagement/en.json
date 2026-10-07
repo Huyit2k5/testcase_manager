@@ -2,6 +2,13 @@
   "culture": "en",
   "texts": {
     "Menu:TestCaseManagement": "Test Case Management",
+    "Menu:Dashboard": "Dashboard",
+    "Menu:Repository": "Test repository",
+    "Menu:SharedSteps": "Shared steps",
+    "Menu:Runs": "Plans and runs",
+    "Menu:Traceability": "Traceability",
+    "Menu:Quality": "Quality and sign-off",
+    "Menu:Automation": "Automation",
 
     "Permission:TestCaseManagement": "Test Case Management",
     "Permission:TestCases": "Test cases",

@@ -3,27 +3,26 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { AuthService, Permissions, authInterceptor } from './auth';
-import { ToastService } from './core';
-import { I18nService } from './i18n/i18n';
+import { I18nService, Permissions, ToastService } from 'test-case-management';
+import { LocalAuthService, authInterceptor } from './local-auth';
 
 const session = (expiresAt: string) => ({ accessToken: 't', expiresAt, userId: 'u1', userName: 'tester', roles: ['Tester'] });
 const validSession = () => JSON.stringify(session(new Date(Date.now() + 3600_000).toISOString()));
 
-describe('AuthService', () => {
+describe('LocalAuthService', () => {
   beforeEach(() => {
     localStorage.clear();
     TestBed.configureTestingModule({ providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()] });
   });
 
   it('starts signed out and allows nothing', () => {
-    const auth = TestBed.inject(AuthService);
+    const auth = TestBed.inject(LocalAuthService);
     expect(auth.isAuthenticated()).toBe(false);
     expect(auth.can(Permissions.TestCases.Create)).toBe(false);
   });
 
   it('keeps the session after login and reads the granted policies', async () => {
-    const auth = TestBed.inject(AuthService);
+    const auth = TestBed.inject(LocalAuthService);
     const http = TestBed.inject(HttpTestingController);
 
     auth.login('tester', 'pw').subscribe();
@@ -47,7 +46,7 @@ describe('AuthService', () => {
 
   it('drops an expired session on start-up without calling the API', async () => {
     localStorage.setItem('tcm.session', JSON.stringify(session(new Date(Date.now() - 1000).toISOString())));
-    const auth = TestBed.inject(AuthService);
+    const auth = TestBed.inject(LocalAuthService);
 
     await auth.restore();
 
@@ -57,7 +56,7 @@ describe('AuthService', () => {
   });
 
   it('signs out and forgets the permissions', () => {
-    const auth = TestBed.inject(AuthService);
+    const auth = TestBed.inject(LocalAuthService);
     localStorage.setItem('tcm.session', validSession());
     auth.logout(false);
     expect(auth.token).toBeNull();
@@ -81,7 +80,7 @@ describe('authInterceptor', () => {
   it('signs the user out and says so, in the chosen language, when the API answers 401', () => {
     localStorage.setItem('tcm.session', validSession());
     TestBed.inject(I18nService).use('vi');
-    const auth = TestBed.inject(AuthService);
+    const auth = TestBed.inject(LocalAuthService);
     expect(auth.isAuthenticated()).toBe(true);
 
     TestBed.inject(HttpClient).get('/api/x').subscribe({ error: () => undefined });

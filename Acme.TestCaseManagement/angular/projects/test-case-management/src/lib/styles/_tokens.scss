@@ -1,0 +1,43 @@
+// The colours of the module, as custom properties. The module's pages read them through var(--name).
+@mixin light {
+  --bg: #f4f6fa;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --text: #0f172a;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --primary: #2563eb;
+  --primary-contrast: #ffffff;
+  --ok: #15803d;
+  --ok-bg: #dcfce7;
+  --bad: #b91c1c;
+  --bad-bg: #fee2e2;
+  --warn: #b45309;
+  --warn-bg: #fef3c7;
+  --info: #1d4ed8;
+  --info-bg: #dbeafe;
+  --muted-bg: #e2e8f0;
+  --shadow-lg: 0 20px 50px rgba(15, 23, 42, .25);
+  color-scheme: light;
+}
+
+@mixin dark {
+  --bg: #0b1220;
+  --surface: #111a2e;
+  --surface-2: #162036;
+  --text: #e5e9f2;
+  --muted: #94a3b8;
+  --border: #25314d;
+  --primary: #5b8def;
+  --primary-contrast: #0b1220;
+  --ok: #4ade80;
+  --ok-bg: #12351f;
+  --bad: #f87171;
+  --bad-bg: #3b1616;
+  --warn: #fbbf24;
+  --warn-bg: #3a2c0a;
+  --info: #93c5fd;
+  --info-bg: #14264a;
+  --muted-bg: #25314d;
+  color-scheme: dark;
+}

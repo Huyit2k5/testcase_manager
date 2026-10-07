@@ -1,10 +1,9 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
+import { apiRoot } from '../core/host';
 import { Observable, map } from 'rxjs';
 import { ImportReport, TestCaseExportRequest } from './dtos';
 import { ImportConflictMode, TransferFormat } from './enums';
-
-const ROOT = '/api/test-case-management';
 
 export interface DownloadedFile { blob: Blob; fileName: string }
 
@@ -25,6 +24,7 @@ export function fileNameOf(header: string | null): string | null {
 @Injectable({ providedIn: 'root' })
 export class TransferService {
   private readonly http = inject(HttpClient);
+  private readonly root = apiRoot();
 
   exportTestCases(request: TestCaseExportRequest): Observable<DownloadedFile> {
     let params = new HttpParams().set('Format', String(request.format));
@@ -35,11 +35,11 @@ export class TransferService {
     if (request.priority !== null && request.priority !== undefined) { params = params.set('Priority', String(request.priority)); }
     for (const tag of request.tags ?? []) { params = params.append('Tags', tag); }
     if (request.hasAutomationId !== null && request.hasAutomationId !== undefined) { params = params.set('HasAutomationId', String(request.hasAutomationId)); }
-    return this.download(`${ROOT}/test-cases/export`, params, request.format);
+    return this.download(`${this.root}/test-cases/export`, params, request.format);
   }
 
   exportResults(runId: string, format: TransferFormat): Observable<DownloadedFile> {
-    return this.download(`${ROOT}/runs/${runId}/results/export`, new HttpParams().set('format', String(format)), format);
+    return this.download(`${this.root}/runs/${runId}/results/export`, new HttpParams().set('format', String(format)), format);
   }
 
   importTestCases(
@@ -50,14 +50,14 @@ export class TransferService {
     if (options.defaultSuiteId) { form.append('DefaultSuiteId', options.defaultSuiteId); }
     form.append('OnExisting', String(options.onExisting));
     form.append('DryRun', String(options.dryRun));
-    return this.http.post<ImportReport>(`${ROOT}/test-cases/import`, form);
+    return this.http.post<ImportReport>(`${this.root}/test-cases/import`, form);
   }
 
   importResults(runId: string, file: File, dryRun: boolean): Observable<ImportReport> {
     const form = new FormData();
     form.append('File', file, file.name);
     form.append('DryRun', String(dryRun));
-    return this.http.post<ImportReport>(`${ROOT}/runs/${runId}/results/import`, form);
+    return this.http.post<ImportReport>(`${this.root}/runs/${runId}/results/import`, form);
   }
 
   private download(url: string, params: HttpParams, format: TransferFormat): Observable<DownloadedFile> {

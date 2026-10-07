@@ -212,3 +212,19 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 - [x] T087 Tests: group rules, the link surviving edits and reorders, unlinking on content change, insert and refresh at the right position, approved test cases get a version, versions and runs keep the copy, usage and bulk update, permissions, import and export of linked test cases.
 - [x] T088 Angular: a Shared steps page (list, edit, usage, bulk update); in the test case dialog the groups as blocks with "outdated", update and detach, and a button to insert a group; the form shows linked steps as read-only; English and Vietnamese; unit tests and a browser run.
 - [x] T089 Document the decisions (plan.md 4.13, README); run the full build.
+
+---
+
+## Phase 15: Plugging into a host application (an ABP Angular app)
+
+**Goal**: Prove that the module works inside an application that is not its sample host: an ABP application with its own sign-in, sidebar, roles and theme. Make the Angular pages independent of how the host signs in, which language it uses and where its API is, add the module to a second, template-built host, and fix what that shows.
+
+- [x] T090 Library layout: move the pages, the proxy, the core and the styles to `angular/projects/test-case-management/` with a public API; the standalone app becomes a small host of it (login page, top bar, `LocalAuthService`).
+- [x] T091 Host contracts: `AuthService` (abstract, signed-out default), `TCM_API_URL`, `TCM_BASE_PATH`, `TCM_LANGUAGE`, `TCM_NOTIFIER`; the services build their URLs from the API root; the language and toasts follow the host when it provides them; run links honour the base path.
+- [x] T092 Routes and menu: `createTestCaseManagementRoutes` (all pages behind the host's guards, wrapped by `TcmShellComponent`), `TCM_MENU` with a permission and an ABP name per entry; menu labels in the module's localization resource (en, vi); the module's styles scoped under `.tcm`.
+- [x] T093 ABP adapter (`test-case-management/abp`): `AbpAuthAdapter`, `provideTestCaseManagementForAbp`, `provideTestCaseManagementMenu`, an interceptor that shows the errors of the module's API in the host's toaster.
+- [x] T094 Server: `AddTestCaseManagementApiKeyAuthentication()` for hosts whose default scheme is ASP.NET Core Identity's (the ABP templates), with tests.
+- [x] T095 Second host: an `abp new` application (Angular, LeptonX, SQLite) with the module attached (project references, DbContext, migration, API key scheme), `vi` added to its languages; run it with its Angular app.
+- [x] T096 Fix what running it showed: Bootstrap class clashes, dialog z-index, route id binding, calls the user may not make, errors shown through the host.
+- [x] T097 Tests and browser runs: unit tests of the host contracts, the routes and the menu (85 Angular tests); a browser run of the whole module in the second host (sign-in, sidebar, repository, attachments, run, API key, dashboard, permissions in the Roles screen, a user with three permissions, Vietnamese); the earlier browser script again on the standalone app; the full build.
+- [x] T098 Document the decisions and the steps (plan.md 4.14, README "Using the module in an ABP application").

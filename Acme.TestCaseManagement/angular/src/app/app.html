@@ -1,3 +1,4 @@
+<div class="tcm tcm-theme tcm-auto-dark">
 @if (auth.isAuthenticated() && auth.ready()) {
 <header class="topbar">
   <div class="brand">{{ 'app.name' | t }}</div>
@@ -25,4 +26,5 @@
       <button type="button" class="icon-btn" [attr.aria-label]="'app.dismiss' | t" (click)="toasts.dismiss(toast.id)">&times;</button>
     </div>
   }
+</div>
 </div>

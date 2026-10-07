@@ -2,9 +2,8 @@ import { Component, inject, input, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AuthService } from '../../core/auth';
-import { describeError } from '../../core/core';
-import { I18nService, LanguageSwitchComponent, TranslatePipe } from '../../core/i18n/i18n';
+import { I18nService, LanguageSwitchComponent, TranslatePipe, describeError } from 'test-case-management';
+import { LocalAuthService } from '../core/local-auth';
 
 @Component({
   selector: 'app-login',
@@ -41,7 +40,7 @@ import { I18nService, LanguageSwitchComponent, TranslatePipe } from '../../core/
   `,
 })
 export class LoginComponent {
-  private readonly auth = inject(AuthService);
+  private readonly auth = inject(LocalAuthService);
   private readonly router = inject(Router);
   private readonly i18n = inject(I18nService);
 

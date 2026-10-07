@@ -1,9 +1,12 @@
-import { Component, effect, inject, input, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { map } from 'rxjs';
 import { ModalComponent } from '../../core/modal';
 import { AuthService, Permissions } from '../../core/auth';
 import { ToastService } from '../../core/core';
+import { TCM_BASE_PATH } from '../../core/host';
 import { FormatDatePipe, I18nService, TranslatePipe } from '../../core/i18n/i18n';
 import { badge } from '../../core/ui';
 import { AddDefect, DefectLink, TestExecution, TestRun, TestRunItem } from '../../proxy/dtos';
@@ -24,6 +27,7 @@ interface ExecuteForm {
   templateUrl: './run-detail.html',
 })
 export class RunDetailComponent {
+  protected readonly base = inject(TCM_BASE_PATH);
   private readonly service = inject(TestRunService);
   private readonly toast = inject(ToastService);
   private readonly transfer = inject(TransferService);
@@ -32,7 +36,8 @@ export class RunDetailComponent {
   protected readonly perm = Permissions;
 
   /** Bound from the route parameter :id. */
-  readonly id = input.required<string>();
+  /** The run in the address. Read from the route, not bound as an input, so that the host does not have to enable input binding. */
+  readonly id = toSignal(inject(ActivatedRoute).paramMap.pipe(map(params => params.get('id') ?? '')), { initialValue: '' });
 
   protected readonly run = signal<TestRun | null>(null);
   protected readonly executeForm = signal<ExecuteForm | null>(null);

@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { ModalComponent } from '../../core/modal';
 import { AuthService, Permissions } from '../../core/auth';
 import { ToastService } from '../../core/core';
+import { TCM_BASE_PATH } from '../../core/host';
 import { FormatDatePipe, I18nService, TranslatePipe } from '../../core/i18n/i18n';
 import { badge, toDateInput, toIsoDate } from '../../core/ui';
 import { TestPlan, TestRun } from '../../proxy/dtos';
@@ -25,6 +26,7 @@ export class RunsComponent implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(I18nService);
   private readonly router = inject(Router);
+  protected readonly base = inject(TCM_BASE_PATH);
   protected readonly auth = inject(AuthService);
   protected readonly perm = Permissions;
 
@@ -110,7 +112,7 @@ export class RunsComponent implements OnInit {
     }).subscribe(run => {
       this.toast.success(this.i18n.t('runs.runCreated'));
       this.runForm.set(null);
-      void this.router.navigate(['/runs', run.id]);
+      void this.router.navigate([this.base + '/runs', run.id]);
     });
   }
 }

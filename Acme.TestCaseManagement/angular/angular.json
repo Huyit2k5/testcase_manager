@@ -33,7 +33,8 @@
               }
             ],
             "styles": [
-              "src/styles.scss"
+              "src/styles.scss",
+              "projects/test-case-management/src/lib/styles/tcm.scss"
             ]
           },
           "configurations": {
@@ -76,7 +77,10 @@
           "defaultConfiguration": "development"
         },
         "test": {
-          "builder": "@angular/build:unit-test"
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "include": ["**/*.spec.ts", "../projects/**/*.spec.ts"]
+          }
         }
       }
     }

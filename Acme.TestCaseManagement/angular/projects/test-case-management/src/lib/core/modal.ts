@@ -18,7 +18,7 @@ import { TranslatePipe } from './i18n/i18n';
     </div>
   `,
   styles: `
-    .backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, .45); display: grid; place-items: center; z-index: 50; padding: 16px; }
+    .backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, .45); display: grid; place-items: center; z-index: 1055; padding: 16px; }
     .dialog { background: var(--surface); color: var(--text); border-radius: 12px; width: min(560px, 100%); max-height: 90vh; display: flex; flex-direction: column; box-shadow: var(--shadow-lg); }
     .dialog.wide { width: min(900px, 100%); }
     header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--border); }

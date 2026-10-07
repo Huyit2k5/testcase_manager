@@ -118,6 +118,35 @@ Outside Development nothing is created: configure `Auth:Jwt:SigningKey` (32+ cha
 `Auth_Login`, then use Authorize with the returned `accessToken`. The host serves the languages `en` and `vi`
 (`UseAbpRequestLocalization`): error messages follow the `Accept-Language` header.
 
+## Using the module in an ABP application
+
+This is how the module was added to an application built from ABP's own template (Angular UI, LeptonX, OpenIddict), and the
+browser was run against it (plan.md, section 4.14).
+
+**On the server**
+1. The host needs ABP 10.6.1 or newer (a template with 10.6.0 packages fails with NU1605 until its packages are raised).
+2. Reference the six `Acme.TestCaseManagement.*` projects (or packages) and add each module to the `[DependsOn]` of the matching layer
+   of the host: Domain.Shared, Domain, Application.Contracts, Application, EntityFrameworkCore, HttpApi.
+3. Embed the model in the host's DbContext as in "2. Database" above (`ITestCaseManagementDbContext`, `[ReplaceDbContext]`, one `DbSet`
+   per member, `builder.ConfigureTestCaseManagement()`), then add a migration and run the migrator. The template's admin role receives
+   the module's permissions when the migrator seeds.
+4. For pipelines, after the template's `ForwardIdentityAuthenticationForBearer(...)` call `context.Services.AddTestCaseManagementApiKeyAuthentication();`.
+   The template's default scheme then sends a request with `X-Api-Key` to the key scheme and everything else where it went.
+5. Attachments use ABP's BlobStoring; the template already includes the database provider, which works as it is. Choose another provider
+   (file system, S3...) for large volumes.
+6. Add `vi` to the host's `AbpLocalizationOptions.Languages` if users should switch to Vietnamese; the module's resource has both languages.
+
+**In the Angular application** (the pages are shared as source, see "Angular front end")
+1. Copy `angular/projects/test-case-management/` into the application (a git submodule or a copy), and add to its `tsconfig.json`:
+   `"paths": { "test-case-management": ["./projects/test-case-management/src/public-api.ts"], "test-case-management/abp": ["./projects/test-case-management/abp/public-api.ts"] }`.
+2. In `app.config.ts`, after `provideAbpCore(...)` and the theme: `provideTestCaseManagementForAbp(), provideTestCaseManagementMenu()`.
+3. In `app.routes.ts`: `{ path: 'test-case-management', loadChildren: () => import('test-case-management').then(m => m.createTestCaseManagementRoutes({ canActivate: [authGuard] })) }`.
+   Another path needs the same value in `TCM_BASE_PATH` (the adapter provides `/test-case-management`).
+
+There is no stylesheet to add: the pages load their own, scoped under `.tcm`. The sidebar gets a "Test Case Management" group with
+the pages the user may open, the permissions are managed in the host's own Roles screen, the language follows the host's switch, and
+messages and errors appear in the host's toaster. The pages keep their own light palette and do not follow the theme's dark mode.
+
 ## HTTP API
 
 All routes start with `api/test-case-management/`.
@@ -275,7 +304,8 @@ symbol packages. Requires the .NET SDK 10 (see `global.json`).
   reaches host applications through ABP itself.
 - Sign-off approvals carry a SHA-256 integrity digest that detects tampering; they are not asymmetric digital
   signatures and do not give non-repudiation.
-- The module contains no user interface and no EF Core migrations.
+- The module contains no EF Core migrations. Its UI is Angular only, shared as a source folder (not an npm package), tried with an ABP host on
+  Angular 22.0 and the LeptonX Lite side menu; it keeps its own light palette instead of following the host's theme.
 - Deleting a test case does not delete its attachments; a pipeline cannot attach files yet; files are held in memory while stored (25 MB limit).
 - Flaky detection and the dashboard read the attempts of the lookback window into memory and work on the dates of the server clock.
 - Results published with an API key have no creator, there is no rate limiting on the publish endpoint, stored idempotency records
@@ -285,7 +315,8 @@ symbol packages. Requires the .NET SDK 10 (see `global.json`).
 
 ## Angular front end
 
-`angular/` holds a ready-made UI (Angular 22) for the module: test repository with suite tree, versions and defects;
+`angular/` holds a ready-made UI (Angular 22) for the module, as a library folder (`angular/projects/test-case-management/`) that hosts share
+as source, and a small standalone app that runs it with a JWT sign-in: test repository with suite tree, versions and defects;
 plans and runs with execution and retest; the traceability matrix; quality gates and two-user sign-off; API keys for pipelines; a dashboard with burn-down, velocity, defect density and flaky tests; attachments with screenshot paste; tags and filters; shared steps, in English and
 Vietnamese with a language switch. See
 [angular/README.md](angular/README.md). It is not packed into the NuGet packages.

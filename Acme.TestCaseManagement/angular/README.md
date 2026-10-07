@@ -3,11 +3,19 @@
 Angular 22 front end of the Acme.TestCaseManagement module. Standalone components, signals, lazy routes.
 
 ```text
-src/app/proxy/      typed DTOs, enums and one service per API area (what `abp generate-proxy` would produce)
-src/app/core/       sign-in (AuthService, token interceptor, route guard), toasts, error mapping, modal, helpers
-src/app/core/i18n/  English and Vietnamese texts (en.ts, vi.ts), language service, `t` pipe, language switch
-src/app/features/   login, repository, runs, traceability, quality (lazy loaded)
+projects/test-case-management/   the library: pages and services, shared by every host
+  src/lib/proxy/      typed DTOs, enums and one service per API area (what `abp generate-proxy` would produce)
+  src/lib/core/       what the pages need from a host (auth.ts, host.ts), toasts, error mapping, modal, helpers
+  src/lib/core/i18n/  English and Vietnamese texts (en.ts, vi.ts), language service, `t` pipe, language switch
+  src/lib/features/   repository, runs, traceability, quality, dashboard, automation, shared steps (lazy loaded)
+  src/lib/styles/     the stylesheet, scoped under `.tcm`, and its colour tokens
+  src/public-api.ts   what a host imports as `test-case-management`
+  abp/                the adapter for an ABP Angular application, imported as `test-case-management/abp`
+src/app/              the standalone host: login page, top bar, LocalAuthService (JWT sign-in), interceptors
 ```
+
+A host provides `AuthService` (and optionally the language, the notifications and the API address) and mounts
+`createTestCaseManagementRoutes()`; the README of the module explains it for an ABP application.
 
 ## Run
 
@@ -22,8 +30,8 @@ Every page except `/login` needs a signed-in user. Sign in with a demo account o
 `/api/abp/application-configuration` (a hidden button is a convenience, the API enforces the permission). To sign off a
 release two different users must approve, so sign out and in as the second user.
 
-The host issues the tokens itself (`POST /api/auth/login`). With an external identity provider, replace `AuthService.login`
-and keep the interceptor, guard and permission lookup.
+The host issues the tokens itself (`POST /api/auth/login`). With an external identity provider, replace `LocalAuthService`
+(`src/app/core/local-auth.ts`) with an `AuthService` of your own; the pages only read who is signed in and what they may do.
 
 ## Import and export
 

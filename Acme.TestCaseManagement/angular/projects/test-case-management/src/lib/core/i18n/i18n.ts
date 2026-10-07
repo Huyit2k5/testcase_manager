@@ -1,5 +1,5 @@
 import { HttpInterceptorFn } from '@angular/common/http';
-import { Component, Injectable, Pipe, PipeTransform, effect, inject, signal } from '@angular/core';
+import { Component, Injectable, Pipe, PipeTransform, Signal, computed, effect, inject, signal } from '@angular/core';
 import { formatDate, registerLocaleData } from '@angular/common';
 import localeVi from '@angular/common/locales/vi';
 import { Title } from '@angular/platform-browser';
@@ -8,6 +8,7 @@ import {
   AttachmentOwnerType, ExecutionType, FlakinessLevel, ImportConflictMode, ImportOutcome, PlanStatus, PriorityLevel, RequirementCoverageStatus, RunStatus, SeverityLevel,
   SignOffStatus, TestCaseStatus, TestKind, TestLayer, TestResultStatus, TransferFormat, enumLabel,
 } from '../../proxy/enums';
+import { TCM_LANGUAGE } from '../host';
 import { words } from '../ui';
 import { en } from './en';
 import { vi } from './vi';
@@ -39,6 +40,11 @@ function isLang(value: unknown): value is Lang {
   return value === 'en' || value === 'vi';
 }
 
+/** A language name of a host (vi, vi-VN, en-US) to one the module has, English when it has none. */
+function toLang(value: string | null | undefined): Lang {
+  return value?.toLowerCase().startsWith('vi') ? 'vi' : 'en';
+}
+
 /** The remembered choice, else the browser language (Vietnamese when it starts with vi), else English. */
 function initialLanguage(): Lang {
   try {
@@ -54,14 +60,21 @@ function initialLanguage(): Lang {
  */
 @Injectable({ providedIn: 'root' })
 export class I18nService {
-  readonly lang = signal<Lang>(initialLanguage());
+  /** The language of the host when it owns the switch (an ABP application does), else the module's own choice. */
+  private readonly hostLanguage = inject(TCM_LANGUAGE, { optional: true });
+  private readonly own = signal<Lang>(initialLanguage());
+  readonly lang: Signal<Lang> = this.hostLanguage ? computed(() => toLang(this.hostLanguage!())) : this.own;
 
   constructor() {
-    this.applyToDocument(this.lang());
+    if (!this.hostLanguage) {
+      this.applyToDocument(this.own());
+    }
   }
 
+  /** Switches the language of the module; ignored when the host owns the switch. */
   use(lang: Lang): void {
-    this.lang.set(lang);
+    if (this.hostLanguage) { return; }
+    this.own.set(lang);
     this.applyToDocument(lang);
     try { localStorage.setItem(STORAGE_KEY, lang); } catch { /* storage may be unavailable */ }
   }
@@ -130,7 +143,11 @@ export class TranslatedTitleStrategy extends TitleStrategy {
   }
 
   override updateTitle(snapshot: RouterStateSnapshot): void {
-    this.key.set(this.buildTitle(snapshot));
+    // The module's pages carry the key in their route data, so that the title follows a language switch; a title that is
+    // itself a key (the login page of the standalone app) works as before.
+    let route = snapshot.root;
+    while (route.firstChild) { route = route.firstChild; }
+    this.key.set((route.data['titleKey'] as string | undefined) ?? this.buildTitle(snapshot));
   }
 }
 

@@ -2,6 +2,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService, Permissions } from '../../core/auth';
 import { ToastService } from '../../core/core';
+import { TCM_API_URL } from '../../core/host';
 import { FormatDatePipe, I18nService, TranslatePipe } from '../../core/i18n/i18n';
 import { ModalComponent } from '../../core/modal';
 import { ApiKey, ApiKeyCreated } from '../../proxy/dtos';
@@ -61,7 +62,7 @@ export class AutomationComponent implements OnInit {
   protected readonly created = signal<ApiKeyCreated | null>(null);
   protected readonly copied = signal(false);
 
-  protected readonly origin = typeof location === 'undefined' ? '' : location.origin;
+  protected readonly origin = inject(TCM_API_URL) || (typeof location === 'undefined' ? '' : location.origin);
   protected readonly githubExample = githubActionsExample(this.origin);
   protected readonly activeCount = computed(() => this.keys().filter(k => k.isActive).length);
 

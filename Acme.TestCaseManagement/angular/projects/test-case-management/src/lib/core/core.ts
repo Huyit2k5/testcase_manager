@@ -1,6 +1,7 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { catchError, from, map, of, switchMap, throwError } from 'rxjs';
+import { TCM_NOTIFIER } from './host';
 import { I18nService } from './i18n/i18n';
 
 // ---- Toasts -------------------------------------------------------------------------------------------------------
@@ -11,10 +12,12 @@ export interface Toast { id: number; kind: 'success' | 'error' | 'info'; text: s
 export class ToastService {
   readonly toasts = signal<Toast[]>([]);
   private nextId = 1;
+  /** The host's own notification area, when it has one: the message goes there and no toast of the module is shown. */
+  private readonly notifier = inject(TCM_NOTIFIER, { optional: true });
 
-  success(text: string): void { this.push('success', text, 3500); }
-  info(text: string): void { this.push('info', text, 3500); }
-  error(text: string): void { this.push('error', text, 8000); }
+  success(text: string): void { this.notifier ? this.notifier.success(text) : this.push('success', text, 3500); }
+  info(text: string): void { this.notifier ? this.notifier.info(text) : this.push('info', text, 3500); }
+  error(text: string): void { this.notifier ? this.notifier.error(text) : this.push('error', text, 8000); }
 
   dismiss(id: number): void { this.toasts.update(list => list.filter(t => t.id !== id)); }
 
