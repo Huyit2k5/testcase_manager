@@ -60,6 +60,22 @@ internal sealed class ApiClient
     /// <summary>A client that sends no credentials at all.</summary>
     public static ApiClient Anonymous(TestCaseManagementHost host) => new(host.CreateDefaultClient(), Guid.Empty, "anonymous");
 
+    /// <summary>A client that authenticates with an API key (the X-Api-Key header) and no bearer token, as a pipeline does.</summary>
+    public static ApiClient WithApiKey(TestCaseManagementHost host, string apiKey, ConcurrentBag<(HttpMethod Method, string Path)>? calls = null)
+    {
+        var http = host.CreateDefaultClient(new RecordingHandler(calls));
+        http.DefaultRequestHeaders.TryAddWithoutValidation("X-Api-Key", apiKey);
+        return new ApiClient(http, Guid.Empty, "api-key");
+    }
+
+    /// <summary>Adds a header to every request of this client; returns the client for chaining.</summary>
+    public ApiClient WithHeader(string name, string value)
+    {
+        _http.DefaultRequestHeaders.Remove(name);
+        _http.DefaultRequestHeaders.TryAddWithoutValidation(name, value);
+        return this;
+    }
+
     /// <summary>A client that sends a bearer token the API cannot have issued.</summary>
     public static ApiClient WithToken(TestCaseManagementHost host, string token)
     {

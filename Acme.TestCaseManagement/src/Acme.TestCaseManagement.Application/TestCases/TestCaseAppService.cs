@@ -81,6 +81,7 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
     public virtual async Task<TestCaseDto> CreateAsync(CreateUpdateTestCaseDto input)
     {
         var testCase = await _testCaseManager.CreateAsync(input.SuiteId, input.Code, input.Title);
+        await _testCaseManager.EnsureAutomationIdIsUniqueAsync(input.AutomationId, exceptTestCaseId: null);
         ApplyContent(testCase, input);
 
         await _testCaseRepository.InsertAsync(testCase, autoSave: true);
@@ -96,6 +97,13 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
         await _testCaseManager.ChangeCodeAsync(testCase, input.Code);
         await _testCaseManager.ChangeSuiteAsync(testCase, input.SuiteId);
         testCase.SetTitle(input.Title);
+
+        // Checked only when it changes, so that a test case that already shares an ID can still be edited.
+        if (!string.Equals(testCase.AutomationId, TestCaseManager.NormalizeAutomationId(input.AutomationId), StringComparison.Ordinal))
+        {
+            await _testCaseManager.EnsureAutomationIdIsUniqueAsync(input.AutomationId, testCase.Id);
+        }
+
         ApplyContent(testCase, input);
 
         await PublishVersionIfApprovedAsync(testCase, input.ChangeSummary);
@@ -198,7 +206,7 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
             input.ExecutionType,
             input.Kind,
             input.Layer,
-            input.AutomationId);
+            TestCaseManager.NormalizeAutomationId(input.AutomationId));
         testCase.SetFlaky(input.IsFlaky);
         testCase.SetSteps(
             input.Steps

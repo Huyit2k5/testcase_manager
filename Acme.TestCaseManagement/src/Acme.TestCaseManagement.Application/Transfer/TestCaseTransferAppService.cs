@@ -178,6 +178,7 @@ public class TestCaseTransferAppService : TestCaseManagementAppService, ITestCas
             .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
         var plans = new List<CasePlan>();
+        var automationIds = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var draft in sheet.Drafts)
         {
@@ -204,6 +205,7 @@ public class TestCaseTransferAppService : TestCaseManagementAppService, ITestCas
                 {
                     ResolveSuite(plan, sheet, tree, input, messages, canCreateSuites);
                     CheckTitle(plan, sheet, messages);
+                    await CheckAutomationIdAsync(plan, sheet, automationIds, messages);
                 }
             }
 
@@ -294,6 +296,36 @@ public class TestCaseTransferAppService : TestCaseManagementAppService, ITestCas
                 plan.SuiteId = lookup.Node.Id;
                 break;
         }
+    }
+
+    /// <summary>
+    /// An Automation ID names one test case (FR-019). Refused here, so that it shows in the report with its row, and not as an
+    /// error half way through the import: the ID may not belong to another test case of the library or of the file.
+    /// </summary>
+    private async Task CheckAutomationIdAsync(CasePlan plan, ParsedSheet sheet, Dictionary<string, string> seen, TransferMessages messages)
+    {
+        // A column that the file does not have leaves the ID of an existing test case as it is.
+        if (plan.Existing != null && !sheet.Columns.Contains(TestCaseSheet.AutomationId))
+        {
+            return;
+        }
+
+        var automationId = TestCaseManager.NormalizeAutomationId(plan.Draft.AutomationId);
+        if (automationId == null)
+        {
+            return;
+        }
+
+        var unchanged = plan.Existing != null && string.Equals(plan.Existing.AutomationId, automationId, StringComparison.Ordinal);
+        var owner = unchanged ? null : await _testCaseRepository.FindByAutomationIdAsync(automationId);
+        var takenInFile = seen.TryGetValue(automationId, out var otherCode) && !string.Equals(otherCode, plan.Draft.Code, StringComparison.OrdinalIgnoreCase);
+
+        if ((owner != null && owner.Id != plan.Existing?.Id) || takenInFile)
+        {
+            plan.Messages.Add(messages.Get("Import:DuplicateAutomationId", ("AutomationId", automationId)));
+        }
+
+        seen.TryAdd(automationId, plan.Draft.Code);
     }
 
     /// <summary>A title is required for a new test case, and may not be blanked on an existing one.</summary>

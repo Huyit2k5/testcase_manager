@@ -3,6 +3,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using Acme.TestCaseManagement.Automation.Dtos;
 using Acme.TestCaseManagement.Enums;
 using Acme.TestCaseManagement.Plans.Dtos;
 using Acme.TestCaseManagement.QualityGates.Dtos;
@@ -284,6 +285,24 @@ public class HttpApiFlow_Tests
         (await qaLead.UploadAsync<ImportReportDto>(
                 $"{Root}/runs/{run.Id}/results/import", "flow.csv", Encoding.UTF8.GetBytes("Code,Result\nPAY-001,Passed\n"), dryRun))
             .DryRun.ShouldBeTrue();
+
+        // ---- Automation: a key for the pipeline, its results, and the key revoked (see HttpApiAutomation_Tests) --------------
+        var automated = await qaLead.PostAsync<TestCaseDto>($"{Root}/test-cases", new CreateUpdateTestCaseDto
+        {
+            SuiteId = suite.Id, Code = "PAY-AUTO", Title = "An automated test", AutomationId = "flow.automated",
+            Steps = { new TestStepDto { Action = "Run the script", ExpectedResult = "It passes" } },
+        });
+        await qaLead.PostAsync<TestCaseDto>($"{Root}/test-cases/{automated.Id}/status", new ChangeTestCaseStatusDto { TargetStatus = TestCaseStatus.Approved });
+        var apiKey = await qaLead.PostAsync<ApiKeyCreatedDto>($"{Root}/api-keys", new CreateApiKeyDto { Name = "Release cycle" });
+        (await qaLead.GetAsync<List<ApiKeyDto>>($"{Root}/api-keys")).ShouldContain(candidate => candidate.Id == apiKey.Id);
+        var pipeline = ApiClient.WithApiKey(_host, apiKey.Key, calls);
+        var published = await pipeline.PostAsync<PublishAutomationResultsDto>($"{Root}/automation/results", new PublishAutomationResultsInput
+        {
+            Run = new AutomationRunInput { Title = "Pipeline run", Environment = "CI" },
+            Results = { new AutomationResultInput { AutomationId = "flow.automated", Status = TestResultStatus.Passed, DurationSeconds = 3 } },
+        });
+        published.Recorded.ShouldBe(1);
+        (await qaLead.PostAsync<ApiKeyDto>($"{Root}/api-keys/{apiKey.Id}/revoke")).IsActive.ShouldBeFalse();
 
         await AssertEveryOperationWasCalledAsync(calls);
     }

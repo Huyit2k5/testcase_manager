@@ -52,6 +52,23 @@ public static class TestCaseManagementPermissions
         public const string Approve = Default + ".Approve";
     }
 
+    /// <summary>Creating, listing and revoking the API keys of CI/CD pipelines.</summary>
+    public static class ApiKeys
+    {
+        public const string Default = GroupName + ".ApiKeys";
+        public const string Manage = Default + ".Manage";
+    }
+
+    /// <summary>
+    /// Publishing results of automated runs. An API key can do this and nothing else; a signed-in user needs the
+    /// permission as well.
+    /// </summary>
+    public static class AutomationResults
+    {
+        public const string Default = GroupName + ".AutomationResults";
+        public const string Publish = Default + ".Publish";
+    }
+
     public static string[] GetAll()
     {
         return ReflectionHelper.GetPublicConstantsRecursively(typeof(TestCaseManagementPermissions));

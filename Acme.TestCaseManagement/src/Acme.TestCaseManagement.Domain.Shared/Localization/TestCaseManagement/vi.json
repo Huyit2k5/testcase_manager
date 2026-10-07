@@ -20,6 +20,10 @@
     "Permission:QualityGates": "Quality gate",
     "Permission:QualityGates.Manage": "Quản lý quality gate",
     "Permission:SignOff": "Sign-off",
+    "Permission:ApiKeys": "API key",
+    "Permission:ApiKeys.Manage": "Quản lý API key",
+    "Permission:AutomationResults": "Kết quả tự động hóa",
+    "Permission:AutomationResults.Publish": "Đẩy kết quả tự động hóa",
     "Permission:SignOff.Approve": "Phê duyệt sign-off phát hành",
 
     "TestCaseManagement:CircularSuiteDependency": "Test suite '{SuiteName}' không thể được chuyển vào chính nó hoặc vào suite con của nó.",
@@ -49,6 +53,11 @@
     "TestCaseManagement:SignOffRequiresUser": "Sign-off phải do người dùng đã đăng nhập thực hiện.",
     "TestCaseManagement:SignOffNotPending": "Sign-off '{Title}' đang ở trạng thái {Status} nên không nhận thêm phê duyệt.",
     "TestCaseManagement:DuplicateSignOffApproval": "Bạn đã phê duyệt sign-off '{Title}' rồi.",
+    "TestCaseManagement:DuplicateAutomationId": "Đã có test case khác dùng automation id '{AutomationId}'.",
+    "TestCaseManagement:AutomationTooManyResults": "Mỗi yêu cầu chỉ chứa tối đa {Limit} kết quả, nhưng yêu cầu này có {Count}. Hãy gửi thành nhiều yêu cầu.",
+    "TestCaseManagement:IdempotencyKeyReused": "Khóa idempotency '{Key}' đã được dùng cho một yêu cầu khác.",
+    "TestCaseManagement:InvalidApiKeyExpiry": "Ngày hết hạn của API key phải ở tương lai.",
+    "TestCaseManagement:InvalidAutomationRun": "Hãy cho RunId (test run có sẵn) hoặc Run (test run mới), không cho cả hai và không bỏ trống cả hai.",
     "TestCaseManagement:ExportTooLarge": "Tệp xuất sẽ có {Count} test case, trong khi giới hạn là {Limit}. Hãy thu hẹp bằng bộ lọc.",
 
     "QualityGate:Criterion:PassRate": "Tỷ lệ đạt (%)",
@@ -76,6 +85,7 @@
     "Import:SuiteAmbiguous": "Đường dẫn suite '{Path}' khớp với nhiều hơn một suite.",
     "Import:SuiteNotFound": "Suite '{Path}' chưa có, và bạn không có quyền tạo suite.",
     "Import:DefaultSuiteNotFound": "Không tìm thấy suite mặc định.",
+    "Import:DuplicateAutomationId": "Đã có test case khác dùng automation id '{AutomationId}'.",
     "Import:AlreadyExists": "Đã có test case với mã này nên được giữ nguyên.",
     "Import:Unchanged": "Test case đã giống với tệp; không có gì để cập nhật.",
     "Import:UpdateNotAllowed": "Test case đã có và bạn không có quyền cập nhật test case.",
@@ -86,6 +96,11 @@
     "Import:Results:VersionNotFound": "Test case '{Code}' có trong test run này nhưng không phải phiên bản {Version}.",
     "Import:Results:DefectFormat": "Cột Defects: '{Value}' phải có dạng Hệ thống:MÃ, phân cách bằng dấu chấm phẩy.",
     "Import:Results:DefectNeedsFailed": "Chỉ kết quả Failed mới có defect.",
-    "Import:Results:NoResult": "Dòng này không có kết quả; bỏ qua."
+    "Import:Results:NoResult": "Dòng này không có kết quả; bỏ qua.",
+
+    "Automation:Unmatched": "Không có test case nào có automation id '{AutomationId}'.",
+    "Automation:Ambiguous": "{Count} test case có automation id '{AutomationId}': {Codes}.",
+    "Automation:NotApproved": "Test case '{Code}' đang ở trạng thái {Status}; chỉ test case đã duyệt mới đưa được vào test run.",
+    "Automation:NotInRun": "Test case '{Code}' không có trong test run."
   }
 }

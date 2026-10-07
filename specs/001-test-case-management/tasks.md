@@ -143,3 +143,18 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 - [X] T053 Tests: tabular layer, mapping and validation rules, app services (round trip is idempotent, dry run writes nothing, a bad row blocks the whole file), HTTP (multipart upload, download, roles).
 - [X] T054 Angular: export (current filters, CSV or Excel) and import dialog with "check file" before import on the repository page; export and import of results on the run page; English and Vietnamese texts; unit tests and a browser run.
 - [X] T055 Document the format and the decisions (plan.md 4.8, README); run the full build.
+
+---
+
+## Phase 10: CI/CD ingestion of automated results (FR-020, FR-019)
+
+**Goal**: Let a pipeline publish test results in bulk without a person signing in: its own credential (an API key that can do nothing else), results matched to test cases by Automation ID, safe retries, and the flaky flag of the spec's edge case 3. Second of three follow-up phases (11: flaky detection and dashboard, FR-012/FR-025).
+
+- [x] T056 [P] Domain: `ApiKey` aggregate (only a SHA-256 hash is stored; prefix, expiry, revocation, last use), `ApiKeyManager` (generate, validate in constant time), `AutomationPublication` (idempotency record); Automation ID made unique as FR-019 says (`TestCaseManager`, repository lookups).
+- [x] T057 [P] EF Core mappings and DbSets for the new entities (module context and interface); contracts: permissions (`ApiKeys`, `AutomationResults.Publish`), enums, DTOs, `IApiKeyAppService`, `IAutomationResultsAppService`, `IApiKeyValidator`; localized messages (en, vi).
+- [x] T058 `ApiKeyAppService` (list, create with the secret shown once, revoke), `ApiKeyValidator`, and an ABP permission value provider that grants an API key principal the single permission to publish results.
+- [x] T059 `AutomationResultsAppService.PublishAsync`: match by Automation ID, find or create the run, schedule missing approved test cases, record attempts in order, flag flaky tests, optional completion, per-result outcomes, strict mode, idempotency key with replay.
+- [x] T060 [P] HttpApi: `ApiKeyController`, `AutomationResultsController`, the `X-Api-Key` authentication handler and `AddTestCaseManagementApiKey`; host: policy scheme choosing JWT or API key, new DbSets, Swagger scheme; contract and convention tests.
+- [x] T061 Tests: key generation and validation, publishing rules (matching, ambiguity, strictness, retries and flaky, run creation and completion, idempotency), Automation ID uniqueness, HTTP with real keys (valid, revoked, expired, wrong, scope limits, roles).
+- [x] T062 Angular: an Automation page to create, list and revoke API keys (secret shown once, copy button) with a ready-made curl and CI example; English and Vietnamese; unit tests and a browser run.
+- [x] T063 Document the contract and the decisions (plan.md 4.9, README with a GitHub Actions example); run the full build.

@@ -1,0 +1,95 @@
+<div class="page">
+  <div class="page-head">
+    <h1>{{ 'auto.title' | t }}</h1>
+    @if (auth.can(perm.ApiKeys.Manage)) {
+      <button type="button" class="btn primary" (click)="newKey()">{{ 'auto.newKey' | t }}</button>
+    }
+  </div>
+
+  <section class="card">
+    <h2>{{ 'auto.keysTitle' | t }}</h2>
+    <p class="muted">{{ 'auto.intro' | t }}</p>
+
+    @if (loading()) {
+      <p class="muted">{{ 'common.loading' | t }}</p>
+    } @else if (keys().length === 0) {
+      <p class="muted">{{ 'auto.noKeys' | t }}</p>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th>{{ 'common.name' | t }}</th>
+            <th>{{ 'auto.colPrefix' | t }}</th>
+            <th>{{ 'common.status' | t }}</th>
+            <th>{{ 'auto.colExpires' | t }}</th>
+            <th>{{ 'auto.colLastUsed' | t }}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (key of keys(); track key.id) {
+            <tr>
+              <td>{{ key.name }}<div class="muted">{{ key.creationTime | fdate: 'short' }}</div></td>
+              <td><code>{{ key.keyPrefix }}</code></td>
+              <td><span class="badge" [class]="state(key) === 'active' ? 'ok' : 'bad'">{{ 'auto.state.' + state(key) | t }}</span></td>
+              <td class="nowrap">{{ key.expiresAt ? (key.expiresAt | fdate: 'mediumDate') : ('auto.never' | t) }}</td>
+              <td class="nowrap">{{ key.lastUsedAt ? (key.lastUsedAt | fdate: 'short') : ('auto.neverUsed' | t) }}</td>
+              <td class="nowrap">
+                @if (key.isActive && auth.can(perm.ApiKeys.Manage)) {
+                  <button type="button" class="btn sm danger" (click)="revoke(key)">{{ 'auto.revoke' | t }}</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </section>
+
+  <section class="card">
+    <h2>{{ 'auto.usageTitle' | t }}</h2>
+    <p class="muted">{{ 'auto.usageIntro' | t }}</p>
+    <h3>curl</h3>
+    <pre class="snippet">{{ curl('tcm_xxxxxxxx_...') }}</pre>
+    <h3>GitHub Actions</h3>
+    <pre class="snippet">{{ githubExample }}</pre>
+    <ul class="muted">
+      <li>{{ 'auto.noteMatch' | t }}</li>
+      <li>{{ 'auto.noteIdempotency' | t }}</li>
+      <li>{{ 'auto.noteFlaky' | t }}</li>
+    </ul>
+  </section>
+</div>
+
+@if (form(); as f) {
+  <app-modal [title]="'auto.newKey' | t" (closed)="form.set(null)">
+    <form id="keyForm" (ngSubmit)="save()">
+      <label>{{ 'common.name' | t }}
+        <input name="name" [(ngModel)]="f.name" maxlength="128" required [placeholder]="'auto.namePlaceholder' | t" />
+      </label>
+      <label>{{ 'auto.expiresOn' | t }}
+        <input name="expiresOn" type="date" [(ngModel)]="f.expiresOn" />
+      </label>
+      <p class="muted">{{ 'auto.expiresHelp' | t }}</p>
+    </form>
+    <ng-container slot="footer">
+      <button type="button" class="btn" (click)="form.set(null)">{{ 'common.cancel' | t }}</button>
+      <button type="submit" form="keyForm" class="btn primary" [disabled]="!f.name.trim()">{{ 'common.create' | t }}</button>
+    </ng-container>
+  </app-modal>
+}
+
+@if (created(); as key) {
+  <app-modal [title]="'auto.createdTitle' | t" [wide]="true" (closed)="closeCreated()">
+    <div class="alert warn" role="alert">{{ 'auto.shownOnce' | t }}</div>
+    <div class="row">
+      <input class="secret" readonly [value]="key.key" [attr.aria-label]="'auto.secret' | t" (focus)="$any($event.target).select()" />
+      <button type="button" class="btn primary" (click)="copy(key.key)">{{ (copied() ? 'auto.copied' : 'auto.copy') | t }}</button>
+    </div>
+    <h3>curl</h3>
+    <pre class="snippet">{{ curl(key.key) }}</pre>
+    <ng-container slot="footer">
+      <button type="button" class="btn primary" (click)="closeCreated()">{{ 'auto.savedIt' | t }}</button>
+    </ng-container>
+  </app-modal>
+}

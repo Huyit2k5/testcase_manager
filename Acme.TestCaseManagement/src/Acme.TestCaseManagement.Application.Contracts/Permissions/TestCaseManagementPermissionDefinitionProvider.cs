@@ -35,6 +35,12 @@ public class TestCaseManagementPermissionDefinitionProvider : PermissionDefiniti
 
         var signOff = group.AddPermission(TestCaseManagementPermissions.SignOff.Default, L("Permission:SignOff"));
         signOff.AddChild(TestCaseManagementPermissions.SignOff.Approve, L("Permission:SignOff.Approve"));
+
+        var apiKeys = group.AddPermission(TestCaseManagementPermissions.ApiKeys.Default, L("Permission:ApiKeys"));
+        apiKeys.AddChild(TestCaseManagementPermissions.ApiKeys.Manage, L("Permission:ApiKeys.Manage"));
+
+        var automation = group.AddPermission(TestCaseManagementPermissions.AutomationResults.Default, L("Permission:AutomationResults"));
+        automation.AddChild(TestCaseManagementPermissions.AutomationResults.Publish, L("Permission:AutomationResults.Publish"));
     }
 
     private static LocalizableString L(string name)

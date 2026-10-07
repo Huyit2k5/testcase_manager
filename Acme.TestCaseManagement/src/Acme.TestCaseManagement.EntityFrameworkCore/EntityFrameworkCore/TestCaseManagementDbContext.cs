@@ -1,3 +1,4 @@
+using Acme.TestCaseManagement.Automation;
 using Acme.TestCaseManagement.Plans;
 using Acme.TestCaseManagement.Quality;
 using Acme.TestCaseManagement.Requirements;
@@ -36,6 +37,10 @@ public class TestCaseManagementDbContext : AbpDbContext<TestCaseManagementDbCont
     public DbSet<QualityGate> QualityGates { get; set; } = null!;
 
     public DbSet<SignOffReport> SignOffReports { get; set; } = null!;
+
+    public DbSet<ApiKey> ApiKeys { get; set; } = null!;
+
+    public DbSet<AutomationPublication> AutomationPublications { get; set; } = null!;
 
     public TestCaseManagementDbContext(DbContextOptions<TestCaseManagementDbContext> options)
         : base(options)

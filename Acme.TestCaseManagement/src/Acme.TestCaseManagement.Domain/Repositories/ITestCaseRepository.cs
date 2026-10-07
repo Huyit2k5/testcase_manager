@@ -29,6 +29,12 @@ public interface ITestCaseRepository : IRepository<TestCase, Guid>
 {
     Task<TestCase?> FindByCodeAsync(string code, bool includeDetails = false, CancellationToken cancellationToken = default);
 
+    /// <summary>The test case with this Automation ID (ignoring case), or null.</summary>
+    Task<TestCase?> FindByAutomationIdAsync(string automationId, CancellationToken cancellationToken = default);
+
+    /// <summary>Every test case whose Automation ID is one of these (ignoring case), in one query.</summary>
+    Task<List<TestCase>> GetListByAutomationIdsAsync(IReadOnlyCollection<string> automationIds, CancellationToken cancellationToken = default);
+
     Task<List<TestCase>> GetFilteredListAsync(
         TestCaseFilter filter,
         string? sorting = null,

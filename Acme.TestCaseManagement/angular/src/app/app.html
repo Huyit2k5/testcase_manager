@@ -2,7 +2,7 @@
 <header class="topbar">
   <div class="brand">{{ 'app.name' | t }}</div>
   <nav [attr.aria-label]="'app.mainNav' | t">
-    @for (tab of tabs; track tab.path) {
+    @for (tab of visibleTabs(); track tab.path) {
       <a [routerLink]="tab.path" routerLinkActive="active">{{ tab.label | t }}</a>
     }
   </nav>

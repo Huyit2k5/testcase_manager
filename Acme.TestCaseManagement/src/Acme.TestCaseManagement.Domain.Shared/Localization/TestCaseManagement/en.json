@@ -20,6 +20,10 @@
     "Permission:QualityGates": "Quality gates",
     "Permission:QualityGates.Manage": "Manage quality gates",
     "Permission:SignOff": "Sign-off",
+    "Permission:ApiKeys": "API keys",
+    "Permission:ApiKeys.Manage": "Manage API keys",
+    "Permission:AutomationResults": "Automation results",
+    "Permission:AutomationResults.Publish": "Publish automation results",
     "Permission:SignOff.Approve": "Approve release sign-off",
 
     "TestCaseManagement:CircularSuiteDependency": "Test suite '{SuiteName}' cannot be moved under itself or one of its descendants.",
@@ -49,6 +53,11 @@
     "TestCaseManagement:SignOffRequiresUser": "A sign-off must be given by an authenticated user.",
     "TestCaseManagement:SignOffNotPending": "Sign-off '{Title}' is {Status} and can no longer receive approvals.",
     "TestCaseManagement:DuplicateSignOffApproval": "You have already approved sign-off '{Title}'.",
+    "TestCaseManagement:DuplicateAutomationId": "Another test case already uses the automation id '{AutomationId}'.",
+    "TestCaseManagement:AutomationTooManyResults": "A request may carry at most {Limit} results, and this one has {Count}. Send them in several requests.",
+    "TestCaseManagement:IdempotencyKeyReused": "The idempotency key '{Key}' was already used for a different request.",
+    "TestCaseManagement:InvalidApiKeyExpiry": "The expiry of an API key must be in the future.",
+    "TestCaseManagement:InvalidAutomationRun": "Give either RunId (an existing run) or Run (a new one), not both and not neither.",
     "TestCaseManagement:ExportTooLarge": "The export would have {Count} test cases, and the limit is {Limit}. Narrow it down with the filters.",
 
     "QualityGate:Criterion:PassRate": "Pass rate (%)",
@@ -76,6 +85,7 @@
     "Import:SuiteAmbiguous": "Suite path '{Path}' matches more than one suite.",
     "Import:SuiteNotFound": "Suite '{Path}' does not exist, and you may not create suites.",
     "Import:DefaultSuiteNotFound": "The default suite does not exist.",
+    "Import:DuplicateAutomationId": "Another test case already uses the automation id '{AutomationId}'.",
     "Import:AlreadyExists": "A test case with this code already exists; it is left as it is.",
     "Import:Unchanged": "The test case already matches the file; nothing to update.",
     "Import:UpdateNotAllowed": "The test case exists and you may not update test cases.",
@@ -86,6 +96,11 @@
     "Import:Results:VersionNotFound": "Test case '{Code}' is in this run, but not with version {Version}.",
     "Import:Results:DefectFormat": "Column Defects: '{Value}' must look like System:KEY, separated by semicolons.",
     "Import:Results:DefectNeedsFailed": "Only a Failed result can have defects.",
-    "Import:Results:NoResult": "No result in this row; skipped."
+    "Import:Results:NoResult": "No result in this row; skipped.",
+
+    "Automation:Unmatched": "No test case has the automation id '{AutomationId}'.",
+    "Automation:Ambiguous": "{Count} test cases have the automation id '{AutomationId}': {Codes}.",
+    "Automation:NotApproved": "Test case '{Code}' is {Status}, and only approved test cases can be scheduled in a run.",
+    "Automation:NotInRun": "Test case '{Code}' is not in the run."
   }
 }

@@ -132,3 +132,6 @@ button { font: inherit; cursor: pointer; }
 
 .progress { height: 8px; background: var(--muted-bg); border-radius: 4px; overflow: hidden; }
 .progress > div { height: 100%; background: var(--primary); }
+
+.snippet { background: var(--surface-2, #f1f5f9); border: 1px solid var(--border); border-radius: 8px; padding: 12px; overflow-x: auto; font-size: .82rem; white-space: pre-wrap; overflow-wrap: anywhere; max-width: 100%; user-select: all; }
+.secret { flex: 1; min-width: 260px; font-family: ui-monospace, Consolas, monospace; }

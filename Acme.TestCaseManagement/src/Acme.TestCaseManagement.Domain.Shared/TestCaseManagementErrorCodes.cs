@@ -43,6 +43,13 @@ public static class TestCaseManagementErrorCodes
     public const string SignOffNotPending = "TestCaseManagement:SignOffNotPending";
     public const string DuplicateSignOffApproval = "TestCaseManagement:DuplicateSignOffApproval";
 
+    // Automation (CI/CD)
+    public const string DuplicateAutomationId = "TestCaseManagement:DuplicateAutomationId";
+    public const string AutomationTooManyResults = "TestCaseManagement:AutomationTooManyResults";
+    public const string IdempotencyKeyReused = "TestCaseManagement:IdempotencyKeyReused";
+    public const string InvalidApiKeyExpiry = "TestCaseManagement:InvalidApiKeyExpiry";
+    public const string InvalidAutomationRun = "TestCaseManagement:InvalidAutomationRun";
+
     // Import and export
     public const string ExportTooLarge = "TestCaseManagement:ExportTooLarge";
 }

@@ -91,6 +91,11 @@ public class OpenApiContract_Tests
         "SignOff_SignOff POST /sign-off",
         "SignOff_Approve POST /sign-off/{id}/approvals",
 
+        "ApiKey_GetList GET /api-keys",
+        "ApiKey_Create POST /api-keys",
+        "ApiKey_Revoke POST /api-keys/{id}/revoke",
+        "AutomationResults_Publish POST /automation/results",
+
         // Outside the module: the host's own login endpoint, so that Swagger UI can obtain a token.
         "Auth_Login POST /api/auth/login",
     };
@@ -173,7 +178,7 @@ public class OpenApiContract_Tests
 
             // POST and PUT take a JSON body (the commands without a payload excepted), the imports a multipart upload; GET and DELETE never do.
             var takesBody = operation["requestBody"] is not null;
-            takesBody.ShouldBe(method is "POST" or "PUT" && id != "TestRun_Complete", $"{where}: request body");
+            takesBody.ShouldBe(method is "POST" or "PUT" && id is not ("TestRun_Complete" or "ApiKey_Revoke"), $"{where}: request body");
             if (takesBody)
             {
                 var bodyType = id is "TestCaseTransfer_Import" or "TestResultTransfer_Import" ? "multipart/form-data" : "application/json";
@@ -209,6 +214,39 @@ public class OpenApiContract_Tests
             new[] { "Format", "Filter", "SuiteId", "IncludeDescendantSuites", "Status", "Priority", "Severity", "ExecutionType", "Kind", "Layer" },
             ignoreOrder: true);
         QueryParameters(document, "TestResultTransfer_Export").ShouldBe(new[] { "format" });
+    }
+
+    [Fact]
+    public async Task The_Publish_Operation_Accepts_A_Token_Or_An_Api_Key_And_Describes_The_Key()
+    {
+        var document = await GetDocumentAsync();
+        var operations = Operations(document).ToDictionary(operation => (string)operation.Operation["operationId"]!, operation => operation.Operation);
+
+        var key = document["components"]!["securitySchemes"]!["ApiKey"]!;
+        ((string?)key["type"]).ShouldBe("apiKey");
+        ((string?)key["in"]).ShouldBe("header");
+        ((string?)key["name"]).ShouldBe("X-Api-Key");
+
+        // Alternatives: either one is enough.
+        operations["AutomationResults_Publish"]["security"]!.AsArray()
+            .Select(requirement => requirement!.AsObject().Single().Key)
+            .ShouldBe(new[] { "Bearer", "ApiKey" });
+
+        // Everything else asks for the token only: a key opens nothing but the publish endpoint.
+        operations["TestCase_GetList"]["security"].ShouldBeNull();
+        document["security"]!.AsArray().Select(requirement => requirement!.AsObject().Single().Key).ShouldBe(new[] { "Bearer" });
+
+        var input = Property(Schemas(document), "Automation.Dtos.PublishAutomationResultsInput");
+        ((bool)input("failOnUnmatched")["type"]!.ToJsonString().Contains("boolean")).ShouldBeTrue();
+        ((int)input("results")["minItems"]!).ShouldBe(1);
+        ((int)input("idempotencyKey")["maxLength"]!).ShouldBe(AutomationConsts.MaxIdempotencyKeyLength);
+        Required(Schemas(document), "Automation.Dtos.AutomationResultInput").ShouldBe(new[] { "automationId" });
+        Required(Schemas(document), "Automation.Dtos.CreateApiKeyDto").ShouldBe(new[] { "name" });
+        Schemas(document).ContainsKey("Acme.TestCaseManagement.Automation.Dtos.ApiKeyDto").ShouldBeTrue();
+        // Only the answer to creating a key has the secret.
+        Property(Schemas(document), "Automation.Dtos.ApiKeyDto").ShouldNotBeNull();
+        Schemas(document)["Acme.TestCaseManagement.Automation.Dtos.ApiKeyDto"]!["properties"]!.AsObject().ContainsKey("key").ShouldBeFalse();
+        Schemas(document)["Acme.TestCaseManagement.Automation.Dtos.ApiKeyCreatedDto"]!.ToJsonString().ShouldContain("key");
     }
 
     [Fact]
@@ -271,7 +309,7 @@ public class OpenApiContract_Tests
         var schemas = Schemas(await GetDocumentAsync());
 
         var documented = schemas.Where(schema => schema.Key.StartsWith("Acme.TestCaseManagement.Enums.")).ToList();
-        documented.Count.ShouldBe(14);
+        documented.Count.ShouldBe(15);
 
         foreach (var (name, schema) in documented)
         {

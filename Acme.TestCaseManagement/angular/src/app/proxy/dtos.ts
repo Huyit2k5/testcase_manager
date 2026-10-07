@@ -159,3 +159,20 @@ export interface SignOffReport {
   summary: QualityGateEvaluation | null; approvals: SignOffApproval[]; creationTime: string;
 }
 export interface StartSignOff extends EvaluateInput { title?: string | null; approverRole?: string | null; comment?: string | null }
+
+// ---- Automation (API keys for CI/CD) ------------------------------------------------------------------------------
+
+export interface ApiKey {
+  id: string;
+  name: string;
+  keyPrefix: string;
+  expiresAt: string | null;
+  revokedAt: string | null;
+  lastUsedAt: string | null;
+  creationTime: string;
+  creatorId: string | null;
+  isActive: boolean;
+}
+
+/** The only answer that carries the secret; it cannot be read again. */
+export interface ApiKeyCreated extends ApiKey { key: string }

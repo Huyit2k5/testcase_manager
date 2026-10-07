@@ -23,6 +23,23 @@ public class EfCoreTestCaseRepository
             .FirstOrDefaultAsync(x => x.Code == code, GetCancellationToken(cancellationToken));
     }
 
+    public virtual async Task<TestCase?> FindByAutomationIdAsync(string automationId, CancellationToken cancellationToken = default)
+    {
+        // Lower-casing both sides makes the match behave the same on SQL Server, PostgreSQL and SQLite.
+        var lowered = automationId.Trim().ToLowerInvariant();
+        return await (await GetQueryableAsync())
+            .FirstOrDefaultAsync(x => x.AutomationId != null && x.AutomationId.ToLower() == lowered, GetCancellationToken(cancellationToken));
+    }
+
+    public virtual async Task<List<TestCase>> GetListByAutomationIdsAsync(
+        IReadOnlyCollection<string> automationIds, CancellationToken cancellationToken = default)
+    {
+        var lowered = automationIds.Select(id => id.Trim().ToLowerInvariant()).Distinct().ToList();
+        return await (await GetQueryableAsync())
+            .Where(x => x.AutomationId != null && lowered.Contains(x.AutomationId.ToLower()))
+            .ToListAsync(GetCancellationToken(cancellationToken));
+    }
+
     public virtual async Task<List<TestCase>> GetFilteredListAsync(
         TestCaseFilter filter,
         string? sorting = null,

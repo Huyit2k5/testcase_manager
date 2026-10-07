@@ -8,6 +8,7 @@ export const routes: Routes = [
   { path: 'runs/:id', canActivate: [authGuard], title: 'title.run', loadComponent: () => import('./features/runs/run-detail').then(m => m.RunDetailComponent) },
   { path: 'traceability', canActivate: [authGuard], title: 'title.traceability', loadComponent: () => import('./features/traceability/traceability').then(m => m.TraceabilityComponent) },
   { path: 'quality', canActivate: [authGuard], title: 'title.quality', loadComponent: () => import('./features/quality/quality').then(m => m.QualityComponent) },
+  { path: 'automation', canActivate: [authGuard], title: 'title.automation', loadComponent: () => import('./features/automation/automation').then(m => m.AutomationComponent) },
   { path: 'login', title: 'title.login', loadComponent: () => import('./features/login/login').then(m => m.LoginComponent) },
   { path: '**', redirectTo: 'repository' },
 ];

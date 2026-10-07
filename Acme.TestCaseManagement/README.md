@@ -85,6 +85,20 @@ Every application service requires a permission (see below). The host must provi
 permission store, for example the ABP Permission Management module. Sign-off records the calling user, so it
 needs an authenticated user with an id.
 
+**API keys for pipelines.** A CI job publishes results with an API key instead of a user login. Wire the handler next to your
+other schemes with `AddTestCaseManagementApiKey()` and pick it per request, as the sample host does with a policy scheme:
+
+```csharp
+services.AddAuthentication(o => { o.DefaultScheme = "BearerOrApiKey"; o.DefaultChallengeScheme = "BearerOrApiKey"; })
+    .AddPolicyScheme("BearerOrApiKey", "Bearer token or API key", o =>
+        o.ForwardDefaultSelector = ctx => ctx.Request.IsApiKeyRequest() ? ApiKeyDefaults.Scheme : JwtBearerDefaults.AuthenticationScheme)
+    .AddTestCaseManagementApiKey()
+    .AddJwtBearer(/* ... */);
+```
+
+The key principal has no user and no role; the module grants it only `AutomationResults.Publish`. Create keys with
+`POST api-keys` (permission `ApiKeys.Manage`); the secret (`tcm_...`) is shown once and only its hash is stored.
+
 ### 4. API documentation
 
 The controllers are ordinary MVC controllers and appear in Swagger. Use `Volo.Abp.Swashbuckle`
@@ -121,6 +135,8 @@ All routes start with `api/test-case-management/`.
 | `rtm` | requirements traceability matrix |
 | `quality-gates` | gate CRUD and `POST quality-gates/evaluate` (dry run with per-criterion breakdown) |
 | `sign-off` | start a sign-off, add approvals, read reports |
+| `api-keys` | list, create (secret shown once) and revoke API keys |
+| `automation/results` | `POST`: a pipeline publishes automated results (API key, or a user with `AutomationResults.Publish`) |
 
 ## Permissions
 
@@ -135,6 +151,8 @@ Group `TestCaseManagement`. Each `...Default` permission allows reading; the chi
 | `TestCaseManagement.Requirements` | `Manage` |
 | `TestCaseManagement.QualityGates` | `Manage` |
 | `TestCaseManagement.SignOff` | `Approve` |
+| `TestCaseManagement.ApiKeys` | `Manage` (create and revoke keys) |
+| `TestCaseManagement.AutomationResults` | `Publish` (the only permission an API key has) |
 
 ## Import and export
 
@@ -151,6 +169,38 @@ importing needs only `Code` and `Result`, and every row becomes a new attempt.
   `TestSuites.Manage` to create suites), importing results needs `TestRuns.Execute`.
 - CSV is UTF-8 with a byte order mark (comma, semicolon or tab are read); cells that would run as a formula get a leading apostrophe on
   export. Limits are set through `TestCaseManagementTransferOptions`: 5 MiB, 10,000 rows, 50 MiB unzipped, 20,000 test cases per export.
+
+## Publishing automated results (CI/CD)
+
+A test case is linked to its automated test by the **Automation ID**, which is unique. A pipeline sends its results with an API key
+(create one on the Automation page, or with `POST api-keys`):
+
+```bash
+curl --fail-with-body -X POST https://tcm.example/api/test-case-management/automation/results \
+  -H "X-Api-Key: $TCM_API_KEY" -H "Idempotency-Key: build-123" -H "Content-Type: application/json" \
+  -d '{ "run": { "title": "CI build 123", "environment": "staging", "buildVersion": "1.4.2" },
+        "completeRun": true,
+        "results": [ { "automationId": "e2e.login.valid", "status": "Passed", "durationSeconds": 12 },
+                     { "automationId": "e2e.checkout.card", "status": "Failed", "actualResult": "Card declined" } ] }'
+```
+
+GitHub Actions (keep the key in `secrets.TCM_API_KEY`):
+
+```yaml
+- name: Publish results to Test Case Management
+  if: always()
+  run: |
+    curl --fail-with-body -X POST https://tcm.example/api/test-case-management/automation/results \
+      -H "X-Api-Key: ${{ secrets.TCM_API_KEY }}" \
+      -H "Idempotency-Key: ${{ github.run_id }}-${{ github.run_attempt }}" \
+      -H "Content-Type: application/json" -d @results.json
+```
+
+Give either `run` (a new run) or `runId` (an existing one). Results whose Automation ID matches no test case are listed in the answer
+and the others are still recorded (`failOnUnmatched: true` rejects the whole request). Approved test cases missing from the run are
+added (`addMissingToRun`). The same test case twice in a request counts as retries; a test that fails and then passes is marked flaky.
+A request holds at most 2000 results. Send an `Idempotency-Key` so that retrying a request does not record twice. A host that embeds
+the module's model in its own DbContext needs the two new `DbSet`s (`ApiKey`, `AutomationPublication`).
 
 ## Quality gate rules in one place
 
@@ -180,10 +230,12 @@ symbol packages. Requires the .NET SDK 10 (see `global.json`).
 - Sign-off approvals carry a SHA-256 integrity digest that detects tampering; they are not asymmetric digital
   signatures and do not give non-repudiation.
 - The module contains no user interface and no EF Core migrations.
+- Results published with an API key have no creator, there is no rate limiting on the publish endpoint, stored idempotency records
+  are never cleaned up, and publishing was tested on SQLite with a single tenant only.
 
 ## Angular front end
 
 `angular/` holds a ready-made UI (Angular 22) for the module: test repository with suite tree, versions and defects;
-plans and runs with execution and retest; the traceability matrix; quality gates and two-user sign-off, in English and
+plans and runs with execution and retest; the traceability matrix; quality gates and two-user sign-off; API keys for pipelines, in English and
 Vietnamese with a language switch. See
 [angular/README.md](angular/README.md). It is not packed into the NuGet packages.

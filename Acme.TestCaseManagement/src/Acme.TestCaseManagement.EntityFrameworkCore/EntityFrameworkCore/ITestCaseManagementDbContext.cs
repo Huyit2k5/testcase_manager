@@ -1,3 +1,4 @@
+using Acme.TestCaseManagement.Automation;
 using Acme.TestCaseManagement.Plans;
 using Acme.TestCaseManagement.Quality;
 using Acme.TestCaseManagement.Requirements;
@@ -40,4 +41,9 @@ public interface ITestCaseManagementDbContext : IEfCoreDbContext
     DbSet<QualityGate> QualityGates { get; }
 
     DbSet<SignOffReport> SignOffReports { get; }
+
+    // Automation (CI/CD)
+    DbSet<ApiKey> ApiKeys { get; }
+
+    DbSet<AutomationPublication> AutomationPublications { get; }
 }

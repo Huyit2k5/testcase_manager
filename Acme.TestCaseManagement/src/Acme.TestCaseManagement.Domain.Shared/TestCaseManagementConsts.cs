@@ -75,3 +75,18 @@ public static class DefectLinkConsts
     public const int MaxIssueKeyLength = 128;
     public const int MaxIssueUrlLength = 1024;
 }
+
+public static class ApiKeyConsts
+{
+    public const int MaxNameLength = 128;
+
+    /// <summary>"tcm_" followed by 8 hexadecimal characters: what is shown and what a lookup uses.</summary>
+    public const int KeyPrefixLength = 12;
+}
+
+public static class AutomationConsts
+{
+    public const int MaxIdempotencyKeyLength = 128;
+
+    public const int MaxRunTitleLength = TestRunConsts.MaxTitleLength;
+}

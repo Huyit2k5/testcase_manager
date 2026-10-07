@@ -1,4 +1,5 @@
 using Acme.TestCaseManagement.Authentication;
+using Acme.TestCaseManagement.Automation;
 using Acme.TestCaseManagement.Data;
 using Acme.TestCaseManagement.Swagger;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -49,6 +50,7 @@ public class TestCaseManagementHttpApiHostModule : AbpModule
 
     private const string ApiRoutePrefix = "api/test-case-management/";
     private const string LoginRoute = "api/auth/login";
+    private const string BearerOrApiKeyScheme = "BearerOrApiKey";
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
@@ -90,8 +92,20 @@ public class TestCaseManagementHttpApiHostModule : AbpModule
         // Fails at start-up, not at the first request, when the secret is missing or too short.
         var key = JwtTokenService.CreateKey(jwt);
 
+        // A request that names an API key (X-Api-Key) is authenticated as that key, any other as a bearer token.
         context.Services
-            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddAuthentication(options =>
+            {
+                options.DefaultScheme = BearerOrApiKeyScheme;
+                options.DefaultChallengeScheme = BearerOrApiKeyScheme;
+            })
+            .AddPolicyScheme(BearerOrApiKeyScheme, "Bearer token or API key", options =>
+            {
+                options.ForwardDefaultSelector = httpContext => httpContext.Request.IsApiKeyRequest()
+                    ? ApiKeyDefaults.Scheme
+                    : JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddTestCaseManagementApiKey()
             .AddJwtBearer(options =>
             {
                 options.MapInboundClaims = false;
@@ -138,6 +152,13 @@ public class TestCaseManagementHttpApiHostModule : AbpModule
                 BearerFormat = "JWT",
                 Description = "The accessToken returned by POST /api/auth/login.",
             });
+            options.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.ApiKey,
+                In = ParameterLocation.Header,
+                Name = ApiKeyDefaults.HeaderName,
+                Description = "An API key created on the Automation page or with POST /api/test-case-management/api-keys. It can only publish automation results.",
+            });
             options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
             {
                 [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>(),
@@ -150,6 +171,7 @@ public class TestCaseManagementHttpApiHostModule : AbpModule
             }
 
             // Registered after the XML comments so that they extend, rather than get overwritten by, the type summaries.
+            options.DocumentFilter<ApiKeyDocumentFilter>();
             options.SchemaFilter<EnumNamesSchemaFilter>();
             options.OperationFilter<InterfaceDocumentationOperationFilter>();
         });

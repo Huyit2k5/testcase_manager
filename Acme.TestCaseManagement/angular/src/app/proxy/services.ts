@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
-  AddDefect, CreateRun, DefectLink, EvaluateInput, ExecuteItem, PagedResult, QualityGate, QualityGateEvaluation,
+  AddDefect, ApiKey, ApiKeyCreated, CreateRun, DefectLink, EvaluateInput, ExecuteItem, PagedResult, QualityGate, QualityGateEvaluation,
   Requirement, RtmMatrix, RtmRequest, SavePlan, SaveQualityGate, SaveRequirement, SaveTestCase, SignOffReport, StartSignOff,
   TestCase, TestCaseDefect, TestCaseListRequest, TestCaseVersion, TestExecution, TestPlan, TestRun, TestRunListRequest,
   TestSuite, TestSuiteTree,
@@ -151,4 +151,15 @@ export class SignOffService {
   approve(id: string, approverRole: string | null, comment: string | null): Observable<SignOffReport> {
     return this.http.post<SignOffReport>(`${ROOT}/sign-off/${id}/approvals`, { approverRole, comment });
   }
+}
+
+@Injectable({ providedIn: 'root' })
+export class ApiKeyService {
+  private readonly http = inject(HttpClient);
+
+  list(): Observable<ApiKey[]> { return this.http.get<ApiKey[]>(`${ROOT}/api-keys`); }
+  create(input: { name: string; expiresAt?: string | null }): Observable<ApiKeyCreated> {
+    return this.http.post<ApiKeyCreated>(`${ROOT}/api-keys`, input);
+  }
+  revoke(id: string): Observable<ApiKey> { return this.http.post<ApiKey>(`${ROOT}/api-keys/${id}/revoke`, {}); }
 }

@@ -594,6 +594,54 @@ a defect is not exchanged. Excel files are read from the first worksheet only; m
 Excel cells are not interpreted (no date column is imported). No attachments. Import is tested against SQLite only, with up to a few
 dozen test cases; the 10,000-row limit was not load tested.
 
+### 4.9. Phase 10: CI/CD ingestion of automated results (FR-020, FR-019)
+
+Added after Phase 9. A pipeline publishes the results of an automated run with `POST api/test-case-management/automation/results`
+(`AutomationResultsAppService`, permission `AutomationResults.Publish`) and authenticates with an API key
+(`ApiKeyAppService`, routes `api-keys`, permission `ApiKeys` to list and `ApiKeys.Manage` to create or revoke).
+
+**API key.** `tcm_<8 hex>_<43 base64url>`: 256 random bits, and the prefix is the lookup handle. Only the SHA-256 hash is stored (the
+secret has full entropy, so a slow password hash buys nothing and would slow every request); the secret is returned once, by the
+create call. Validation finds the key by prefix across tenants, compares the hash in fixed time, and refuses a revoked or expired key
+(UTC). `LastUsedAt` is written at most once a minute and is best effort.
+
+**Authentication.** A handler reads the `X-Api-Key` header. The principal has no user id and no role, only the claim `tcm_api_key_id`,
+and a custom `PermissionValueProvider` grants that principal exactly `AutomationResults.Publish`. So a leaked key can publish results
+and can do nothing else; an API key cannot manage keys, read the library or approve anything. The sample host uses a policy scheme
+(`BearerOrApiKey`): a request with `X-Api-Key` goes to the key handler, any other to JWT; when both are sent the key wins.
+
+**Publishing.**
+- Results are matched to test cases by Automation ID (trimmed, case-insensitive). An unmatched or ambiguous ID is reported per result
+  and the rest are recorded (partial acceptance: the pipeline should not lose 999 results over one typo). `FailOnUnmatched` makes
+  the whole request fail instead.
+- The run is an existing `RunId` or a new `Run` (exactly one of them). A matched approved test case that is not in the run is added
+  (`AddMissingToRun`, default true); a case that is not approved is reported, not scheduled.
+- Several results for the same test case become ordered attempts (`AttemptNumber`, then request order), the way a retry works.
+- A test is flagged flaky when the runner says so, or when it both fails and passes inside one request. The flag is never cleared by
+  this path. (Detection from the history across runs is Phase 11.)
+- `CompleteRun` completes the run after the results are written. Everything is one unit of work: a failure midway leaves no run.
+- At most 2000 results per request.
+- `Idempotency-Key` (header or body): the first request is stored in `AutomationPublication` with a hash of the request, a replay
+  returns the stored answer without recording again, and the same key with a different request is refused.
+
+**FR-019.** The Automation ID now names one test case. It is checked when a test case is created and when its Automation ID changes
+(a legacy duplicate can still be edited until the ID itself is changed). The import reports a clash, with the library or inside the
+file, as an invalid row.
+
+**Front end.** The Automation page lists keys, creates one (the secret is in a dialog with a copy button and is gone once the dialog is
+closed), revokes with a confirmation, and shows a curl and a GitHub Actions example. The tab is shown only with `ApiKeys`.
+
+**Findings while testing.** A wide `<pre>` pushed the dialog off the screen (the snippet now wraps). The browser run proves the whole
+chain: create a key, publish with it, a wrong key gets 401, revoke it, the revoked key gets 401.
+
+**Not covered.**
+- A result made through a key has no creator (there is no user).
+- Multi-tenant behavior is designed for (keys are found across tenants, data is per tenant) but not tested.
+- The unique index of the idempotency key does not protect a null tenant on SQLite and PostgreSQL (nulls are distinct there); the
+  service checks first, so only a race can slip through.
+- Publications are never cleaned up, there is no rate limiting, and `LastUsedAt` can lag by a minute.
+- Tested on SQLite only.
+
 ## 5. Security, RBAC & Permissions
 
 Defined in `TestCaseManagementPermissions`:

@@ -1,3 +1,4 @@
+using Acme.TestCaseManagement.Automation;
 using Acme.TestCaseManagement.EntityFrameworkCore;
 using Acme.TestCaseManagement.Plans;
 using Acme.TestCaseManagement.Quality;
@@ -39,6 +40,8 @@ public class HostDbContext : AbpDbContext<HostDbContext>, ITestCaseManagementDbC
     public DbSet<DefectLink> DefectLinks { get; set; } = null!;
     public DbSet<QualityGate> QualityGates { get; set; } = null!;
     public DbSet<SignOffReport> SignOffReports { get; set; } = null!;
+    public DbSet<ApiKey> ApiKeys { get; set; } = null!;
+    public DbSet<AutomationPublication> AutomationPublications { get; set; } = null!;
 
     // Identity
     public DbSet<IdentityUser> Users { get; set; } = null!;

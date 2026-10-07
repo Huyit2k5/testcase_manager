@@ -118,6 +118,32 @@ public class TestCaseManager : DomainService
         return await _versionRepository.InsertAsync(version);
     }
 
+    /// <summary>An Automation ID without surrounding spaces; null when there is none.</summary>
+    public static string? NormalizeAutomationId(string? automationId)
+    {
+        var trimmed = automationId?.Trim();
+        return string.IsNullOrEmpty(trimmed) ? null : trimmed;
+    }
+
+    /// <summary>
+    /// The Automation ID links a test case to its automated script, so it names one test case only (FR-019). Throws when
+    /// another test case already has it, ignoring case. An empty ID is allowed any number of times.
+    /// </summary>
+    public virtual async Task EnsureAutomationIdIsUniqueAsync(string? automationId, Guid? exceptTestCaseId)
+    {
+        var normalized = NormalizeAutomationId(automationId);
+        if (normalized == null)
+        {
+            return;
+        }
+
+        var existing = await _testCaseRepository.FindByAutomationIdAsync(normalized);
+        if (existing != null && existing.Id != exceptTestCaseId)
+        {
+            throw new BusinessException(TestCaseManagementErrorCodes.DuplicateAutomationId).WithData("AutomationId", normalized);
+        }
+    }
+
     protected virtual async Task EnsureCodeIsUniqueAsync(string code, Guid? exceptTestCaseId)
     {
         var normalized = code?.Trim() ?? string.Empty;

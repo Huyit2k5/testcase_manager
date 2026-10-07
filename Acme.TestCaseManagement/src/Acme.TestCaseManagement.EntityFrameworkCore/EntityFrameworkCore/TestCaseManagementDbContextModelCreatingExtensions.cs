@@ -1,3 +1,4 @@
+using Acme.TestCaseManagement.Automation;
 using Acme.TestCaseManagement.Plans;
 using Acme.TestCaseManagement.Quality;
 using Acme.TestCaseManagement.Requirements;
@@ -96,6 +97,37 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
         ConfigureExecutionCycle(builder);
         ConfigureTraceability(builder);
         ConfigureQuality(builder);
+        ConfigureAutomation(builder);
+    }
+
+    private static void ConfigureAutomation(ModelBuilder builder)
+    {
+        builder.Entity<ApiKey>(b =>
+        {
+            b.ToTable(TableName("ApiKeys"), TestCaseManagementDbProperties.DbSchema);
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Name).IsRequired().HasMaxLength(ApiKeyConsts.MaxNameLength);
+            b.Property(x => x.KeyPrefix).IsRequired().HasMaxLength(ApiKeyConsts.KeyPrefixLength);
+            b.Property(x => x.KeyHash).IsRequired().HasMaxLength(SignOffConsts.HashLength);
+
+            // The lookup of a request: the prefix narrows the keys to compare to one or two.
+            b.HasIndex(x => x.KeyPrefix);
+        });
+
+        builder.Entity<AutomationPublication>(b =>
+        {
+            b.ToTable(TableName("AutomationPublications"), TestCaseManagementDbProperties.DbSchema);
+            b.ConfigureByConvention();
+
+            b.Property(x => x.IdempotencyKey).IsRequired().HasMaxLength(AutomationConsts.MaxIdempotencyKeyLength);
+            b.Property(x => x.RequestHash).IsRequired().HasMaxLength(SignOffConsts.HashLength);
+            b.Property(x => x.ResponseJson).IsRequired(); // unbounded text / JSON
+
+            // Two requests with the same key cannot both be recorded. (A database that treats NULLs as distinct, such as
+            // SQLite and PostgreSQL, does not apply this to a host without tenants; the service checks first anyway.)
+            b.HasIndex(x => new { x.TenantId, x.IdempotencyKey }).IsUnique();
+        });
     }
 
     private static void ConfigureTraceability(ModelBuilder builder)
