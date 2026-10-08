@@ -1017,6 +1017,47 @@ the ones that mattered were checked against the code before anything was changed
   grows with the data: to be measured with a large data set and, if it needs it, rewritten as aggregates in the database. Not done yet.
 - Tested on SQLite only; the constructs that would behave differently on other providers were looked for (sorting, case, `LOWER`), not run.
 
+### 4.17. Phase 18: the module on MySQL, and on a large data set
+
+The company's application uses MySQL, so the whole test suite was run against a real MySQL 8.4 server (a Docker container with its data in memory), not only
+against SQLite.
+
+**How.** The package `Volo.Abp.EntityFrameworkCore.MySQL` (the one the ABP application template chooses; it sits on Oracle's `MySql.EntityFrameworkCore`; the
+Pomelo variant, `Volo.Abp.EntityFrameworkCore.MySQL.Pomelo`, was not run) is added to the test base and to the sample host. Setting the environment variable
+`TCM_TEST_MYSQL` (for example `Server=localhost;Port=3307;User ID=root;Password=...`, no database name) makes `TestCaseManagementTestBaseModule` use MySQL: one
+database is created for the run (its schema built by EF Core from the module's model, which also shows that the model creates on MySQL) and emptied before each test,
+so the tests must not run in parallel: `dotnet test --settings test/mysql.runsettings`. The HTTP tests start the sample host on MySQL with `Host:Database=MySql` in a
+database of their own. With the variable unset nothing changes (in-memory SQLite).
+
+**Result.** All suites pass on MySQL: Domain 211, Application 375 (374 plus the scale test, which does nothing unless asked) and HTTP API 79. Two tests needed a change,
+both because they assumed what SQLite does, not because the module was wrong: one looked a defect up with `IssueKey == "bug-1"` and expected not to find `BUG-1` (MySQL's default
+collation compares text without regard to case, so the lookup is now done in memory), and one compared a stored time with the value that was returned before it was stored (MySQL
+keeps six decimals of a second, .NET seven; the comparison now has a tolerance of a millisecond). Everything else (the sorting with a unique last key, the case-insensitive
+Automation ID lookup, the locks, the imports and exports, the dashboard queries, the attachments, the quality gate) behaved the same.
+
+**Large data set** (`Scale_Tests`, run with `TCM_SCALE=<test cases>`; it prints a time per operation): 10,000 test cases with 100 runs of 1,000 items each, that is 100,000 run
+items and about 133,000 attempts, on the same machine that ran everything else, so the figures are only good for order of magnitude and for comparing.
+
+| Operation | 1,000 test cases (1,000 items) | 5,000 (25,000 items) | 10,000 (100,000 items) |
+|---|---|---|---|
+| Dashboard of every run | 1.1 s | 3.7 s | 5.9 to 7.8 s |
+| Dashboard of one plan | 0.3 s | 2.3 s | 5.1 to 5.6 s |
+| List of flaky tests | 0.7 s | 2.7 s | 5.7 to 6.8 s |
+| Quality gate evaluation of a plan | 0.3 s | 1.2 s | 2.7 s |
+| Test cases: first page, filter on text, page 100, with an Automation ID | 0.1 to 1 s | 0.1 to 0.9 s | 0.1 to 0.5 s |
+
+The lists of test cases stay fast whatever the size (they page in the database). The dashboard, the flaky list and the quality gate read every run item and attempt of their
+scope: of the 5.9 seconds of the dashboard at 100,000 items, 5.1 are the queries (reading about 370,000 rows through the MySQL connector) and 0.5 the arithmetic. A rewrite of the items
+query without correlated subqueries was tried and did not help, so it was dropped. What would help is computing the sums in the database (counts by status, attempts by day) instead of
+reading rows, which is provider-specific work (dates, windows) and a change of the repository contract; a short-lived cache of the dashboard would help the repeated views. Neither is
+done: at the size of a company's test library (a few thousand test cases) the dashboard answers in about one to three seconds.
+
+**Found while measuring.** ABP matches the entities of a unit of work against each other when it ends (domain events), which is quadratic: seeding 500,000 rows in one unit of work took
+more than 15 minutes of CPU before it was stopped. Tools and imports that insert very many rows should commit in units of a few thousand. The module's own import is bounded (10,000 rows) and was not affected.
+
+**Not covered.** The Pomelo provider; MySQL 5.7 or MariaDB (only 8.4 was run); a migration made with `dotnet ef` for a MySQL DbContext (the schema was created from the model); more than one
+server node; the dashboard queries rewritten as aggregates.
+
 ## 5. Security, RBAC & Permissions
 
 Defined in `TestCaseManagementPermissions`:

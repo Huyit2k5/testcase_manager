@@ -241,8 +241,9 @@ public class QualityGateManager_Tests : QualityTestBase
 
             // Resolving every link of BUG-1 and the High ticket clears both criteria; the Medium one stays as residual risk.
             await DefectManager.UpdateAsync(critical1, SeverityLevel.Critical, true);
-            var secondLink = (await GetRequiredService<IRepository<DefectLink, Guid>>()
-                .GetListAsync(x => x.IssueKey == "bug-1")).Single();
+            // Compared in memory, as written: a database may treat "bug-1" and "BUG-1" as equal (MySQL's default collation does).
+            var secondLink = (await GetRequiredService<IRepository<DefectLink, Guid>>().GetListAsync())
+                .Single(x => string.Equals(x.IssueKey, "bug-1", StringComparison.Ordinal));
             await DefectManager.UpdateAsync(secondLink, SeverityLevel.Critical, true);
             await DefectManager.UpdateAsync(high, SeverityLevel.High, true);
 

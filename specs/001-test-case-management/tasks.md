@@ -257,3 +257,14 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 - [x] T109 Pipelines and host: an empty API key header, null results, the file name of an import, the reader of AI answers; Swagger and login timing of the sample host; tests.
 - [x] T110 Front end: the dialog (drag, Escape, focus), double submits, stale answers, the Quality and import dialogs, permission checks for secondary calls, the standalone tabs and the smaller findings; 42 new unit tests.
 - [x] T111 Document the changes and what is left (plan.md 4.16, README); run the full build, the browser script of the standalone app and the three browser scripts of the ABP host.
+
+---
+
+## Phase 18: The module on MySQL and on a large data set
+
+**Goal**: Run the module on the database the company's application uses (MySQL), and see how the screens that read a lot behave with a large amount of data.
+
+- [x] T112 Run the tests on MySQL: the MySQL provider in the test base and the sample host, `TCM_TEST_MYSQL`, a shared database emptied before each test, `test/mysql.runsettings`; the HTTP tests on a MySQL host.
+- [x] T113 Fix what MySQL showed (two tests that assumed SQLite's case sensitivity and time precision); all suites pass on MySQL 8.4 and on SQLite.
+- [x] T114 `Scale_Tests`: 1,000 to 10,000 test cases with 100,000 run items; the times of the dashboard, the flaky list, the gate and the lists; what the time is spent on.
+- [x] T115 Document the way to run on MySQL, the figures and what would improve them (plan.md 4.17, README).

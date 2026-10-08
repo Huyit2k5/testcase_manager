@@ -12,6 +12,9 @@ namespace Acme.TestCaseManagement;
 public class TestCaseManagementHost : WebApplicationFactory<Program>
 {
     private readonly string _databaseFile = Path.Combine(Path.GetTempPath(), $"tcm-http-tests-{Guid.NewGuid():N}.db");
+    /// <summary>When set (see <c>TestCaseManagementTestBaseModule.MySqlEnvironmentVariable</c>) the host runs on MySQL, in a database of its own.</summary>
+    private readonly string? _mySqlServer = Environment.GetEnvironmentVariable("TCM_TEST_MYSQL");
+    private readonly string _mySqlDatabase = $"tcm_http_{Guid.NewGuid():N}";
     private readonly string _storageFolder = Path.Combine(Path.GetTempPath(), $"tcm-http-tests-{Guid.NewGuid():N}-files");
 
     /// <summary>Development is the only environment in which the host signs callers in and creates the schema.</summary>
@@ -24,7 +27,16 @@ public class TestCaseManagementHost : WebApplicationFactory<Program>
     protected sealed override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment(EnvironmentName);
-        builder.UseSetting("ConnectionStrings:Default", $"Data Source={_databaseFile}");
+        if (string.IsNullOrWhiteSpace(_mySqlServer))
+        {
+            builder.UseSetting("ConnectionStrings:Default", $"Data Source={_databaseFile}");
+        }
+        else
+        {
+            builder.UseSetting("Host:Database", "MySql");
+            builder.UseSetting("ConnectionStrings:Default", $"{_mySqlServer.TrimEnd(';')};Database={_mySqlDatabase}");
+        }
+
         builder.UseSetting("Storage:Path", _storageFolder);
         ConfigureTestHost(builder);
     }
@@ -40,6 +52,11 @@ public class TestCaseManagementHost : WebApplicationFactory<Program>
 
         // Pooled connections keep the file locked on Windows.
         SqliteConnection.ClearAllPools();
+
+        if (!string.IsNullOrWhiteSpace(_mySqlServer))
+        {
+            DropMySqlDatabase();
+        }
 
         try
         {
@@ -63,6 +80,22 @@ public class TestCaseManagementHost : WebApplicationFactory<Program>
             {
                 // A leftover temp file is harmless.
             }
+        }
+    }
+
+    private void DropMySqlDatabase()
+    {
+        try
+        {
+            using var connection = new MySql.Data.MySqlClient.MySqlConnection($"{_mySqlServer!.TrimEnd(';')}");
+            connection.Open();
+            using var command = connection.CreateCommand();
+            command.CommandText = $"DROP DATABASE IF EXISTS `{_mySqlDatabase}`";
+            command.ExecuteNonQuery();
+        }
+        catch
+        {
+            // A leftover test database is harmless.
         }
     }
 }

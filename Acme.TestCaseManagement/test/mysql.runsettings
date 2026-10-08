@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Run the tests against MySQL: set TCM_TEST_MYSQL (see TestCaseManagementTestBaseModule) and pass "-settings test/mysql.runsettings".
+     The tests share one database, so they must not run in parallel. -->
+<RunSettings>
+  <RunConfiguration>
+    <MaxCpuCount>1</MaxCpuCount>
+  </RunConfiguration>
+  <xUnit>
+    <ParallelizeAssembly>false</ParallelizeAssembly>
+    <ParallelizeTestCollections>false</ParallelizeTestCollections>
+    <MaxParallelThreads>1</MaxParallelThreads>
+  </xUnit>
+</RunSettings>

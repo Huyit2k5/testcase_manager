@@ -13,6 +13,7 @@ using Volo.Abp.BlobStoring;
 using Volo.Abp.BlobStoring.FileSystem;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
+using Volo.Abp.EntityFrameworkCore.MySQL;
 using Volo.Abp.EntityFrameworkCore.Sqlite;
 using Volo.Abp.Identity;
 using Volo.Abp.Identity.EntityFrameworkCore;
@@ -36,6 +37,7 @@ namespace Acme.TestCaseManagement;
     typeof(AbpBlobStoringFileSystemModule),
     typeof(AbpSwashbuckleModule),
     typeof(AbpEntityFrameworkCoreSqliteModule),
+    typeof(AbpEntityFrameworkCoreMySQLModule),
     typeof(AbpIdentityDomainModule),
     typeof(AbpIdentityEntityFrameworkCoreModule),
     typeof(AbpPermissionManagementDomainModule),
@@ -51,6 +53,9 @@ public class TestCaseManagementHttpApiHostModule : AbpModule
     /// <summary>Configuration key: create the schema and seed roles and demo users at start-up (default: Development only).</summary>
     public const string InitializeDatabaseSetting = "Host:InitializeDatabase";
 
+    /// <summary>Configuration key: the database provider of the sample host, "Sqlite" (default) or "MySql".</summary>
+    public const string DatabaseProviderSetting = "Host:Database";
+
     /// <summary>Configuration key: serve Swagger and its UI (default: Development only).</summary>
     public const string SwaggerEnabledSetting = "Swagger:Enabled";
 
@@ -64,7 +69,16 @@ public class TestCaseManagementHttpApiHostModule : AbpModule
 
         Configure<AbpDbContextOptions>(options =>
         {
-            options.UseSqlite();
+            // SQLite (the default) or MySQL: the provider of the sample host is a setting, so that the module can be run on the database a
+            // real application uses. The connection string is ConnectionStrings:Default either way.
+            if (string.Equals(configuration[DatabaseProviderSetting], "MySql", StringComparison.OrdinalIgnoreCase))
+            {
+                options.UseMySQL();
+            }
+            else
+            {
+                options.UseSqlite();
+            }
         });
 
         // Attachments are kept in a folder (Storage:Path, relative to the content root unless absolute). A production host

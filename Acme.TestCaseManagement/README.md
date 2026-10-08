@@ -323,6 +323,20 @@ the requirement text. Details: plan.md, section 4.15.
   unresolved link; both limits are fixed at zero.
 - A gate has `RequiredApprovals` (default 2). There is deliberately no override: a failing gate blocks sign-off.
 
+## Running on MySQL
+
+The module has been run against MySQL 8.4 with `Volo.Abp.EntityFrameworkCore.MySQL` (the package of the ABP application template): the model creates, and every test of the module passes (plan.md,
+section 4.17). To repeat it, start a MySQL server and run the tests with `TCM_TEST_MYSQL` set and the settings file that turns parallel runs off:
+
+```text
+docker run -d --name tcm-mysql -e MYSQL_ROOT_PASSWORD=secret -p 3307:3306 mysql:8.4
+set TCM_TEST_MYSQL=Server=localhost;Port=3307;User ID=root;Password=secret;
+dotnet test --settings test/mysql.runsettings
+```
+
+The sample host runs on MySQL with `Host:Database=MySql` and `ConnectionStrings:Default`. On a large data set (100,000 run items) the dashboard takes about 6 seconds and the flaky list about the same, because they
+read every run item and attempt of their scope; the lists of test cases stay under a second. `TCM_SCALE=10000` with the same tests runs the measurement (`Scale_Tests`).
+
 ## Build, test and pack
 
 ```powershell
@@ -350,6 +364,7 @@ symbol packages. Requires the .NET SDK 10 (see `global.json`).
   case compares as the database does (case sensitive on SQLite and PostgreSQL); the dashboard and the flaky list read the run items and defects of their scope into
   memory; the sample host's tokens last 8 hours and cannot be revoked, and its pipeline has no `UseMultiTenancy`, so a tenant-bound API key would publish into the host's
   tenant (a host with tenants must resolve the tenant first). The locks of sign-off and default gate are in this process unless a distributed lock provider is registered.
+- On MySQL the dashboard, the flaky list and the quality gate read every run item and attempt of their scope and take about 6 seconds at 100,000 run items (see "Running on MySQL"); tested with MySQL 8.4 and the Oracle-based provider only, not with Pomelo, MariaDB or 5.7.
 - Results published with an API key have no creator, there is no rate limiting on the publish endpoint, stored idempotency records
   are never cleaned up, and publishing was tested on SQLite with a single tenant only. Requests that share an idempotency key are
   serialized by an in-process lock; with several server nodes register a distributed lock provider. The Automation ID is unique by

@@ -179,7 +179,8 @@ public class ApiKey_Tests : TestCaseManagementApplicationTestBase
         (await _validator.ValidateAsync(created.Key)).ShouldBeNull();
 
         var again = await _service.RevokeAsync(created.Id);
-        again.RevokedAt.ShouldBe(revoked.RevokedAt);
+        // The same moment; a database may keep fewer decimals of a second than .NET (MySQL keeps six, .NET seven).
+        again.RevokedAt!.Value.ShouldBe(revoked.RevokedAt!.Value, TimeSpan.FromMilliseconds(1));
     }
 
     [Fact]
