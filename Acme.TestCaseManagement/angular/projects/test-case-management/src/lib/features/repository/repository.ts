@@ -14,6 +14,7 @@ import { SuiteNodeComponent } from './suite-node';
 import { SuiteOption, flattenSuites } from './suite-options';
 import { TestCaseDetailComponent } from './test-case-detail';
 import { TestCaseFormComponent } from './test-case-form';
+import { ConfirmService } from '../../core/confirm';
 
 
 const PAGE_SIZE = 20;
@@ -29,6 +30,7 @@ export class RepositoryComponent implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly transfer = inject(TransferService);
   private readonly i18n = inject(I18nService);
+  private readonly confirmer = inject(ConfirmService);
   protected readonly auth = inject(AuthService);
   protected readonly perm = Permissions;
 
@@ -198,13 +200,14 @@ export class RepositoryComponent implements OnInit {
 
   protected deleteSuite(): void {
     const id = this.selectedSuite();
-    if (!id || !confirm(this.i18n.t('repo.confirmDeleteSuite', { name: this.selectedSuiteName() }))) {
-      return;
-    }
-    this.suiteService.delete(id).subscribe(() => {
-      this.toast.success(this.i18n.t('repo.suiteDeleted'));
-      this.selectSuite(null);
-      this.loadTree();
+    if (!id) { return; }
+    this.confirmer.ask({ message: this.i18n.t('repo.confirmDeleteSuite', { name: this.selectedSuiteName() }), confirmText: this.i18n.t('common.delete'), danger: true }).subscribe(ok => {
+      if (!ok) { return; }
+      this.suiteService.delete(id).subscribe(() => {
+        this.toast.success(this.i18n.t('repo.suiteDeleted'));
+        this.selectSuite(null);
+        this.loadTree();
+      });
     });
   }
 

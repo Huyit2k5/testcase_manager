@@ -100,8 +100,8 @@
             <td>@if (g.isDefault) { <span class="badge info">{{ 'qg.defaultBadge' | t }}</span> }</td>
             <td class="right nowrap">
               @if (auth.can(perm.QualityGates.Manage)) {
-                <button type="button" class="btn sm" (click)="editGate(g)">{{ 'common.edit' | t }}</button>
-                <button type="button" class="btn sm danger" (click)="deleteGate(g)">{{ 'common.delete' | t }}</button>
+                <button type="button" tcmIcon="edit" [attr.aria-label]="'common.edit' | t" [attr.title]="'common.edit' | t" (click)="editGate(g)"></button>
+                <button type="button" tcmIcon="trash" [attr.aria-label]="'common.delete' | t" [attr.title]="'common.delete' | t" (click)="deleteGate(g)"></button>
               }
             </td>
           </tr>

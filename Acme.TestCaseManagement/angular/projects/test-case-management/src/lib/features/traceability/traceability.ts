@@ -9,6 +9,8 @@ import { RtmMatrix, RtmRow, TestPlan } from '../../proxy/dtos';
 import { PriorityLevel, RequirementCoverageStatus, SeverityLevel, TestResultStatus, enumOptions } from '../../proxy/enums';
 import { RequirementService, RtmService, TestPlanService } from '../../proxy/services';
 import { CasePickerComponent } from '../runs/case-picker';
+import { IconButtonComponent } from '../../core/icon-button';
+import { ConfirmService } from '../../core/confirm';
 
 interface RequirementForm {
   id: string | null; code: string; title: string; description: string; acceptanceCriteria: string;
@@ -17,7 +19,7 @@ interface RequirementForm {
 
 @Component({
   selector: 'app-traceability',
-  imports: [FormsModule, TranslatePipe, ModalComponent, CasePickerComponent],
+  imports: [FormsModule, TranslatePipe, ModalComponent, CasePickerComponent, IconButtonComponent],
   templateUrl: './traceability.html',
 })
 export class TraceabilityComponent implements OnInit {
@@ -26,6 +28,7 @@ export class TraceabilityComponent implements OnInit {
   private readonly planService = inject(TestPlanService);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(I18nService);
+  private readonly confirmer = inject(ConfirmService);
   protected readonly auth = inject(AuthService);
   protected readonly perm = Permissions;
 
@@ -105,10 +108,12 @@ export class TraceabilityComponent implements OnInit {
   }
 
   protected deleteRequirement(row: RtmRow): void {
-    if (!confirm(this.i18n.t('rtm.confirmDelete', { code: row.code }))) { return; }
-    this.requirementService.delete(row.requirementId).subscribe(() => {
-      this.toast.success(this.i18n.t('rtm.deleted'));
-      this.load();
+    this.confirmer.ask({ message: this.i18n.t('rtm.confirmDelete', { code: row.code }), confirmText: this.i18n.t('common.delete'), danger: true }).subscribe(ok => {
+      if (!ok) { return; }
+      this.requirementService.delete(row.requirementId).subscribe(() => {
+        this.toast.success(this.i18n.t('rtm.deleted'));
+        this.load();
+      });
     });
   }
 

@@ -13,6 +13,7 @@ import { AttachmentOwnerType } from '../../proxy/enums';
 import { SharedStepGroupService, TestCaseService } from '../../proxy/services';
 import { AttachmentsComponent } from '../attachments/attachments';
 import { TagInputComponent } from '../tags/tag-input';
+import { ConfirmService } from '../../core/confirm';
 
 @Component({
   selector: 'app-test-case-detail',
@@ -138,6 +139,7 @@ export class TestCaseDetailComponent {
   private readonly groupService = inject(SharedStepGroupService);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(I18nService);
+  private readonly confirmer = inject(ConfirmService);
   protected readonly auth = inject(AuthService);
   protected readonly perm = Permissions;
 
@@ -227,33 +229,36 @@ export class TestCaseDetailComponent {
   }
 
   // ---- shared steps
-  /** An approved test case gets a new version from these, so the person is asked first. */
-  private confirmVersion(): boolean {
-    return this.testCase().status !== TestCaseStatus.Approved || confirm(this.i18n.t('shared.confirmVersion'));
+  /** An approved test case gets a new version from these, so the person is asked first; the action runs when there is nothing to ask or the answer is yes. */
+  private withVersionConfirmed(action: () => void): void {
+    if (this.testCase().status !== TestCaseStatus.Approved) { action(); return; }
+    this.confirmer.ask({ message: this.i18n.t('shared.confirmVersion'), confirmText: this.i18n.t('confirm.continue') }).subscribe(ok => { if (ok) { action(); } });
   }
 
   protected insertGroup(): void {
-    if (!this.pick || !this.confirmVersion()) { return; }
-    this.service.insertSharedSteps(this.testCase().id, this.pick).subscribe(saved => {
+    if (!this.pick) { return; }
+    const pick = this.pick;
+    this.withVersionConfirmed(() => this.service.insertSharedSteps(this.testCase().id, pick).subscribe(saved => {
       this.pick = '';
       this.toast.success(this.i18n.t('shared.inserted'));
       this.stepsChanged.emit(saved);
-    });
+    }));
   }
 
   protected refreshGroup(groupId: string): void {
-    if (!this.confirmVersion()) { return; }
-    this.service.refreshSharedSteps(this.testCase().id, groupId).subscribe(saved => {
+    this.withVersionConfirmed(() => this.service.refreshSharedSteps(this.testCase().id, groupId).subscribe(saved => {
       this.toast.success(this.i18n.t('shared.refreshed'));
       this.stepsChanged.emit(saved);
-    });
+    }));
   }
 
   protected detachGroup(groupId: string): void {
-    if (!confirm(this.i18n.t('shared.confirmDetach'))) { return; }
-    this.service.detachSharedSteps(this.testCase().id, groupId).subscribe(saved => {
-      this.toast.success(this.i18n.t('shared.detached'));
-      this.stepsChanged.emit(saved);
+    this.confirmer.ask({ message: this.i18n.t('shared.confirmDetach'), confirmText: this.i18n.t('shared.detach'), danger: true }).subscribe(ok => {
+      if (!ok) { return; }
+      this.service.detachSharedSteps(this.testCase().id, groupId).subscribe(saved => {
+        this.toast.success(this.i18n.t('shared.detached'));
+        this.stepsChanged.emit(saved);
+      });
     });
   }
 
@@ -265,12 +270,13 @@ export class TestCaseDetailComponent {
   }
 
   protected remove(): void {
-    if (!confirm(this.i18n.t('detail.confirmDelete', { code: this.testCase().code }))) {
-      return;
-    }
-    this.service.delete(this.testCase().id).subscribe(() => {
-      this.toast.success(this.i18n.t('detail.deleted'));
-      this.changed.emit();
+    const testCase = this.testCase();
+    this.confirmer.ask({ message: this.i18n.t('detail.confirmDelete', { code: testCase.code }), confirmText: this.i18n.t('common.delete'), danger: true }).subscribe(ok => {
+      if (!ok) { return; }
+      this.service.delete(testCase.id).subscribe(() => {
+        this.toast.success(this.i18n.t('detail.deleted'));
+        this.changed.emit();
+      });
     });
   }
 }

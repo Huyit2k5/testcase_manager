@@ -11,13 +11,16 @@ import { TestPlan, TestRun } from '../../proxy/dtos';
 import { PLAN_TRANSITIONS, PlanStatus, RunStatus } from '../../proxy/enums';
 import { TestPlanService, TestRunService } from '../../proxy/services';
 import { CasePickerComponent } from './case-picker';
+import { IconButtonComponent } from '../../core/icon-button';
+import { RowMenuComponent, RowMenuItem } from '../../core/row-menu';
+import { ConfirmService } from '../../core/confirm';
 
 interface PlanForm { id: string | null; name: string; description: string; milestoneId: string; startDate: string; endDate: string }
 interface RunForm { testPlanId: string; title: string; environment: string; testCaseIds: string[] }
 
 @Component({
   selector: 'app-runs',
-  imports: [FormsModule, RouterLink, FormatDatePipe, TranslatePipe, ModalComponent, CasePickerComponent],
+  imports: [FormsModule, RouterLink, FormatDatePipe, TranslatePipe, ModalComponent, CasePickerComponent, IconButtonComponent, RowMenuComponent],
   templateUrl: './runs.html',
 })
 export class RunsComponent implements OnInit {
@@ -25,6 +28,7 @@ export class RunsComponent implements OnInit {
   private readonly runService = inject(TestRunService);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(I18nService);
+  private readonly confirmer = inject(ConfirmService);
   private readonly router = inject(Router);
   protected readonly base = inject(TCM_BASE_PATH);
   protected readonly auth = inject(AuthService);
@@ -89,6 +93,11 @@ export class RunsComponent implements OnInit {
     });
   }
 
+  /** What the menu of a plan offers: its next states, each with the colour of its badge. */
+  protected nextStates(plan: TestPlan): RowMenuItem[] {
+    return this.transitions(plan).map(target => ({ value: target, text: this.label(PlanStatus, target), badge: badge('plan', target) }));
+  }
+
   protected movePlan(plan: TestPlan, target: PlanStatus): void {
     this.planService.changeStatus(plan.id, target).subscribe(() => {
       this.toast.success(this.i18n.t('runs.planNow', { status: this.label(PlanStatus, target) }));
@@ -97,10 +106,12 @@ export class RunsComponent implements OnInit {
   }
 
   protected deletePlan(plan: TestPlan): void {
-    if (!confirm(this.i18n.t('runs.confirmDeletePlan', { name: plan.name }))) { return; }
-    this.planService.delete(plan.id).subscribe(() => {
-      this.toast.success(this.i18n.t('runs.planDeleted'));
-      this.reload();
+    this.confirmer.ask({ message: this.i18n.t('runs.confirmDeletePlan', { name: plan.name }), confirmText: this.i18n.t('common.delete'), danger: true }).subscribe(ok => {
+      if (!ok) { return; }
+      this.planService.delete(plan.id).subscribe(() => {
+        this.toast.success(this.i18n.t('runs.planDeleted'));
+        this.reload();
+      });
     });
   }
 

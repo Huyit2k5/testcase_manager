@@ -7,6 +7,7 @@ import { FormatDatePipe, I18nService, TranslatePipe } from '../../core/i18n/i18n
 import { ModalComponent } from '../../core/modal';
 import { ApiKey, ApiKeyCreated } from '../../proxy/dtos';
 import { ApiKeyService } from '../../proxy/services';
+import { ConfirmService } from '../../core/confirm';
 
 const ENDPOINT = '/api/test-case-management/automation/results';
 
@@ -52,6 +53,7 @@ export class AutomationComponent implements OnInit {
   private readonly service = inject(ApiKeyService);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(I18nService);
+  private readonly confirmer = inject(ConfirmService);
   protected readonly auth = inject(AuthService);
   protected readonly perm = Permissions;
 
@@ -116,10 +118,12 @@ export class AutomationComponent implements OnInit {
   protected closeCreated(): void { this.created.set(null); }
 
   protected revoke(key: ApiKey): void {
-    if (!confirm(this.i18n.t('auto.confirmRevoke', { name: key.name }))) { return; }
-    this.service.revoke(key.id).subscribe(() => {
-      this.toast.success(this.i18n.t('auto.revoked'));
-      this.reload();
+    this.confirmer.ask({ message: this.i18n.t('auto.confirmRevoke', { name: key.name }), confirmText: this.i18n.t('auto.revoke'), danger: true }).subscribe(ok => {
+      if (!ok) { return; }
+      this.service.revoke(key.id).subscribe(() => {
+        this.toast.success(this.i18n.t('auto.revoked'));
+        this.reload();
+      });
     });
   }
 }

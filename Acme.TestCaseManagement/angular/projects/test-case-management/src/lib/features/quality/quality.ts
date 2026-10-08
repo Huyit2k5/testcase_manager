@@ -8,6 +8,8 @@ import { badge, shortId } from '../../core/ui';
 import { QualityGate, QualityGateEvaluation, SignOffReport, TestPlan } from '../../proxy/dtos';
 import { SeverityLevel, SignOffStatus, TestResultStatus } from '../../proxy/enums';
 import { QualityGateService, SignOffService, TestPlanService } from '../../proxy/services';
+import { IconButtonComponent } from '../../core/icon-button';
+import { ConfirmService } from '../../core/confirm';
 
 interface GateForm { id: string | null; name: string; description: string; minPassRate: number; requiredApprovals: number; isDefault: boolean }
 /** `planId` and `gateId` are what was evaluated when the sign-off was started, so that they cannot drift with the selects. */
@@ -15,7 +17,7 @@ interface ApprovalForm { report: SignOffReport | null; role: string; comment: st
 
 @Component({
   selector: 'app-quality',
-  imports: [FormsModule, FormatDatePipe, TranslatePipe, ModalComponent],
+  imports: [FormsModule, FormatDatePipe, TranslatePipe, ModalComponent, IconButtonComponent],
   templateUrl: './quality.html',
 })
 export class QualityComponent implements OnInit {
@@ -24,6 +26,7 @@ export class QualityComponent implements OnInit {
   private readonly planService = inject(TestPlanService);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(I18nService);
+  private readonly confirmer = inject(ConfirmService);
   protected readonly auth = inject(AuthService);
   protected readonly perm = Permissions;
 
@@ -165,10 +168,12 @@ export class QualityComponent implements OnInit {
   }
 
   protected deleteGate(gate: QualityGate): void {
-    if (!confirm(this.i18n.t('qg.confirmDeleteGate', { name: gate.name }))) { return; }
-    this.gateService.delete(gate.id).subscribe(() => {
-      this.toast.success(this.i18n.t('qg.gateDeleted'));
-      this.reloadGates();
+    this.confirmer.ask({ message: this.i18n.t('qg.confirmDeleteGate', { name: gate.name }), confirmText: this.i18n.t('common.delete'), danger: true }).subscribe(ok => {
+      if (!ok) { return; }
+      this.gateService.delete(gate.id).subscribe(() => {
+        this.toast.success(this.i18n.t('qg.gateDeleted'));
+        this.reloadGates();
+      });
     });
   }
 }

@@ -7,6 +7,7 @@ import { formatSize } from '../../core/ui';
 import { Attachment } from '../../proxy/dtos';
 import { AttachmentService } from '../../proxy/services';
 import { saveFile } from '../../proxy/transfer';
+import { ConfirmService } from '../../core/confirm';
 
 /** How much of a text file the dialog shows. */
 const PREVIEW_CHARS = 200_000;
@@ -79,6 +80,7 @@ export class AttachmentsComponent implements OnInit {
   private readonly service = inject(AttachmentService);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(I18nService);
+  private readonly confirmer = inject(ConfirmService);
 
   readonly ownerType = input.required<number>();
   readonly ownerId = input.required<string>();
@@ -222,13 +224,15 @@ export class AttachmentsComponent implements OnInit {
   }
 
   protected remove(file: Attachment): void {
-    if (!confirm(this.i18n.t('att.confirmDelete', { name: file.fileName }))) { return; }
-    this.service.remove(file.id).subscribe(() => {
-      const url = this.thumbs()[file.id];
-      if (url) { URL.revokeObjectURL(url); }
-      this.thumbs.update(all => { const { [file.id]: _gone, ...rest } = all; return rest; });
-      this.toast.success(this.i18n.t('att.deleted'));
-      this.reload();
+    this.confirmer.ask({ message: this.i18n.t('att.confirmDelete', { name: file.fileName }), confirmText: this.i18n.t('common.delete'), danger: true }).subscribe(ok => {
+      if (!ok) { return; }
+      this.service.remove(file.id).subscribe(() => {
+        const url = this.thumbs()[file.id];
+        if (url) { URL.revokeObjectURL(url); }
+        this.thumbs.update(all => { const { [file.id]: _gone, ...rest } = all; return rest; });
+        this.toast.success(this.i18n.t('att.deleted'));
+        this.reload();
+      });
     });
   }
 }

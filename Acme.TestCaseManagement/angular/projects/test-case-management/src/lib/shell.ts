@@ -1,5 +1,6 @@
 import { Component, ViewEncapsulation, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { ConfirmHostComponent } from './core/confirm';
 import { TCM_FOLLOW_OS_THEME } from './core/host';
 
 /**
@@ -8,10 +9,10 @@ import { TCM_FOLLOW_OS_THEME } from './core/host';
  */
 @Component({
   selector: 'tcm-shell',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, ConfirmHostComponent],
   encapsulation: ViewEncapsulation.None,
   styleUrl: './styles/tcm.scss',
-  template: `<div class="tcm tcm-theme" [class.tcm-auto-dark]="followOsTheme"><router-outlet /></div>`,
+  template: `<div class="tcm tcm-theme" [class.tcm-auto-dark]="followOsTheme"><router-outlet /><app-confirm-host /></div>`,
 })
 export class TcmShellComponent {
   protected readonly followOsTheme = inject(TCM_FOLLOW_OS_THEME);

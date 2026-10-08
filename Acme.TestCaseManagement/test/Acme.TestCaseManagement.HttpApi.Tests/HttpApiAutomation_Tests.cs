@@ -281,6 +281,23 @@ public class HttpApiAutomation_Tests
     }
 
     [Fact]
+    public async Task A_Retry_With_The_Same_Idempotency_Key_Header_Is_Recorded_Once()
+    {
+        var qaLead = await ApiClient.LoginAsync(_host, "qa.lead");
+        var id = Unique();
+        await ApprovedCaseAsync(qaLead, id, $"hdr.{id}");
+        var pipeline = ApiClient.WithApiKey(_host, (await CreateKeyAsync(qaLead, $"Header {id}")).Key).WithHeader("Idempotency-Key", $"build-{id}");
+        var input = NewRun($"Header {id}", Result($"hdr.{id}"));
+
+        var first = await pipeline.PostAsync<PublishAutomationResultsDto>($"{Root}/automation/results", input);
+        var retry = await pipeline.PostAsync<PublishAutomationResultsDto>($"{Root}/automation/results", input);
+
+        (first.Replayed, retry.Replayed).ShouldBe((false, true));
+        retry.RunId.ShouldBe(first.RunId);
+        (await qaLead.GetAsync<TestRunDto>($"{Root}/runs/{first.RunId}")).Items.Single().AttemptCount.ShouldBe(1);
+    }
+
+    [Fact]
     public async Task Unmatched_Results_Are_Reported_In_The_Language_Of_The_Caller_And_Strict_Mode_Refuses_Them()
     {
         var qaLead = await ApiClient.LoginAsync(_host, "qa.lead");

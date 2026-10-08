@@ -45,11 +45,11 @@
             <td><span class="badge" [class]="badgeOf('plan', plan.status)">{{ label(planEnum, plan.status) }}</span></td>
             <td class="right nowrap">
               @if (auth.can(perm.TestPlans.Manage)) {
-                @for (target of transitions(plan); track target) {
-                  <button type="button" class="btn sm" (click)="movePlan(plan, target)">{{ label(planEnum, target) }}</button>
+                @if (transitions(plan).length) {
+                  <app-row-menu [label]="'runs.changeStatus' | t" [heading]="'runs.moveTo' | t" [items]="nextStates(plan)" (chosen)="movePlan(plan, $event)" />
                 }
-                <button type="button" class="btn sm" (click)="editPlan(plan)">{{ 'common.edit' | t }}</button>
-                <button type="button" class="btn sm danger" (click)="deletePlan(plan)">{{ 'common.delete' | t }}</button>
+                <button type="button" tcmIcon="edit" [attr.aria-label]="'common.edit' | t" [attr.title]="'common.edit' | t" (click)="editPlan(plan)"></button>
+                <button type="button" tcmIcon="trash" [attr.aria-label]="'common.delete' | t" [attr.title]="'common.delete' | t" (click)="deletePlan(plan)"></button>
               }
             </td>
           </tr>

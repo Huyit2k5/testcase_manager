@@ -17,6 +17,7 @@ import { TransferService, saveFile } from '../../proxy/transfer';
 import { AttachmentsComponent } from '../attachments/attachments';
 import { ImportDialogComponent } from '../transfer/import-dialog';
 import { CasePickerComponent } from './case-picker';
+import { ConfirmService } from '../../core/confirm';
 
 interface ExecuteForm {
   item: TestRunItem; status: TestResultStatus; actualResult: string; durationSeconds: number; defects: AddDefect[];
@@ -33,6 +34,7 @@ export class RunDetailComponent {
   private readonly toast = inject(ToastService);
   private readonly transfer = inject(TransferService);
   private readonly i18n = inject(I18nService);
+  private readonly confirmer = inject(ConfirmService);
   protected readonly auth = inject(AuthService);
   protected readonly users = inject(UserNames);
   protected readonly perm = Permissions;
@@ -190,17 +192,19 @@ export class RunDetailComponent {
   }
 
   protected linkDefect(attempt: TestExecution): void {
-    const key = prompt(this.i18n.t('run.promptIssueKey'));
-    if (!key?.trim()) { return; }
-    this.service.addDefect(attempt.id, { externalSystem: 'Jira', issueKey: key.trim() }).subscribe(() => {
-      this.toast.success(this.i18n.t('run.defectLinked'));
-      this.refreshHistory();
+    this.confirmer.askText({ title: this.i18n.t('run.linkDefectTitle'), message: this.i18n.t('run.promptIssueKey'), placeholder: 'BUG-42', confirmText: this.i18n.t('common.add') }).subscribe(key => {
+      if (!key) { return; }
+      this.service.addDefect(attempt.id, { externalSystem: 'Jira', issueKey: key }).subscribe(() => {
+        this.toast.success(this.i18n.t('run.defectLinked'));
+        this.refreshHistory();
+      });
     });
   }
 
   protected removeDefect(attempt: TestExecution, defect: DefectLink): void {
-    if (!confirm(this.i18n.t('run.confirmRemoveLink', { key: defect.issueKey }))) { return; }
-    this.service.removeDefect(attempt.id, defect.id).subscribe(() => this.refreshHistory());
+    this.confirmer.ask({ message: this.i18n.t('run.confirmRemoveLink', { key: defect.issueKey }), confirmText: this.i18n.t('common.remove'), danger: true }).subscribe(ok => {
+      if (ok) { this.service.removeDefect(attempt.id, defect.id).subscribe(() => this.refreshHistory()); }
+    });
   }
 
   private refreshHistory(): void {
@@ -224,10 +228,12 @@ export class RunDetailComponent {
 
   // ---- run level
   protected complete(): void {
-    if (!confirm(this.i18n.t('run.confirmComplete'))) { return; }
-    this.service.complete(this.id()).subscribe(run => {
-      this.toast.success(this.i18n.t('run.completed'));
-      this.run.set(run);
+    this.confirmer.ask({ message: this.i18n.t('run.confirmComplete'), confirmText: this.i18n.t('run.complete') }).subscribe(ok => {
+      if (!ok) { return; }
+      this.service.complete(this.id()).subscribe(run => {
+        this.toast.success(this.i18n.t('run.completed'));
+        this.run.set(run);
+      });
     });
   }
 

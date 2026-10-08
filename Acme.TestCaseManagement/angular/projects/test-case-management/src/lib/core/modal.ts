@@ -12,7 +12,7 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([t
   imports: [TranslatePipe],
   template: `
     <div class="backdrop" (mousedown)="pressed($event)" (click)="backdropClick($event)">
-      <section #dialog class="dialog" [class.wide]="wide()" role="dialog" aria-modal="true" tabindex="-1" [attr.aria-label]="title()" (click)="$event.stopPropagation()">
+      <section #dialog class="dialog" [class.wide]="wide()" [class.narrow]="narrow()" role="dialog" aria-modal="true" tabindex="-1" [attr.aria-label]="title()" (click)="$event.stopPropagation()">
         <header>
           <h2>{{ title() }}</h2>
           <button type="button" class="icon-btn" [attr.aria-label]="'common.close' | t" (click)="closed.emit()">&times;</button>
@@ -27,6 +27,7 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([t
     .dialog { background: var(--surface); color: var(--text); border-radius: 12px; width: min(560px, 100%); max-height: 90vh; display: flex; flex-direction: column; box-shadow: var(--shadow-lg); }
     .dialog:focus { outline: none; }
     .dialog.wide { width: min(900px, 100%); }
+    .dialog.narrow { width: min(440px, 100%); }
     header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--border); }
     h2 { margin: 0; font-size: 1.05rem; }
     .body { padding: 20px; overflow: auto; }
@@ -37,6 +38,8 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([t
 export class ModalComponent {
   readonly title = input.required<string>();
   readonly wide = input(false);
+  /** A small dialog, for a question. */
+  readonly narrow = input(false);
   readonly closed = output<void>();
 
   private readonly dialog = viewChild.required<ElementRef<HTMLElement>>('dialog');

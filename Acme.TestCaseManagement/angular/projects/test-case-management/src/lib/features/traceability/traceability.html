@@ -69,8 +69,8 @@
             <td class="right nowrap">
               @if (auth.can(perm.Requirements.Manage)) {
                 <button type="button" class="btn sm" (click)="openLink(row)">{{ 'rtm.linkTests' | t }}</button>
-                <button type="button" class="btn sm" (click)="editRequirement(row)">{{ 'common.edit' | t }}</button>
-                <button type="button" class="btn sm danger" (click)="deleteRequirement(row)">{{ 'common.delete' | t }}</button>
+                <button type="button" tcmIcon="edit" [attr.aria-label]="'common.edit' | t" [attr.title]="'common.edit' | t" (click)="editRequirement(row)"></button>
+                <button type="button" tcmIcon="trash" [attr.aria-label]="'common.delete' | t" [attr.title]="'common.delete' | t" (click)="deleteRequirement(row)"></button>
               }
             </td>
           </tr>

@@ -8,6 +8,8 @@ import { badge } from '../../core/ui';
 import { SaveSharedStepGroup, SharedStepGroup, SharedStepGroupSummary, SharedStepUsage } from '../../proxy/dtos';
 import { TestCaseStatus } from '../../proxy/enums';
 import { SharedStepGroupService } from '../../proxy/services';
+import { IconButtonComponent } from '../../core/icon-button';
+import { ConfirmService } from '../../core/confirm';
 
 interface EditForm { id: string | null; name: string; description: string; steps: { id?: string | null; action: string; expectedResult: string; testData: string }[] }
 interface UsageDialog { group: SharedStepGroupSummary; items: SharedStepUsage[]; selected: Set<string> }
@@ -15,13 +17,14 @@ interface UsageDialog { group: SharedStepGroupSummary; items: SharedStepUsage[];
 /** The library of reusable groups of steps: write a group once, see who uses it, and bring the test cases that are behind up to date. */
 @Component({
   selector: 'app-shared-steps',
-  imports: [FormsModule, TranslatePipe, ModalComponent],
+  imports: [FormsModule, TranslatePipe, ModalComponent, IconButtonComponent],
   templateUrl: './shared-steps.html',
 })
 export class SharedStepsComponent implements OnInit {
   private readonly service = inject(SharedStepGroupService);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(I18nService);
+  private readonly confirmer = inject(ConfirmService);
   protected readonly auth = inject(AuthService);
   protected readonly perm = Permissions;
 
@@ -84,10 +87,12 @@ export class SharedStepsComponent implements OnInit {
   }
 
   protected remove(group: SharedStepGroupSummary): void {
-    if (!confirm(this.i18n.t('shared.confirmDelete', { name: group.name }))) { return; }
-    this.service.remove(group.id).subscribe(() => {
-      this.toast.success(this.i18n.t('shared.deleted'));
-      this.reload();
+    this.confirmer.ask({ message: this.i18n.t('shared.confirmDelete', { name: group.name }), confirmText: this.i18n.t('common.delete'), danger: true }).subscribe(ok => {
+      if (!ok) { return; }
+      this.service.remove(group.id).subscribe(() => {
+        this.toast.success(this.i18n.t('shared.deleted'));
+        this.reload();
+      });
     });
   }
 

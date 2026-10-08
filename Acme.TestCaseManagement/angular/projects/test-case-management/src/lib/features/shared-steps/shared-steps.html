@@ -31,8 +31,8 @@
             <td class="right nowrap">
               <button type="button" class="btn sm" (click)="openUsage(group)">{{ 'shared.usage' | t }}</button>
               @if (auth.can(perm.SharedSteps.Manage)) {
-                <button type="button" class="btn sm" (click)="edit(group)">{{ 'common.edit' | t }}</button>
-                <button type="button" class="btn sm danger" (click)="remove(group)">{{ 'common.delete' | t }}</button>
+                <button type="button" tcmIcon="edit" [attr.aria-label]="'common.edit' | t" [attr.title]="'common.edit' | t" (click)="edit(group)"></button>
+                <button type="button" tcmIcon="trash" [attr.aria-label]="'common.delete' | t" [attr.title]="'common.delete' | t" (click)="remove(group)"></button>
               }
             </td>
           </tr>
