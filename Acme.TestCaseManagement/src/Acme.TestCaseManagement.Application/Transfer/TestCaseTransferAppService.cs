@@ -112,7 +112,7 @@ public class TestCaseTransferAppService : TestCaseManagementAppService, ITestCas
         }
 
         // Pass 1: check every test case against the library. Nothing is written.
-        var plans = await PlanAsync(sheet, tree, input, messages, Path.GetFileName(input.File.FileName ?? string.Empty));
+        var plans = await PlanAsync(sheet, tree, input, messages, SafeFileName(Path.GetFileName(input.File.FileName ?? string.Empty)));
 
         foreach (var plan in plans)
         {
@@ -559,5 +559,21 @@ public class TestCaseTransferAppService : TestCaseManagementAppService, ITestCas
 
         /// <summary>A suite that the import has yet to create: its id is known once pass 2 has made it.</summary>
         internal SuiteTree.Node? Suite { get; set; }
+    }
+
+    /// <summary>
+    /// The file name goes into the change summary of every version the import creates, which is limited in length and shown in the history:
+    /// control characters are dropped and a long name is cut, so that an odd file name cannot make the import fail after the check passed.
+    /// </summary>
+    internal static string SafeFileName(string? name)
+    {
+        var clean = new string((name ?? string.Empty).Where(c => !char.IsControl(c)).ToArray()).Trim();
+        if (clean.Length <= 100)
+        {
+            return clean;
+        }
+
+        var cut = char.IsHighSurrogate(clean[99]) ? 99 : 100;
+        return clean[..cut] + "...";
     }
 }

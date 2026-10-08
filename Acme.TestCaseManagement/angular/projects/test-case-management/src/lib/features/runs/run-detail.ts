@@ -40,6 +40,11 @@ export class RunDetailComponent {
   readonly id = toSignal(inject(ActivatedRoute).paramMap.pipe(map(params => params.get('id') ?? '')), { initialValue: '' });
 
   protected readonly run = signal<TestRun | null>(null);
+  /** True when the run in the address could not be loaded (not found, or not allowed). */
+  protected readonly loadFailed = signal(false);
+  protected readonly busy = signal(false);
+  /** Counts the loads: /runs/A to /runs/B reuses this component, and a late answer for A must not show under B. */
+  private loadRequest = 0;
   protected readonly executeForm = signal<ExecuteForm | null>(null);
   protected readonly history = signal<{ item: TestRunItem; attempts: TestExecution[] } | null>(null);
   protected readonly addForm = signal<{ testCaseIds: string[] } | null>(null);
@@ -64,7 +69,24 @@ export class RunDetailComponent {
   protected isOpen(run: TestRun): boolean { return run.status !== RunStatus.Completed; }
 
   private load(id: string): void {
-    this.service.get(id).subscribe(run => this.run.set(run));
+    const request = ++this.loadRequest;
+    if (this.run()?.id !== id) {
+      // Another run is being opened: do not show the old one meanwhile.
+      this.run.set(null);
+      this.loadFailed.set(false);
+    }
+    this.service.get(id).subscribe({
+      next: run => {
+        if (request !== this.loadRequest) { return; }
+        this.loadFailed.set(false);
+        this.run.set(run);
+      },
+      error: () => {
+        if (request !== this.loadRequest) { return; }
+        // A refresh that fails keeps the run that is on screen; only a run that never loaded shows the error.
+        if (this.run()?.id !== id) { this.loadFailed.set(true); }
+      },
+    });
   }
 
   protected reload(): void {
@@ -85,7 +107,8 @@ export class RunDetailComponent {
   protected execute(): void {
     const form = this.executeForm();
     const run = this.run();
-    if (!form || !run) { return; }
+    if (!form || !run || this.busy()) { return; }
+    this.busy.set(true);
     const failed = form.status === TestResultStatus.Failed;
     this.service.execute(run.id, form.item.id, {
       status: form.status,
@@ -94,10 +117,14 @@ export class RunDetailComponent {
       defects: failed
         ? form.defects.filter(d => d.issueKey.trim()).map(d => ({ ...d, issueUrl: d.issueUrl || null, severity: d.severity === null ? null : Number(d.severity) }))
         : [],
-    }).subscribe(() => {
-      this.toast.success(this.i18n.t('run.recorded', { code: form.item.testCaseCode, result: this.label(TestResultStatus, form.status) }));
-      this.executeForm.set(null);
-      this.reload();
+    }).subscribe({
+      next: () => {
+        this.busy.set(false);
+        this.toast.success(this.i18n.t('run.recorded', { code: form.item.testCaseCode, result: this.label(TestResultStatus, form.status) }));
+        this.executeForm.set(null);
+        this.reload();
+      },
+      error: () => this.busy.set(false),
     });
   }
 

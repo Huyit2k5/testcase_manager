@@ -68,6 +68,32 @@ public class AutomationResultsAppService_Tests : TestCaseManagementApplicationTe
     private static PublishAutomationResultsInput IntoRun(Guid runId, params AutomationResultInput[] results) =>
         new() { RunId = runId, Results = results.ToList() };
 
+    // ---- malformed payloads
+
+    [Fact]
+    public async Task A_Null_Result_In_The_List_Is_A_Validation_Error_Not_A_Crash()
+    {
+        await CaseAsync("TC-1", "e2e.login");
+        var input = NewRun(Result("e2e.login"));
+        input.Results.Add(null!);
+
+        var exception = await Should.ThrowAsync<Volo.Abp.Validation.AbpValidationException>(() => _publisher.PublishAsync(input));
+
+        exception.ValidationErrors.ShouldContain(e => e.MemberNames.Contains(nameof(PublishAutomationResultsInput.Results)));
+    }
+
+    [Fact]
+    public async Task A_Result_With_A_Null_Defects_List_Is_Read_As_Having_No_Defects()
+    {
+        await CaseAsync("TC-1", "e2e.login");
+        var result = Result("e2e.login");
+        result.Defects = null!;
+
+        var answer = await _publisher.PublishAsync(NewRun(result));
+
+        answer.Recorded.ShouldBe(1);
+    }
+
     // ---- the plain case
 
     [Fact]

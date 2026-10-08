@@ -61,6 +61,11 @@
       </table>
       @if (!r.items.length) { <div class="empty">{{ 'run.noItems' | t }}</div> }
     </div>
+  } @else if (loadFailed()) {
+    <div class="alert bad" role="alert" data-test="run-load-failed">
+      {{ 'run.loadFailed' | t }}
+      <a [routerLink]="base + '/runs'">{{ 'nav.runs' | t }}</a>
+    </div>
   } @else {
     <div class="empty">{{ 'common.loading' | t }}</div>
   }
@@ -110,7 +115,7 @@
     </form>
     <ng-container slot="footer">
       <button type="button" class="btn" (click)="executeForm.set(null)">{{ 'common.cancel' | t }}</button>
-      <button type="submit" form="exec-form" class="btn primary">{{ 'run.record' | t }}</button>
+      <button type="submit" form="exec-form" class="btn primary" [disabled]="busy()">{{ 'run.record' | t }}</button>
     </ng-container>
   </app-modal>
 }

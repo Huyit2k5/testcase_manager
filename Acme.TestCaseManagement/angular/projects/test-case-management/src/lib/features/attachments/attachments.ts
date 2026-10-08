@@ -1,4 +1,5 @@
 import { Component, DestroyRef, OnInit, inject, input, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ToastService } from '../../core/core';
 import { FormatDatePipe, I18nService, TranslatePipe } from '../../core/i18n/i18n';
 import { formatSize } from '../../core/ui';
@@ -64,9 +65,12 @@ export class AttachmentsComponent implements OnInit {
   protected readonly over = signal(false);
   protected readonly busy = signal(false);
   protected readonly size = formatSize;
+  private readonly destroyRef = inject(DestroyRef);
+  /** Thumbnails being downloaded, so that a second reload does not fetch (and create a URL for) the same image twice. */
+  private readonly loading = new Set<string>();
 
   constructor() {
-    inject(DestroyRef).onDestroy(() => Object.values(this.thumbs()).forEach(url => URL.revokeObjectURL(url)));
+    this.destroyRef.onDestroy(() => Object.values(this.thumbs()).forEach(url => URL.revokeObjectURL(url)));
   }
 
   ngOnInit(): void { this.reload(); }
@@ -79,9 +83,17 @@ export class AttachmentsComponent implements OnInit {
   }
 
   private loadThumb(file: Attachment): void {
-    this.service.content(file.id).subscribe({
-      next: blob => this.thumbs.update(all => ({ ...all, [file.id]: URL.createObjectURL(blob) })),
-      error: () => { /* a missing image is shown as its extension */ },
+    if (this.loading.has(file.id)) { return; }
+    this.loading.add(file.id);
+    // Cancelled with the component: an answer that arrives later must not create an object URL nobody will revoke.
+    this.service.content(file.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: blob => {
+        this.loading.delete(file.id);
+        const previous = this.thumbs()[file.id];
+        if (previous) { URL.revokeObjectURL(previous); }
+        this.thumbs.update(all => ({ ...all, [file.id]: URL.createObjectURL(blob) }));
+      },
+      error: () => this.loading.delete(file.id),   // a missing image is shown as its extension
     });
   }
 

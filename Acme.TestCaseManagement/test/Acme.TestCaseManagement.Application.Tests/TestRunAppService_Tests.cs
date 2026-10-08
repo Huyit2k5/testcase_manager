@@ -219,6 +219,75 @@ public class TestRunAppService_Tests : TestCaseManagementApplicationTestBase
     }
 
     [Fact]
+    public async Task A_Test_Case_Is_Scheduled_Once_In_A_Run_Even_After_An_Edit_Made_A_New_Version()
+    {
+        var run = await CreateRunWithItemsAsync(1);
+        var testCase = await _testCases.GetAsync(run.Items.Single().TestCaseId);
+
+        // The same version again.
+        (await Should.ThrowAsync<BusinessException>(() => _runs.AddItemsAsync(run.Id, new AddTestRunItemsDto { TestCaseIds = { testCase.Id } })))
+            .Code.ShouldBe(TestCaseManagementErrorCodes.TestCaseAlreadyInRun);
+
+        // An edit of an approved test case publishes version 2: the run's check is per test case, not per version.
+        await _testCases.UpdateAsync(testCase.Id, new CreateUpdateTestCaseDto
+        {
+            SuiteId = testCase.SuiteId,
+            Code = testCase.Code,
+            Title = testCase.Title + " (edited)",
+            Steps = { new TestStepDto { Action = "Do it", ExpectedResult = "Done" } },
+        });
+        (await _testCases.GetAsync(testCase.Id)).CurrentVersion.ShouldBe(2);
+
+        var refused = await Should.ThrowAsync<BusinessException>(
+            () => _runs.AddItemsAsync(run.Id, new AddTestRunItemsDto { TestCaseIds = { testCase.Id } }));
+
+        refused.Code.ShouldBe(TestCaseManagementErrorCodes.TestCaseAlreadyInRun);
+        refused.Data["Version"].ShouldBe(1);
+        (await _runs.GetAsync(run.Id)).Items.Count.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task A_New_Run_Is_Refused_For_An_Archived_Plan_But_Not_For_An_Active_One()
+    {
+        var plan = await _plans.CreateAsync(new CreateTestPlanDto { Name = "Sprint 99" });
+        await _plans.ChangeStatusAsync(plan.Id, new ChangeTestPlanStatusDto { TargetStatus = PlanStatus.Active });
+        var testCase = await CreateApprovedTestCaseAsync("TC-PLAN");
+
+        var run = await _runs.CreateAsync(new CreateTestRunDto { Title = "Run", Environment = "QA", TestPlanId = plan.Id, TestCaseIds = { testCase.Id } });
+        run.TestPlanId.ShouldBe(plan.Id);
+
+        await _plans.ChangeStatusAsync(plan.Id, new ChangeTestPlanStatusDto { TargetStatus = PlanStatus.Completed });
+        await _plans.ChangeStatusAsync(plan.Id, new ChangeTestPlanStatusDto { TargetStatus = PlanStatus.Archived });
+
+        (await Should.ThrowAsync<BusinessException>(
+                () => _runs.CreateAsync(new CreateTestRunDto { Title = "Late", Environment = "QA", TestPlanId = plan.Id, TestCaseIds = { testCase.Id } })))
+            .Code.ShouldBe(TestCaseManagementErrorCodes.TestPlanArchived);
+    }
+
+    [Theory]
+    [InlineData("title")]
+    [InlineData("title desc")]
+    [InlineData("environment")]
+    [InlineData("creationtime")]
+    public async Task Paging_Over_Runs_With_Equal_Sort_Values_Neither_Repeats_Nor_Skips_A_Run(string sorting)
+    {
+        var testCase = await CreateApprovedTestCaseAsync("TC-RUNPAGE");
+        for (var i = 0; i < 12; i++)
+        {
+            await _runs.CreateAsync(new CreateTestRunDto { Title = "Regression", Environment = "QA", TestCaseIds = { testCase.Id } });
+        }
+
+        var seen = new List<Guid>();
+        for (var page = 0; page < 3; page++)
+        {
+            seen.AddRange((await _runs.GetListAsync(new GetTestRunListInput { Sorting = sorting, SkipCount = page * 5, MaxResultCount = 5 })).Items.Select(r => r.Id));
+        }
+
+        seen.Count.ShouldBe(12);
+        seen.Distinct().Count().ShouldBe(12);
+    }
+
+    [Fact]
     public async Task BatchExecute_Should_Record_Every_Result_In_One_Call_And_Be_All_Or_Nothing()
     {
         var run = await CreateRunWithItemsAsync(3);

@@ -15,6 +15,10 @@ internal static class XlsxTable
     private const int HeaderStyle = 1;
     private const int BodyStyle = 0;
 
+    /// <summary>The last row (1,048,576) and column (XFD = 16,384) an Excel sheet can have; a cell outside them is not a real sheet.</summary>
+    private const int MaxSheetRow = 1_048_576;
+    internal const int MaxSheetColumns = 16_384;
+
     public static bool LooksLikeXlsx(byte[] content)
     {
         return content.Length > 4 && content[0] == 'P' && content[1] == 'K' && content[2] == 3 && content[3] == 4;
@@ -127,7 +131,14 @@ internal static class XlsxTable
                     continue;
                 }
 
-                var rowNumber = (int)(row.RowIndex?.Value ?? (uint)(count + 1));
+                // The row number is data from the file: it decides how many blank rows are kept below, so it must be real.
+                var declared = row.RowIndex?.Value ?? (uint)(count + 1);
+                if (declared == 0 || declared > MaxSheetRow)
+                {
+                    throw new TableException(TableProblem.Unreadable);
+                }
+
+                var rowNumber = (int)declared;
                 rows[rowNumber] = cells;
                 count++;
                 if (count > maxRows + 1)
@@ -147,6 +158,14 @@ internal static class XlsxTable
 
         var data = new List<IReadOnlyList<string>>();
         var last = rows.Keys.Last();
+
+        // Blank rows between the filled ones are kept (so that row numbers stay true), which makes the span, not the number of
+        // filled rows, what costs memory: a file with a header and one cell at row 1,000,000 must not become a million rows.
+        if (last - headerRowNumber > maxRows)
+        {
+            throw new TableException(TableProblem.TooManyRows);
+        }
+
         for (var number = headerRowNumber + 1; number <= last; number++)
         {
             // A row that is missing from the sheet is a blank row; keeping it keeps the row numbers true.
@@ -163,6 +182,11 @@ internal static class XlsxTable
         foreach (var cell in row.Elements<Cell>())
         {
             var index = cell.CellReference?.Value is { } reference ? ColumnIndex(reference) : cells.Count;
+            if (index < 0 || index >= MaxSheetColumns)
+            {
+                throw new TableException(TableProblem.Unreadable);
+            }
+
             while (cells.Count < index)
             {
                 cells.Add(string.Empty);
@@ -222,6 +246,23 @@ internal static class XlsxTable
                 if (total > maxUncompressedBytes)
                 {
                     throw new TableException(TableProblem.UnzippedTooLarge);
+                }
+            }
+
+            // The sizes above are what the file says about itself. Count what really comes out, and stop at the limit.
+            long actual = 0;
+            var buffer = new byte[81920];
+            foreach (var entry in archive.Entries)
+            {
+                using var entryStream = entry.Open();
+                int read;
+                while ((read = entryStream.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    actual += read;
+                    if (actual > maxUncompressedBytes)
+                    {
+                        throw new TableException(TableProblem.UnzippedTooLarge);
+                    }
                 }
             }
         }
@@ -315,7 +356,8 @@ internal static class XlsxTable
         var index = 0;
         foreach (var c in reference.TakeWhile(char.IsLetter))
         {
-            index = index * 26 + (char.ToUpperInvariant(c) - 'A' + 1);
+            // Capped: a reference of many letters must not overflow into a small, valid-looking index.
+            index = Math.Min(index * 26 + (char.ToUpperInvariant(c) - 'A' + 1), MaxSheetColumns + 1);
         }
 
         return index - 1;

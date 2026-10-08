@@ -39,6 +39,9 @@ export class RepositoryComponent implements OnInit {
   protected readonly total = signal(0);
   protected readonly page = signal(0);
   protected readonly loading = signal(false);
+  protected readonly suiteBusy = signal(false);
+  /** Counts the list requests, so that a slow answer to an old filter cannot replace the answer to the current one. */
+  private casesRequest = 0;
 
   protected search = '';
   protected priority: PriorityLevel | '' = '';
@@ -107,12 +110,17 @@ export class RepositoryComponent implements OnInit {
   private loadTags(): void {
     this.caseService.tags().subscribe(tags => {
       this.tagOptions.set(tags);
-      // A tag that no test case has any more cannot stay selected.
-      if (this.tag && !tags.some(t => t.name.toLowerCase() === this.tag.toLowerCase())) { this.tag = ''; }
+      // A tag that no test case has any more cannot stay selected; the list that was loaded with it is loaded again without it.
+      if (this.tag && !tags.some(t => t.name.toLowerCase() === this.tag.toLowerCase())) {
+        this.tag = '';
+        this.page.set(0);
+        this.loadCases();
+      }
     });
   }
 
   protected loadCases(): void {
+    const request = ++this.casesRequest;
     this.loading.set(true);
     this.caseService.list({
       filter: this.search,
@@ -127,11 +135,19 @@ export class RepositoryComponent implements OnInit {
       sorting: 'code',
     }).subscribe({
       next: result => {
+        if (request !== this.casesRequest) { return; }
+        const lastPage = Math.max(0, Math.ceil(result.totalCount / PAGE_SIZE) - 1);
+        if (this.page() > lastPage) {
+          // After a delete or a deprecate the page we were on may be gone.
+          this.page.set(lastPage);
+          this.loadCases();
+          return;
+        }
         this.cases.set(result.items);
         this.total.set(result.totalCount);
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => { if (request === this.casesRequest) { this.loading.set(false); } },
     });
   }
 
@@ -164,13 +180,19 @@ export class RepositoryComponent implements OnInit {
 
   protected createSuite(): void {
     const dialog = this.suiteDialog();
-    if (!dialog?.name.trim()) {
+    // Enter in the form submits even when the button is disabled, so the guard is here and not only on the button.
+    if (!dialog?.name.trim() || this.suiteBusy()) {
       return;
     }
-    this.suiteService.create({ name: dialog.name.trim(), description: dialog.description || null, parentId: this.selectedSuite() }).subscribe(() => {
-      this.toast.success(this.i18n.t('repo.suiteCreated'));
-      this.suiteDialog.set(null);
-      this.loadTree();
+    this.suiteBusy.set(true);
+    this.suiteService.create({ name: dialog.name.trim(), description: dialog.description || null, parentId: this.selectedSuite() }).subscribe({
+      next: () => {
+        this.suiteBusy.set(false);
+        this.toast.success(this.i18n.t('repo.suiteCreated'));
+        this.suiteDialog.set(null);
+        this.loadTree();
+      },
+      error: () => this.suiteBusy.set(false),
     });
   }
 

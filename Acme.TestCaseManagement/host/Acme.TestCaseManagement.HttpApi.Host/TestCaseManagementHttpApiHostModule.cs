@@ -51,6 +51,9 @@ public class TestCaseManagementHttpApiHostModule : AbpModule
     /// <summary>Configuration key: create the schema and seed roles and demo users at start-up (default: Development only).</summary>
     public const string InitializeDatabaseSetting = "Host:InitializeDatabase";
 
+    /// <summary>Configuration key: serve Swagger and its UI (default: Development only).</summary>
+    public const string SwaggerEnabledSetting = "Swagger:Enabled";
+
     private const string ApiRoutePrefix = "api/test-case-management/";
     private const string LoginRoute = "api/auth/login";
     private const string BearerOrApiKeyScheme = "BearerOrApiKey";
@@ -215,11 +218,17 @@ public class TestCaseManagementHttpApiHostModule : AbpModule
         app.UseAuthentication();
         app.UseUnitOfWork();
         app.UseAuthorization();
-        app.UseSwagger();
-        app.UseAbpSwaggerUI(options =>
+
+        // The description of the whole API and the login route are for developers: on elsewhere only when asked for (Swagger:Enabled).
+        if (configuration.GetValue(SwaggerEnabledSetting, defaultValue: environment.IsDevelopment()))
         {
-            options.SwaggerEndpoint("/swagger/v1/swagger.json", ApiTitle);
-        });
+            app.UseSwagger();
+            app.UseAbpSwaggerUI(options =>
+            {
+                options.SwaggerEndpoint("/swagger/v1/swagger.json", ApiTitle);
+            });
+        }
+
         app.UseConfiguredEndpoints();
     }
 

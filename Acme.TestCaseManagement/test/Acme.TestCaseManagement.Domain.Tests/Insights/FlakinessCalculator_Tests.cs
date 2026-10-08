@@ -177,4 +177,21 @@ public class FlakinessCalculator_Tests
         result.Flips.ShouldBe(1);
         result.Score.ShouldBe(1m);
     }
+
+    [Fact]
+    public void Attempts_Before_The_Window_Are_Left_Out_When_A_Start_Is_Given()
+    {
+        // A test that flipped long ago and has been steady since is Stable in a window that only sees the steady part.
+        var old = Attempts("PFPFPF");
+        var recent = Attempts("PPPPPP").Select(a => a with { Time = a.Time.AddDays(60) }).ToList();
+        var all = old.Concat(recent).ToList();
+
+        FlakinessCalculator.CalculateAll(all, new FlakinessSettings()).Single().Level.ShouldNotBe(FlakinessLevel.Stable);
+        var windowed = FlakinessCalculator.CalculateAll(all, new FlakinessSettings(), Start.AddDays(30)).Single();
+
+        windowed.Observations.ShouldBe(6);
+        windowed.Flips.ShouldBe(0);
+        windowed.Level.ShouldBe(FlakinessLevel.Stable);
+        FlakinessCalculator.CalculateAll(all, new FlakinessSettings(), Start.AddDays(90)).ShouldBeEmpty();
+    }
 }

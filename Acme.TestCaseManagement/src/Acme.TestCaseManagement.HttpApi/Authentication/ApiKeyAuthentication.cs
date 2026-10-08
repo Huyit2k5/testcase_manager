@@ -84,9 +84,13 @@ public static class ApiKeyAuthenticationExtensions
         return services;
     }
 
-    /// <summary>True when the request names an API key, which a host's policy scheme uses to pick this scheme over a bearer token.</summary>
+    /// <summary>
+    /// True when the request names an API key, which a host's policy scheme uses to pick this scheme over a bearer token. An empty
+    /// header does not name one: some proxies and CI templates send <c>X-Api-Key:</c> with no value next to a valid bearer token, and
+    /// that request must still be authenticated by its token.
+    /// </summary>
     public static bool IsApiKeyRequest(this HttpRequest request)
     {
-        return request.Headers.ContainsKey(ApiKeyDefaults.HeaderName);
+        return !string.IsNullOrWhiteSpace(request.Headers[ApiKeyDefaults.HeaderName].ToString());
     }
 }

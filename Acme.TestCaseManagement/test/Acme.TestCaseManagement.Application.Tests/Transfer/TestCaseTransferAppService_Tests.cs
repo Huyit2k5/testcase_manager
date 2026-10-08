@@ -303,6 +303,40 @@ public class TestCaseTransferAppService_Tests : TestCaseManagementApplicationTes
     }
 
     [Fact]
+    public async Task A_Very_Long_Or_Odd_File_Name_Does_Not_Make_The_Import_Fail_After_The_Check_Passed()
+    {
+        var odd = new string('a', 1500) + ".csv";
+        var text = Header + "Odd/Name,TC-ODD,One,,A,B,\n";
+        var input = Csv(text);
+        input.File = new RemoteStreamContent(new MemoryStream(Encoding.UTF8.GetBytes(text)), odd, "text/csv");
+
+        var report = await _transfer.ImportAsync(input);
+
+        report.Imported.ShouldBeTrue();
+        report.Created.ShouldBe(1);
+    }
+
+    [Theory]
+    [InlineData("cases.csv", "cases.csv")]
+    [InlineData("a\u0007b\r\nc.csv", "abc.csv")]
+    [InlineData(null, "")]
+    public void The_File_Name_Is_Cleaned_For_The_Change_Summary(string? name, string expected)
+    {
+        TestCaseTransferAppService.SafeFileName(name).ShouldBe(expected);
+    }
+
+    [Fact]
+    public void A_Long_File_Name_Is_Cut_Without_Splitting_An_Emoji()
+    {
+        var name = new string('x', 99) + "\U0001F600" + new string('y', 50);
+
+        var clean = TestCaseTransferAppService.SafeFileName(name);
+
+        clean.ShouldBe(new string('x', 99) + "...");
+        clean.EnumerateRunes().ShouldAllBe(r => r != System.Text.Rune.ReplacementChar);
+    }
+
+    [Fact]
     public async Task One_Invalid_Row_Blocks_The_Whole_File_And_Every_Problem_Is_Reported()
     {
         var report = await _transfer.ImportAsync(Csv(

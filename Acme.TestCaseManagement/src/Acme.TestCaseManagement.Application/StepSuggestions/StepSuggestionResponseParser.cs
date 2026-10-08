@@ -15,6 +15,9 @@ internal static class StepSuggestionResponseParser
     /// <summary>The most places in a text that are tried as the start of the JSON.</summary>
     private const int MaxCandidates = 50;
 
+    /// <summary>The most opening brackets that are allowed not to close before the search is given up.</summary>
+    private const int MaxUnclosed = 20;
+
     /// <summary>
     /// Reads the steps out of the text of a model's answer: a JSON object with a <c>steps</c> list, or a bare list. Every opening
     /// bracket is tried in turn until one gives steps, so a bracket in the talk before the JSON ("[see below]") does not hide it.
@@ -118,11 +121,19 @@ internal static class StepSuggestionResponseParser
         }
 
         var tried = 0;
+        var unclosed = 0;
         for (var start = text.IndexOfAny(new[] { '{', '[' }); start >= 0 && tried < MaxCandidates; start = text.IndexOfAny(new[] { '{', '[' }, start + 1))
         {
             var end = MatchingEnd(text, start);
             if (end < 0)
             {
+                // Finding that a bracket never closes reads to the end of the text; a text of nothing but opening brackets would do it
+                // for every one of them. A few are prose ("[see below"), a lot is not an answer.
+                if (++unclosed >= MaxUnclosed)
+                {
+                    yield break;
+                }
+
                 continue;
             }
 

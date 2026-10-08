@@ -233,7 +233,7 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 
 ## Phase 17: AI step suggestions (FR-027)
 
-(Phase 16, the guide for production deployment, is not done yet.)
+(The guide for production deployment and the run on SQL Server or PostgreSQL are not done yet.)
 
 **Goal**: Let a person turn a requirement text into proposed test steps with an AI model, review them and add the ones they want, without the module storing or showing a key, trusting the model's answer, or saving anything on its own.
 
@@ -243,3 +243,17 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 - [x] T102 Tests: parser and cleaning; the provider against a fake model (request shape, key placement, answer shapes, refusal, network error, timeout, size, endpoint validity, secrets absent from errors and logs); the service with a fake provider; HTTP with the model configured only through configuration (permissions, validation, errors in two languages, the key never in an answer).
 - [x] T103 Angular: the suggestion dialog in the test case form (button only when enabled and permitted, requirement prefilled, pick, add to the form); proxy, permission, English and Vietnamese texts; unit tests and a browser run against a fake OpenAI-compatible server.
 - [x] T104 Document the decisions and the configuration (plan.md 4.15, README "AI step suggestions"); run the full build.
+
+---
+
+## Phase 16: Review of the whole module and the fixes it asked for
+
+**Goal**: Find what is wrong with the module before it is plugged into the company's application, fix what matters, and leave the rest written down. The performance of the dashboard queries on a large data set and a run on SQL Server or PostgreSQL are not part of this phase yet.
+
+- [x] T105 Review every layer with independent readers (Domain, application services in two parts, EF Core with the HTTP API and the sample host, the Angular library); check the important findings against the code.
+- [x] T106 Excel import limits: real row and column numbers, the span of blank rows against the row limit, the real unzipped size; tests with sparse rows, far columns and the last column.
+- [x] T107 Business rules: one item per test case in a run, no new run for an archived plan, no approved test case without steps, a group once per test case, the flaky window of the dashboard, enum values checked everywhere, unique sort tie-breakers; tests for each.
+- [x] T108 Concurrency: locks for approving a sign-off, starting a sign-off for a plan and saving the default gate; the tests hold the lock and see the refusal and the release.
+- [x] T109 Pipelines and host: an empty API key header, null results, the file name of an import, the reader of AI answers; Swagger and login timing of the sample host; tests.
+- [x] T110 Front end: the dialog (drag, Escape, focus), double submits, stale answers, the Quality and import dialogs, permission checks for secondary calls, the standalone tabs and the smaller findings; 42 new unit tests.
+- [x] T111 Document the changes and what is left (plan.md 4.16, README); run the full build, the browser script of the standalone app and the three browser scripts of the ABP host.

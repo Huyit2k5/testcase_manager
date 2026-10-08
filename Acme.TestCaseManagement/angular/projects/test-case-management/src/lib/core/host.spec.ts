@@ -125,6 +125,8 @@ describe('the module inside a host', () => {
   it('gives every menu entry a policy, a label key and an ABP name, and unique paths', () => {
     for (const item of TCM_MENU) {
       expect(item.policy, item.path).toMatch(/^TestCaseManagement\./);
+      // The standalone top bar hides what the user cannot open, so every page that has a policy has to name its permission too.
+      expect(item.permission, item.path).toBe(item.policy);
       expect(item.abpName, item.path).toMatch(/^TestCaseManagement::Menu:/);
       expect(item.label, item.path).toMatch(/^nav\./);
     }

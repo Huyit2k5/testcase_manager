@@ -26,6 +26,11 @@ export class DashboardComponent implements OnInit {
   protected readonly flaky = signal<FlakyTestList | null>(null);
   protected readonly plans = signal<TestPlan[]>([]);
   protected readonly loading = signal(true);
+  /** Counts the loads, so that a slow answer to an old plan or period cannot replace the current one. */
+  private request = 0;
+  /** The plan list and the flaky card are secondary calls with their own permissions; without them the card is hidden, not an error. */
+  protected readonly canSeePlans = this.auth.can(Permissions.TestPlans.Default);
+  protected readonly canSeeFlaky = this.auth.can(Permissions.TestCases.Default);
   protected planId = '';
   protected days = 14;
   protected clearRecovered = false;
@@ -44,20 +49,26 @@ export class DashboardComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.planService.list().subscribe(r => this.plans.set(r.items));
+    if (this.canSeePlans) { this.planService.list().subscribe(r => this.plans.set(r.items)); }
     this.reload();
   }
 
   protected reload(): void {
+    const request = ++this.request;
     this.loading.set(true);
     this.dashboardService.get({ testPlanId: this.planId || null, days: Number(this.days) }).subscribe({
-      next: d => { this.dashboard.set(d); this.loading.set(false); },
-      error: () => this.loading.set(false),
+      next: d => {
+        if (request !== this.request) { return; }
+        this.dashboard.set(d);
+        this.loading.set(false);
+      },
+      error: () => { if (request === this.request) { this.loading.set(false); } },
     });
     this.reloadFlaky();
   }
 
   private reloadFlaky(): void {
+    if (!this.canSeeFlaky) { return; }
     this.flakyService.list({ minimumLevel: FlakinessLevel.Watch, maxResultCount: 50 }).subscribe(f => this.flaky.set(f));
   }
 

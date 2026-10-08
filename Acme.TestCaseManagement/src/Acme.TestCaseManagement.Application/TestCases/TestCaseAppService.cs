@@ -5,6 +5,7 @@ using Acme.TestCaseManagement.SharedSteps;
 using Acme.TestCaseManagement.Suites;
 using Acme.TestCaseManagement.TestCases.Dtos;
 using Microsoft.AspNetCore.Authorization;
+using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Authorization;
 using Volo.Abp.Domain.Entities;
@@ -111,6 +112,12 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
         }
 
         ApplyContent(testCase, input);
+
+        // Approval needs a step (TestCaseManager); an edit of an approved test case must not take that back and publish an empty version.
+        if (testCase.Status == TestCaseStatus.Approved && testCase.Steps.Count == 0)
+        {
+            throw new BusinessException(TestCaseManagementErrorCodes.TestCaseHasNoSteps).WithData("Code", testCase.Code);
+        }
 
         await PublishVersionIfApprovedAsync(testCase, input.ChangeSummary);
         await _testCaseRepository.UpdateAsync(testCase, autoSave: true);
@@ -372,6 +379,14 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
             parts.Add(descending ? $"{column} desc" : column);
         }
 
-        return parts.Count == 0 ? nameof(TestCase.Code) : string.Join(", ", parts);
+        if (parts.Count == 0)
+        {
+            parts.Add(nameof(TestCase.Code));
+        }
+
+        // Priority, severity and status are not unique: a last unique key keeps the pages from repeating or skipping rows on SQL Server
+        // and PostgreSQL, which order equal values as they like.
+        parts.Add(nameof(TestCase.Id));
+        return string.Join(", ", parts);
     }
 }

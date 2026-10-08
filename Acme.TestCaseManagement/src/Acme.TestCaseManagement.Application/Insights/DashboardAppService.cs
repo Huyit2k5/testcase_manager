@@ -46,7 +46,8 @@ public class DashboardAppService : TestCaseManagementAppService, IDashboardAppSe
         var burnDown = DashboardCalculator.BurnDown(data.Items, start, plan?.EndDate, today);
 
         var density = DashboardCalculator.DefectDensity(data.Items, data.Defects);
-        var flaky = FlakinessCalculator.CalculateAll(data.Attempts, _options.ToSettings());
+        // The same window as the list of flaky tests, not the (possibly longer) window of the velocity chart.
+        var flaky = FlakinessCalculator.CalculateAll(data.Attempts, _options.ToSettings(), now.AddDays(-_options.LookbackDays));
 
         return new DashboardDto
         {

@@ -355,4 +355,27 @@ public class SharedStepGroupAppService_Tests : TestCaseManagementApplicationTest
         (await _transfer.ImportAsync(changed)).Updated.ShouldBe(1);
         (await _testCases.GetAsync(testCase.Id)).Steps.OrderBy(s => s.StepOrder).Select(s => s.SharedStepGroupId).ShouldBe(new Guid?[] { null, group.Id, null });
     }
+
+    [Fact]
+    public async Task A_Group_Is_Used_Once_By_A_Test_Case_And_To_Use_It_Again_The_First_Copy_Is_Detached()
+    {
+        var group = await GroupAsync("Log in");
+        var testCase = await CaseAsync("TC-TWICE");
+        var once = await _testCases.InsertSharedStepsAsync(testCase.Id, new InsertSharedStepsDto { SharedStepGroupId = group.Id, Position = 1 });
+        var linked = once.Steps.Count(s => s.SharedStepGroupId == group.Id);
+
+        // A second copy could not be told from the first when the group is refreshed, so it is refused and nothing changes.
+        (await Should.ThrowAsync<BusinessException>(() => _testCases.InsertSharedStepsAsync(testCase.Id, new InsertSharedStepsDto { SharedStepGroupId = group.Id })))
+            .Code.ShouldBe(TestCaseManagementErrorCodes.SharedStepGroupAlreadyUsed);
+        (await _testCases.GetAsync(testCase.Id)).Steps.Count.ShouldBe(once.Steps.Count);
+
+        // Detached, the first copy is the test case's own steps and the group can be inserted again; a refresh then keeps both parts.
+        await _testCases.DetachSharedStepsAsync(testCase.Id, group.Id);
+        var twice = await _testCases.InsertSharedStepsAsync(testCase.Id, new InsertSharedStepsDto { SharedStepGroupId = group.Id });
+        twice.Steps.Count.ShouldBe(once.Steps.Count + linked);
+
+        var refreshed = await _testCases.RefreshSharedStepsAsync(testCase.Id, group.Id, new RefreshSharedStepsDto());
+        refreshed.Steps.Count.ShouldBe(twice.Steps.Count);
+        refreshed.Steps.Count(s => s.SharedStepGroupId == group.Id).ShouldBe(linked);
+    }
 }

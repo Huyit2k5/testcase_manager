@@ -83,10 +83,15 @@ public static class FlakinessCalculator
             window.LastOrDefault(a => a.Status == TestResultStatus.Failed)?.Time);
     }
 
-    /// <summary>The result of every test case that has attempts.</summary>
-    public static List<FlakinessResult> CalculateAll(IEnumerable<InsightAttempt> attempts, FlakinessSettings settings)
+    /// <summary>
+    /// The result of every test case that has attempts, counting only the attempts made at or after <paramref name="since"/> when it is
+    /// given. The dashboard reads attempts far enough back for its velocity chart; the flakiness it shows must use the same window as the
+    /// list of flaky tests (the lookback of the options), whatever the chart covers.
+    /// </summary>
+    public static List<FlakinessResult> CalculateAll(IEnumerable<InsightAttempt> attempts, FlakinessSettings settings, DateTime? since = null)
     {
         return attempts
+            .Where(a => since == null || a.Time >= since)
             .GroupBy(a => a.TestCaseId)
             .Select(g => Calculate(g.Key, g, settings))
             .ToList();

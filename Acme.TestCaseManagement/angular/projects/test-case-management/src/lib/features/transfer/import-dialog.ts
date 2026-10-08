@@ -26,21 +26,21 @@ const MAX_ROWS_SHOWN = 500;
 
       <div class="field">
         <label for="import-file">{{ 'import.file' | t }}</label>
-        <input id="import-file" type="file" accept=".xlsx,.csv,text/csv" (change)="pick($event)" />
+        <input id="import-file" type="file" accept=".xlsx,.csv,text/csv" [disabled]="busy()" (change)="pick($event)" />
       </div>
 
       @if (kind() === 'cases') {
         <div class="form-grid">
           <div class="field">
             <label for="import-suite">{{ 'import.defaultSuite' | t }}</label>
-            <select id="import-suite" name="suite" [(ngModel)]="defaultSuiteId" (ngModelChange)="reset()">
+            <select id="import-suite" name="suite" [disabled]="busy()" [(ngModel)]="defaultSuiteId" (ngModelChange)="reset()">
               <option value="">{{ 'import.noDefaultSuite' | t }}</option>
               @for (suite of suites(); track suite.id) { <option [value]="suite.id">{{ suite.label }}</option> }
             </select>
           </div>
           <div class="field">
             <label for="import-existing">{{ 'import.onExisting' | t }}</label>
-            <select id="import-existing" name="existing" [(ngModel)]="onExisting" (ngModelChange)="reset()">
+            <select id="import-existing" name="existing" [disabled]="busy()" [(ngModel)]="onExisting" (ngModelChange)="reset()">
               @for (o of conflictOptions; track o.value) { <option [ngValue]="o.value">{{ i18n.enumText(conflictEnum, o.value) }}</option> }
             </select>
           </div>
@@ -124,6 +124,8 @@ export class ImportDialogComponent {
   protected readonly file = signal<File | null>(null);
   protected readonly report = signal<ImportReport | null>(null);
   protected readonly busy = signal(false);
+  /** Counts the changes of file and options; a check that started before the last change describes something else. */
+  private choice = 0;
   protected defaultSuiteId = '';
   protected onExisting = ImportConflictMode.Skip;
 
@@ -146,6 +148,7 @@ export class ImportDialogComponent {
 
   /** What was checked is no longer what would be imported: the file or an option changed. */
   protected reset(): void {
+    this.choice++;
     this.report.set(null);
   }
 
@@ -168,6 +171,7 @@ export class ImportDialogComponent {
     if (!file) { return; }
 
     this.busy.set(true);
+    const choice = this.choice;
     const request = this.kind() === 'cases'
       ? this.transfer.importTestCases(file, { defaultSuiteId: this.defaultSuiteId || null, onExisting: this.onExisting, dryRun })
       : this.transfer.importResults(this.runId()!, file, dryRun);
@@ -175,6 +179,8 @@ export class ImportDialogComponent {
     request.subscribe({
       next: report => {
         this.busy.set(false);
+        // A check of an earlier choice must not unlock the import of the current one; the import itself has already happened.
+        if (dryRun && choice !== this.choice) { return; }
         this.report.set(report);
         if (report.imported) {
           this.toast.success(this.i18n.t(

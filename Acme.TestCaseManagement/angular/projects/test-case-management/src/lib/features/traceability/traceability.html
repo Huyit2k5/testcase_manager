@@ -100,7 +100,7 @@
     </form>
     <ng-container slot="footer">
       <button type="button" class="btn" (click)="form.set(null)">{{ 'common.cancel' | t }}</button>
-      <button type="submit" form="req-form" class="btn primary">{{ 'common.save' | t }}</button>
+      <button type="submit" form="req-form" class="btn primary" [disabled]="busy()">{{ 'common.save' | t }}</button>
     </ng-container>
   </app-modal>
 }
@@ -110,7 +110,7 @@
     <app-case-picker [onlyApproved]="false" [exclude]="linkedIds(l.row)" [(selectedIds)]="l.testCaseIds" />
     <ng-container slot="footer">
       <button type="button" class="btn" (click)="linkForm.set(null)">{{ 'common.cancel' | t }}</button>
-      <button type="button" class="btn primary" [disabled]="!l.testCaseIds.length" (click)="link()">{{ 'rtm.link' | t }}</button>
+      <button type="button" class="btn primary" [disabled]="!l.testCaseIds.length || busy()" (click)="link()">{{ 'rtm.link' | t }}</button>
     </ng-container>
   </app-modal>
 }

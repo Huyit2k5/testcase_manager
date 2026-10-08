@@ -11,6 +11,7 @@ using Acme.TestCaseManagement.Transfer.Tabular;
 using Shouldly;
 using Volo.Abp.Content;
 using Volo.Abp.Domain.Entities;
+using Volo.Abp.Domain.Repositories;
 using Xunit;
 
 namespace Acme.TestCaseManagement.Transfer;
@@ -237,7 +238,7 @@ public class TestResultTransferAppService_Tests : TestCaseManagementApplicationT
         var run = await RunWithAsync("TC-1");
         var testCaseId = run.Items.Single().TestCaseId;
 
-        // A new version of the test case, scheduled into the same run.
+        // A new version of the test case.
         var current = await _testCases.GetAsync(testCaseId);
         await _testCases.UpdateAsync(testCaseId, new CreateUpdateTestCaseDto
         {
@@ -246,7 +247,18 @@ public class TestResultTransferAppService_Tests : TestCaseManagementApplicationT
             Title = "Second title",
             Steps = current.Steps.Select(s => new TestStepDto { Id = s.Id, Action = s.Action, ExpectedResult = s.ExpectedResult }).ToList(),
         });
-        await _runs.AddItemsAsync(run.Id, new AddTestRunItemsDto { TestCaseIds = { testCaseId } });
+
+        // A run that holds two versions of one test case exists in data made before a test case could be scheduled only once in a run
+        // (the manager refuses it now), so it is built here directly, as the import must still read such a run.
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var runs = GetRequiredService<IRepository<TestRun, Guid>>();
+            var versions = GetRequiredService<IRepository<TestCaseVersion, Guid>>();
+            var entity = await runs.GetAsync(run.Id);
+            var second = await versions.GetAsync(v => v.TestCaseId == testCaseId && v.VersionNumber == 2);
+            entity.AddItem(second.Id, null);
+            await runs.UpdateAsync(entity, autoSave: true);
+        });
 
         var ambiguous = await _transfer.ImportAsync(run.Id, Csv("Code,Result\nTC-1,Passed\n"));
         ambiguous.Items.Single().Messages.Single().ShouldBe("Test case 'TC-1' is in this run more than once; add the Version column.");

@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Security.Cryptography;
 using System.Text.Json;
 using Acme.TestCaseManagement.Automation.Dtos;
@@ -6,6 +7,7 @@ using Acme.TestCaseManagement.Permissions;
 using Acme.TestCaseManagement.Quality;
 using Acme.TestCaseManagement.Repositories;
 using Acme.TestCaseManagement.Runs;
+using Acme.TestCaseManagement.Runs.Dtos;
 using Acme.TestCaseManagement.TestCases;
 using Acme.TestCaseManagement.Transfer;
 using Microsoft.AspNetCore.Authorization;
@@ -14,6 +16,7 @@ using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.DistributedLocking;
 using Volo.Abp.Uow;
+using Volo.Abp.Validation;
 
 namespace Acme.TestCaseManagement.Automation;
 
@@ -172,8 +175,23 @@ public class AutomationResultsAppService : TestCaseManagementAppService, IAutoma
                 .WithData("Limit", _options.MaxResultsPerRequest);
         }
 
+        // [Required] and [MinLength] look at the list, not at what is in it: a null element or a null Defects list is a malformed payload,
+        // and it must be answered with a 400 that says so, not a NullReferenceException.
+        if (input.Results.Any(result => result == null))
+        {
+            throw new AbpValidationException(new List<ValidationResult>
+            {
+                new("A result must not be null.", new[] { nameof(PublishAutomationResultsInput.Results) }),
+            });
+        }
+
         foreach (var result in input.Results)
         {
+            if ((object?)result.Defects == null)
+            {
+                result.Defects = new List<AddDefectLinkDto>();
+            }
+
             if (result.Status == TestResultStatus.Untested)
             {
                 throw new BusinessException(TestCaseManagementErrorCodes.InvalidExecutionStatus);

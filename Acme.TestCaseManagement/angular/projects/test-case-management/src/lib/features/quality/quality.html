@@ -4,10 +4,10 @@
   <section class="card">
     <h2>{{ 'qg.evaluateTitle' | t }}</h2>
     <form class="row" (ngSubmit)="evaluate()">
-      <select name="plan" [(ngModel)]="planId" [attr.aria-label]="'common.plan' | t" style="width: auto; min-width: 220px">
+      <select name="plan" [(ngModel)]="planId" (ngModelChange)="selectionChanged()" [attr.aria-label]="'common.plan' | t" style="width: auto; min-width: 220px">
         @for (plan of plans(); track plan.id) { <option [value]="plan.id">{{ plan.name }}</option> }
       </select>
-      <select name="gate" [(ngModel)]="gateId" [attr.aria-label]="'qg.gate' | t" style="width: auto; min-width: 200px">
+      <select name="gate" [(ngModel)]="gateId" (ngModelChange)="selectionChanged()" [attr.aria-label]="'qg.gate' | t" style="width: auto; min-width: 200px">
         <option value="">{{ 'qg.defaultGate' | t }}</option>
         @for (gate of gates(); track gate.id) { <option [value]="gate.id">{{ gate.name }}</option> }
       </select>
@@ -17,7 +17,7 @@
     @if (evaluation(); as e) {
       <div class="alert" [class]="e.passed ? 'ok' : 'bad'" style="margin-top: 14px" role="status">
         <b>{{ (e.passed ? 'qg.passed' : 'qg.notPassed') | t }}</b>
-        {{ 'qg.evalLine' | t: { plan: planName(planId), gate: e.gate.name, rate: e.gate.minPassRate, approvals: e.gate.requiredApprovals, baseline: e.gate.isBuiltIn ? ('qg.builtInSuffix' | t) : '' } }}
+        {{ 'qg.evalLine' | t: { plan: planName(evaluatedPlanId()), gate: e.gate.name, rate: e.gate.minPassRate, approvals: e.gate.requiredApprovals, baseline: e.gate.isBuiltIn ? ('qg.builtInSuffix' | t) : '' } }}
       </div>
 
       <table>
@@ -125,13 +125,13 @@
     </form>
     <ng-container slot="footer">
       <button type="button" class="btn" (click)="gateForm.set(null)">{{ 'common.cancel' | t }}</button>
-      <button type="submit" form="gate-form" class="btn primary">{{ 'common.save' | t }}</button>
+      <button type="submit" form="gate-form" class="btn primary" [disabled]="gateBusy()">{{ 'common.save' | t }}</button>
     </ng-container>
   </app-modal>
 }
 
 @if (approvalForm(); as a) {
-  <app-modal [title]="a.report ? ('qg.approveTitle' | t: { title: a.report.title }) : ('qg.startTitle' | t: { plan: planName(planId) })" (closed)="approvalForm.set(null)">
+  <app-modal [title]="a.report ? ('qg.approveTitle' | t: { title: a.report.title }) : ('qg.startTitle' | t: { plan: planName(a.planId) })" (closed)="approvalForm.set(null)">
     <p class="muted">{{ 'qg.signingAs' | t: { user: auth.user()?.userName } }}</p>
     <form id="approval-form" (ngSubmit)="submitApproval()">
       <div class="field"><label for="a-role">{{ 'qg.yourRole' | t }}</label><input id="a-role" name="role" maxlength="128" [(ngModel)]="a.role" /></div>
@@ -139,7 +139,7 @@
     </form>
     <ng-container slot="footer">
       <button type="button" class="btn" (click)="approvalForm.set(null)">{{ 'common.cancel' | t }}</button>
-      <button type="submit" form="approval-form" class="btn primary">{{ 'qg.sign' | t }}</button>
+      <button type="submit" form="approval-form" class="btn primary" [disabled]="approvalBusy()">{{ 'qg.sign' | t }}</button>
     </ng-container>
   </app-modal>
 }

@@ -2,10 +2,12 @@
   <div class="page-head">
     <h1>{{ 'dash.title' | t }}</h1>
     <form class="row" (ngSubmit)="reload()">
-      <select name="plan" [(ngModel)]="planId" (ngModelChange)="reload()" [attr.aria-label]="'common.plan' | t" style="width: auto; min-width: 200px">
-        <option value="">{{ 'dash.allRuns' | t }}</option>
-        @for (plan of plans(); track plan.id) { <option [value]="plan.id">{{ plan.name }}</option> }
-      </select>
+      @if (canSeePlans) {
+        <select name="plan" [(ngModel)]="planId" (ngModelChange)="reload()" [attr.aria-label]="'common.plan' | t" style="width: auto; min-width: 200px">
+          <option value="">{{ 'dash.allRuns' | t }}</option>
+          @for (plan of plans(); track plan.id) { <option [value]="plan.id">{{ plan.name }}</option> }
+        </select>
+      }
       <select name="days" [(ngModel)]="days" (ngModelChange)="reload()" [attr.aria-label]="'dash.days' | t" style="width: auto">
         @for (option of dayOptions; track option) { <option [ngValue]="option">{{ 'dash.lastDays' | t: { days: option } }}</option> }
       </select>
@@ -125,6 +127,7 @@
     <p class="muted">{{ 'common.loading' | t }}</p>
   }
 
+  @if (canSeeFlaky) {
   <section class="card" data-test="flaky">
     <div class="page-head">
       <h2>{{ 'dash.flakyTitle' | t }}</h2>
@@ -169,4 +172,5 @@
       }
     }
   </section>
+}
 </div>

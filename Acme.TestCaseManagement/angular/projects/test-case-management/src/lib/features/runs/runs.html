@@ -76,7 +76,7 @@
     </form>
     <ng-container slot="footer">
       <button type="button" class="btn" (click)="planForm.set(null)">{{ 'common.cancel' | t }}</button>
-      <button type="submit" form="plan-form" class="btn primary">{{ 'common.save' | t }}</button>
+      <button type="submit" form="plan-form" class="btn primary" [disabled]="busy()">{{ 'common.save' | t }}</button>
     </ng-container>
   </app-modal>
 }
@@ -100,7 +100,7 @@
     </form>
     <ng-container slot="footer">
       <button type="button" class="btn" (click)="runForm.set(null)">{{ 'common.cancel' | t }}</button>
-      <button type="submit" form="run-form" class="btn primary">{{ 'runs.createRun' | t }}</button>
+      <button type="submit" form="run-form" class="btn primary" [disabled]="busy()">{{ 'runs.createRun' | t }}</button>
     </ng-container>
   </app-modal>
 }

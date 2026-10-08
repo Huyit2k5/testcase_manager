@@ -36,11 +36,13 @@ public class AuthController : AbpControllerBase
 {
     private readonly IdentityUserManager _users;
     private readonly JwtTokenService _tokens;
+    private readonly Microsoft.AspNetCore.Identity.IPasswordHasher<IdentityUser> _hasher;
 
-    public AuthController(IdentityUserManager users, JwtTokenService tokens)
+    public AuthController(IdentityUserManager users, JwtTokenService tokens, Microsoft.AspNetCore.Identity.IPasswordHasher<IdentityUser> hasher)
     {
         _users = users;
         _tokens = tokens;
+        _hasher = hasher;
     }
 
     /// <summary>Exchanges a user name and password for an access token. Repeated failures lock the account for a while.</summary>
@@ -53,6 +55,8 @@ public class AuthController : AbpControllerBase
         // One answer for every failure, so that the response does not reveal which user names exist.
         if (user is null || !user.IsActive || await _users.IsLockedOutAsync(user))
         {
+            // Hashing a password costs the same time as checking one, so that the answer does not come faster for a name that does not exist.
+            SpendTheTimeOfACheck(input.Password);
             return Rejected();
         }
 
@@ -73,5 +77,10 @@ public class AuthController : AbpControllerBase
     private UnauthorizedObjectResult Rejected()
     {
         return Unauthorized(new { error = new { message = "Invalid user name or password." } });
+    }
+
+    private void SpendTheTimeOfACheck(string password)
+    {
+        _hasher.HashPassword(new IdentityUser(Guid.NewGuid(), "nobody", "nobody@example.invalid"), password);
     }
 }

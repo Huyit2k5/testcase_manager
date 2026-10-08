@@ -33,6 +33,12 @@ public class QualityGateAppService : TestCaseManagementAppService, IQualityGateA
     [Authorize(TestCaseManagementPermissions.QualityGates.Manage)]
     public virtual async Task<QualityGateDto> CreateAsync(CreateUpdateQualityGateDto input)
     {
+        // One default gate per tenant is kept by clearing the old one: two saves at once would both clear and both set.
+        if (input.IsDefault)
+        {
+            await LockUntilTheRequestEndsAsync("qualitygate-default");
+        }
+
         var gate = await _gateManager.CreateAsync(
             input.Name, input.MinPassRate, input.RequiredApprovals, input.Description, input.IsDefault);
 
@@ -44,6 +50,11 @@ public class QualityGateAppService : TestCaseManagementAppService, IQualityGateA
     [Authorize(TestCaseManagementPermissions.QualityGates.Manage)]
     public virtual async Task<QualityGateDto> UpdateAsync(Guid id, CreateUpdateQualityGateDto input)
     {
+        if (input.IsDefault)
+        {
+            await LockUntilTheRequestEndsAsync("qualitygate-default");
+        }
+
         var gate = await _gateRepository.GetAsync(id);
 
         await _gateManager.UpdateAsync(

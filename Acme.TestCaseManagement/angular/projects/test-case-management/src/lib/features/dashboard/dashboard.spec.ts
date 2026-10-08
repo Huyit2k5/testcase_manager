@@ -2,6 +2,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { Permissions } from '../../core/auth';
+import { grant } from '../../core/auth-testing';
 import { BurnDownPoint, Dashboard, FlakyTestList, VelocityPoint } from '../../proxy/dtos';
 import { CHART, burnDownChart, linePath, niceMax, velocityChart } from './chart';
 import { DashboardComponent } from './dashboard';
@@ -110,7 +112,7 @@ describe('DashboardComponent', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), grant('*')] });
     http = TestBed.inject(HttpTestingController);
     component = TestBed.createComponent(DashboardComponent).componentInstance;
   });
@@ -158,5 +160,36 @@ describe('DashboardComponent', () => {
     expect(call<string>('trendText', -4)).toBe('-4%');
     expect(call<string>('trendText', null)).toBe('');
     expect(call<string>('scoreWidth', 0.456)).toBe('46%');
+  });
+
+  it('ignores a slow answer for an old filter that arrives after the answer for the current one', () => {
+    call('reload');
+    const [old] = http.match(r => r.url === '/api/test-case-management/dashboard');
+    http.match(r => r.url === '/api/test-case-management/flaky-tests');
+    call('reload');
+    const [latest] = http.match(r => r.url === '/api/test-case-management/dashboard');
+    http.match(r => r.url === '/api/test-case-management/flaky-tests');
+
+    latest.flush({ ...dashboard(), runCount: 2 });
+    old.flush({ ...dashboard(), runCount: 1 });
+
+    expect(read<Dashboard>('dashboard').runCount).toBe(2);
+    expect(read<boolean>('loading')).toBe(false);
+  });
+});
+
+describe('DashboardComponent without the secondary permissions', () => {
+  it('does not ask for the plans or the flaky tests, and hides the flaky card', () => {
+    localStorage.clear();
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), grant(Permissions.TestRuns.Default)] });
+    const http = TestBed.inject(HttpTestingController);
+    const fixture = TestBed.createComponent(DashboardComponent);
+    fixture.detectChanges();
+
+    http.expectNone(r => r.url === '/api/test-case-management/plans');
+    http.expectNone(r => r.url === '/api/test-case-management/flaky-tests');
+    http.expectOne(r => r.url === '/api/test-case-management/dashboard');
+    expect(fixture.nativeElement.querySelector('[data-test=flaky]')).toBeNull();
   });
 });

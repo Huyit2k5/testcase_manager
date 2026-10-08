@@ -801,7 +801,7 @@ them up to date. Here the freeze is at the time of the copy, which keeps the que
 **Rules.**
 - A group has 1 to 50 steps and a name that is unique ignoring case (among groups not deleted). Deleting is refused while a test case uses the group
   (detach it first), so that no link points to nothing.
-- Insert puts a copy at a position (default: the end), refresh replaces the copy by the current steps at the place of the first copied step, detach
+- Insert puts a copy at a position (default: the end; a group is used once by a test case, see 4.16), refresh replaces the copy by the current steps at the place of the first copied step, detach
   drops the link and keeps the steps. Insert and refresh change content, so an approved test case gets a new version like for any edit of steps (the
   screen asks first); detach changes no content, so it publishes nothing.
 - A copied step edited inside the test case becomes the test case's own (its link is dropped); a save that leaves it alone keeps the link, and so do reordering
@@ -896,7 +896,7 @@ the host to Tiếng Việt translates the sidebar and the pages. The standalone 
 
 ### 4.15. Phase 17: AI step suggestions (FR-027)
 
-(Phase 16, the guide for production deployment, has not been done yet; this phase was done first because it was asked for first.)
+(The guide for production deployment and the run on SQL Server or PostgreSQL have not been done yet; this phase was done before them because it was asked for first.)
 
 FR-027 asks for an "integration hook for AI-powered test step generation from requirements text". A person writes or pastes a requirement, the
 module asks an AI model for steps, and the person decides which of them go into the test case.
@@ -952,6 +952,70 @@ untested except through the protocol they share.
   checks it), because they may be confidential. The steps that come back are not audited either.
 - One request at a time, no streaming, no memory between requests, no feedback on the quality of the proposals.
 - Suggestions are for the steps of a test case only: no suggestion of test cases from a requirement, of test data, or of a title.
+
+### 4.16. Phase 16: a review of the whole module, and what it changed
+
+Before the module is plugged into the company's application, every layer was reviewed once by independent readers (Domain; core application
+services; the other application services; EF Core, HTTP API and sample host; the Angular library). They reported about 40 findings, about 34 distinct;
+the ones that mattered were checked against the code before anything was changed, and each fix has a test that shows it.
+
+**Security and robustness**
+- *Excel import could be made to allocate gigabytes.* The reader kept blank rows between filled ones to keep row numbers true, and padded a row up
+  to the column number of a cell, both taken from the file: a header and one cell at row 2,000,000,000 (or at column ZZZZZZZZ) was a few hundred bytes that
+  passed every size limit. Row numbers now must be real sheet rows (up to 1,048,576), the span of blank rows counts against the row limit, columns above
+  XFD are refused, and the unzipped size is counted on what really comes out of the archive, not on what its directory claims.
+- *Enum values were not checked.* JSON turns `99` into `(TestResultStatus)99` and the module stored and counted it. A validation contributor now refuses
+  any number that is not a member of the enum, for every enum property of every input of the module, in nested objects and lists (a new DTO is covered
+  without an attribute).
+- *An approved test case could be edited down to no steps*, keeping the status and publishing an empty version that a run could bind. Refused.
+- *An empty `X-Api-Key:` header next to a valid bearer token* sent the request to the key scheme and made it anonymous (some proxies and CI templates
+  send the empty header). A header with no value does not name a key. A `null` in the list of results, or a `null` list of defects, was a
+  `NullReferenceException` (500); it is a 400 or read as no defects.
+- *The file name of an upload* went into the change summary of every version the import creates, which is limited to 1,000 characters: a long or odd
+  name made the import fail after its check passed. It is cleaned and cut.
+- *The reader of the AI answer* gives up after 20 opening brackets that never close instead of scanning to the end from each of them.
+- Sample host: Swagger is served in Development only (setting `Swagger:Enabled`), and an unknown or inactive user name costs a password hash like a
+  known one, so the time of the answer does not tell which names exist. The 8-hour token that cannot be revoked and the missing `UseMultiTenancy` of the sample
+  host are not changed (a host of its own has its own sign-in and tenants) but are said in the README.
+
+**Business rules and counts**
+- *The same test case could sit in a run twice.* The run refused only the same version, and every edit of an approved test case makes a new one, so
+  adding it again after an edit scheduled it a second time: totals, completion, pass rate and the gate counted it twice. The check is per test case now
+  (error `TestCaseAlreadyInRun`). Runs that already hold two versions (made before) are still read by the results import, which asks for the Version column.
+- A new run is refused for an *archived* plan (its end of life). A completed plan still accepts one: a retest after completion is ordinary work.
+- *Two approvals of one sign-off at once* each counted only themselves and could leave a fully signed report Pending; *two sign-offs started at once* for one plan
+  left two Pending reports; *two saves of the default gate at once* left two defaults, and every evaluation without a gate then failed. Each of the three
+  changes now takes a lock for the thing it changes, held until the unit of work ends, before it reads (a second change waits, then is told to try again:
+  `OperationInProgress`). The lock is in this process unless the host registers a distributed lock provider, as for the publish of results.
+- The *dashboard* scored flakiness over the longer window of its velocity chart (up to 90 days) while the list of flaky tests and the "flag" action use the lookback
+  of the options (30): the same test could be Flaky in one place and Stable in the other. The dashboard now uses the lookback.
+- *A shared group can be used once by a test case.* A second copy could not be told from the first when the group is refreshed (which replaces the steps of
+  the group at one place), and a refresh silently dropped one block. To use a group again, detach the first copy.
+- Lists sorted by a column with equal values (priority, status, title, creation time...) had no final unique key, so on SQL Server and PostgreSQL a page could
+  repeat or skip rows (SQLite happened to be stable). Every list sort ends with the id now.
+
+**Front end** (11 findings)
+- A dialog closed when a mouse drag that began inside it (selecting the one-time API key, text in a form) ended on the backdrop: the secret or the whole form was lost.
+  It closes only when the press and the click are both on the backdrop; Escape closes the top dialog, focus goes in and comes back, and Tab stays inside.
+- Double click or Enter twice created two of a record (executions, runs, plans, sign-offs, keys, suites, requirements): every such action has an in-flight guard.
+- A slow answer could overwrite a newer one (filters, the case picker, the matrix, the dashboard, the run page when the address changes): only the latest request
+  updates the screen.
+- The Quality page could start a sign-off for a plan that was never evaluated (the result was tied to what the selects said now); the result is now tied to what was
+  evaluated and cleared when it changes. The import dialog could enable "Import" for options that were never checked; its options are locked while a check runs.
+- Pages called secondary endpoints the user may not call (plans, flaky tests, sign-off list) and showed 403 toasts; they check the permission first.
+  The standalone top bar hides the tabs a user may not open. A page beyond the last one after a delete, a tag filter that stayed after its tag vanished, a run page
+  stuck on "Loading..." after a 404, an expiry date shown a day late in some time zones, and thumbnail URLs created after the dialog was closed are fixed.
+
+**Left as they are, on purpose or for later**
+- Approving again after returning a test case to draft, without an edit, still publishes a version that equals the last. The plan says approval publishes; the
+  duplicate is harmless now that a run takes a test case once.
+- Idempotency keys are per tenant: two pipelines of one tenant that both use "123" collide. The README says to build the key from the pipeline and the build.
+- Lookups by Automation ID lower-case the column (to behave the same on every database), which an index cannot serve; at tens of thousands of test cases add
+  an index on the lowered value for your database. The code of a test case is compared as the database compares text (case sensitive on SQLite and
+  PostgreSQL, not on SQL Server).
+- The dashboard and the flaky list still read every run item and defect of the scope into memory (with two correlated subqueries per item). It is correct, but it
+  grows with the data: to be measured with a large data set and, if it needs it, rewritten as aggregates in the database. Not done yet.
+- Tested on SQLite only; the constructs that would behave differently on other providers were looked for (sorting, case, `LOWER`), not run.
 
 ## 5. Security, RBAC & Permissions
 

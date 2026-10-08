@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, input, model, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { AuthService, Permissions } from '../../core/auth';
 import { I18nService, TranslatePipe } from '../../core/i18n/i18n';
 import { badge } from '../../core/ui';
 import { TestCase } from '../../proxy/dtos';
@@ -11,6 +12,9 @@ import { TestCaseService } from '../../proxy/services';
   selector: 'app-case-picker',
   imports: [FormsModule, TranslatePipe],
   template: `
+    @if (!allowed) {
+      <p class="muted" data-test="picker-denied">{{ 'picker.noAccess' | t }}</p>
+    } @else {
     <div class="row" style="margin-bottom: 8px">
       <input class="grow" name="picker-search" [(ngModel)]="search" (ngModelChange)="load()" [placeholder]="'picker.search' | t" [attr.aria-label]="'picker.search' | t" />
       <button type="button" class="btn sm" (click)="selectAll()">{{ 'picker.selectAll' | t }}</button>
@@ -32,11 +36,16 @@ import { TestCaseService } from '../../proxy/services';
       @if (!cases().length) { <div class="empty">{{ 'picker.none' | t }}</div> }
     </div>
     <p class="muted" style="margin: 6px 0 0">{{ 'picker.selected' | t: { n: selectedIds().length } }}</p>
+    }
   `,
 })
 export class CasePickerComponent implements OnInit {
   private readonly service = inject(TestCaseService);
   private readonly i18n = inject(I18nService);
+  /** Listing test cases needs TestCases.Default, which a person who may only manage plans or requirements may not have. */
+  protected readonly allowed = inject(AuthService).can(Permissions.TestCases.Default);
+  /** Counts the requests, so that a slow answer to an old search cannot replace the answer to the current one. */
+  private request = 0;
 
   /** Test cases that must not be offered, for example the ones already in the run. */
   readonly exclude = input<string[]>([]);
@@ -53,7 +62,10 @@ export class CasePickerComponent implements OnInit {
   }
 
   protected load(): void {
+    if (!this.allowed) { return; }
+    const request = ++this.request;
     this.service.list({ filter: this.search, status: this.onlyApproved() ? TestCaseStatus.Approved : null, maxResultCount: 200, sorting: 'code' }).subscribe(result => {
+      if (request !== this.request) { return; }
       const excluded = new Set(this.exclude());
       this.cases.set(result.items.filter(tc => !excluded.has(tc.id)));
     });

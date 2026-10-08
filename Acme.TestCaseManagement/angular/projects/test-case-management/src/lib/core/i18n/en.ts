@@ -209,6 +209,8 @@ export const en = {
   'picker.select': 'Select {code}',
   'picker.none': 'No test case available.',
   'picker.selected': '{n} selected',
+  'picker.noAccess': 'You do not have permission to browse test cases, so none can be picked here.',
+  'run.loadFailed': 'This run could not be opened. It may not exist, or you may not have access to it.',
 
   'rtm.title': 'Requirements traceability matrix',
   'rtm.newRequirement': '+ New requirement',
@@ -407,7 +409,7 @@ export const en = {
   'auto.revoked': 'The key is revoked.',
   'auto.namePlaceholder': 'For example GitHub Actions - main',
   'auto.expiresOn': 'Expires on (optional)',
-  'auto.expiresHelp': 'Leave the date empty for a key that works until it is revoked. A date ends the key at the end of that day (UTC).',
+  'auto.expiresHelp': 'Leave the date empty for a key that works until it is revoked. A date ends the key at the end of that day, in your local time.',
   'auto.createdTitle': 'API key created',
   'auto.shownOnce': 'Copy the key now. It is shown only once and cannot be read again; if it is lost, revoke it and create a new one.',
   'auto.secret': 'API key',

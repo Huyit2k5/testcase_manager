@@ -34,6 +34,7 @@ export class RunsComponent implements OnInit {
   protected readonly runs = signal<TestRun[]>([]);
   protected readonly planForm = signal<PlanForm | null>(null);
   protected readonly runForm = signal<RunForm | null>(null);
+  protected readonly busy = signal(false);
 
   protected readonly badgeOf = badge;
   protected readonly planEnum = PlanStatus;
@@ -70,16 +71,21 @@ export class RunsComponent implements OnInit {
 
   protected savePlan(): void {
     const form = this.planForm();
-    if (!form) { return; }
+    if (!form || this.busy()) { return; }
+    this.busy.set(true);
     const body = {
       name: form.name, description: form.description || null, milestoneId: form.milestoneId || null,
       startDate: toIsoDate(form.startDate), endDate: toIsoDate(form.endDate),
     };
     const request = form.id ? this.planService.update(form.id, body) : this.planService.create(body);
-    request.subscribe(() => {
-      this.toast.success(this.i18n.t('runs.planSaved'));
-      this.planForm.set(null);
-      this.reload();
+    request.subscribe({
+      next: () => {
+        this.busy.set(false);
+        this.toast.success(this.i18n.t('runs.planSaved'));
+        this.planForm.set(null);
+        this.reload();
+      },
+      error: () => this.busy.set(false),
     });
   }
 
@@ -106,13 +112,18 @@ export class RunsComponent implements OnInit {
 
   protected createRun(): void {
     const form = this.runForm();
-    if (!form) { return; }
+    if (!form || this.busy()) { return; }
+    this.busy.set(true);
     this.runService.create({
       testPlanId: form.testPlanId || null, title: form.title, environment: form.environment, testCaseIds: form.testCaseIds,
-    }).subscribe(run => {
-      this.toast.success(this.i18n.t('runs.runCreated'));
-      this.runForm.set(null);
-      void this.router.navigate([this.base + '/runs', run.id]);
+    }).subscribe({
+      next: run => {
+        this.busy.set(false);
+        this.toast.success(this.i18n.t('runs.runCreated'));
+        this.runForm.set(null);
+        void this.router.navigate([this.base + '/runs', run.id]);
+      },
+      error: () => this.busy.set(false),
     });
   }
 }

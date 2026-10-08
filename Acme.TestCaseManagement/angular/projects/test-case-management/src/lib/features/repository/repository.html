@@ -104,7 +104,7 @@
     </form>
     <ng-container slot="footer">
       <button type="button" class="btn" (click)="suiteDialog.set(null)">{{ 'common.cancel' | t }}</button>
-      <button type="submit" form="suite-form" class="btn primary">{{ 'common.create' | t }}</button>
+      <button type="submit" form="suite-form" class="btn primary" [disabled]="suiteBusy()">{{ 'common.create' | t }}</button>
     </ng-container>
   </app-modal>
 }

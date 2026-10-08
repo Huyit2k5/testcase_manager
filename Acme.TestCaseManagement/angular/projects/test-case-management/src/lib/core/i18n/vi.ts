@@ -211,6 +211,8 @@ export const vi: Record<MessageKey, string> = {
   'picker.select': 'Chọn {code}',
   'picker.none': 'Không có test case nào.',
   'picker.selected': 'Đã chọn {n}',
+  'picker.noAccess': 'Bạn không có quyền xem test case nên không thể chọn ở đây.',
+  'run.loadFailed': 'Không mở được lần chạy này. Có thể nó không tồn tại hoặc bạn không có quyền truy cập.',
 
   'rtm.title': 'Ma trận truy vết yêu cầu',
   'rtm.newRequirement': '+ Yêu cầu mới',
@@ -409,7 +411,7 @@ export const vi: Record<MessageKey, string> = {
   'auto.revoked': 'Đã thu hồi key.',
   'auto.namePlaceholder': 'Ví dụ GitHub Actions - main',
   'auto.expiresOn': 'Hết hạn vào (không bắt buộc)',
-  'auto.expiresHelp': 'Để trống nếu muốn key dùng đến khi bị thu hồi. Nếu chọn ngày, key hết hạn vào cuối ngày đó (giờ UTC).',
+  'auto.expiresHelp': 'Để trống nếu muốn key dùng đến khi bị thu hồi. Nếu chọn ngày, key hết hạn vào cuối ngày đó (theo giờ của bạn).',
   'auto.createdTitle': 'Đã tạo API key',
   'auto.shownOnce': 'Hãy sao chép key ngay. Key chỉ hiện một lần và không đọc lại được; nếu mất, hãy thu hồi và tạo key mới.',
   'auto.secret': 'API key',

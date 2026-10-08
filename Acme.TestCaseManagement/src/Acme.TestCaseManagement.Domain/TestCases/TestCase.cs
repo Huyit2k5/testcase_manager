@@ -203,6 +203,15 @@ public class TestCase : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
         Check.NotNull(group, nameof(group));
 
+        // A group is used once by a test case. A second copy could not be told from the first when the group is refreshed (which
+        // replaces the steps of the group at one place), and would lose a block of steps there. To use it again, detach the first copy.
+        if (Steps.Any(s => s.SharedStepGroupId == group.Id))
+        {
+            throw new BusinessException(TestCaseManagementErrorCodes.SharedStepGroupAlreadyUsed)
+                .WithData("Code", Code)
+                .WithData("Name", group.Name);
+        }
+
         var ordered = Steps.OrderBy(s => s.StepOrder).ToList();
         var index = Math.Clamp((position ?? ordered.Count + 1) - 1, 0, ordered.Count);
 

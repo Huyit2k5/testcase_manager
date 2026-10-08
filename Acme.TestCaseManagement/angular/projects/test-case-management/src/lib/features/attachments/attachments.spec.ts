@@ -128,4 +128,26 @@ describe('AttachmentsComponent', () => {
     request.flush(null);
     http.expectOne(r => r.method === 'GET' && r.url === URL_LIST).flush([]);
   });
+
+  it('creates no object URL for a thumbnail that arrives after the panel is gone, and revokes the ones it made', () => {
+    const created: string[] = [];
+    const revoked: string[] = [];
+    vi.stubGlobal('URL', Object.assign(URL, {
+      createObjectURL: () => { const url = `blob:${created.length}`; created.push(url); return url; },
+      revokeObjectURL: (url: string) => { revoked.push(url); },
+    }));
+    const fixture = TestBed.createComponent(AttachmentsComponent);
+    fixture.componentRef.setInput('ownerType', 0);
+    fixture.componentRef.setInput('ownerId', 'owner-1');
+    fixture.componentInstance.ngOnInit();
+    http.expectOne(r => r.url === URL_LIST).flush([file({ id: 'fast' }), file({ id: 'slow' })]);
+    http.expectOne('/api/test-case-management/attachments/fast/content').flush(new Blob(['x']));
+    const slow = http.expectOne('/api/test-case-management/attachments/slow/content');
+
+    fixture.destroy();
+
+    expect(slow.cancelled).toBe(true);
+    expect(created.length).toBe(1);
+    expect(revoked).toEqual(created);
+  });
 });

@@ -104,7 +104,7 @@ public class TestPlanAppService : TestCaseManagementAppService, ITestPlanAppServ
     {
         var (column, descending) = ParseSorting(sorting);
 
-        return (column, descending) switch
+        var ordered = (column, descending) switch
         {
             ("startdate", false) => query.OrderBy(x => x.StartDate).ThenBy(x => x.Name),
             ("startdate", true) => query.OrderByDescending(x => x.StartDate).ThenBy(x => x.Name),
@@ -117,6 +117,10 @@ public class TestPlanAppService : TestCaseManagementAppService, ITestPlanAppServ
             ("name", true) => query.OrderByDescending(x => x.Name),
             _ => query.OrderBy(x => x.Name),
         };
+
+        // The columns above are not unique. Without a last unique key a page boundary can repeat or skip rows: SQL Server and
+        // PostgreSQL order equal values as they like, differently from one query to the next.
+        return ordered.ThenBy(x => x.Id);
     }
 
     /// <summary>Reads the first "column [asc|desc]" pair; unknown input falls back to the default order.</summary>

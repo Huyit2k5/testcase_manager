@@ -44,6 +44,9 @@ public class SignOffAppService : TestCaseManagementAppService, ISignOffAppServic
     [Authorize(TestCaseManagementPermissions.SignOff.Approve)]
     public virtual async Task<SignOffReportDto> SignOffAsync(StartSignOffDto input)
     {
+        // Two people starting a sign-off for the same plan or milestone at once would each supersede nothing and leave two Pending reports.
+        await LockUntilTheRequestEndsAsync($"signoff-start:{input.TestPlanId}:{input.MilestoneId}");
+
         var report = await _signOffManager.StartAsync(
             new QualityGateScope(input.TestPlanId, input.MilestoneId),
             input.QualityGateId,
@@ -59,6 +62,10 @@ public class SignOffAppService : TestCaseManagementAppService, ISignOffAppServic
     [Authorize(TestCaseManagementPermissions.SignOff.Approve)]
     public virtual async Task<SignOffReportDto> ApproveAsync(Guid id, ApproveSignOffDto input)
     {
+        // The report becomes Approved when the approvals that were read plus this one are enough; two approvals at once would each
+        // count only themselves and leave an enough-signed report Pending.
+        await LockUntilTheRequestEndsAsync($"signoff:{id}");
+
         var report = await _reportRepository.GetAsync(id);
 
         await _signOffManager.ApproveAsync(report, input.ApproverRole, input.Comment);
@@ -92,7 +99,7 @@ public class SignOffAppService : TestCaseManagementAppService, ISignOffAppServic
     {
         var (column, descending) = TestPlanAppService.ParseSorting(sorting);
 
-        return (column, descending) switch
+        var ordered = (column, descending) switch
         {
             ("title", false) => query.OrderBy(x => x.Title),
             ("title", true) => query.OrderByDescending(x => x.Title),
@@ -101,5 +108,9 @@ public class SignOffAppService : TestCaseManagementAppService, ISignOffAppServic
             ("creationtime", false) => query.OrderBy(x => x.CreationTime),
             _ => query.OrderByDescending(x => x.CreationTime),
         };
+
+        // The columns above are not unique. Without a last unique key a page boundary can repeat or skip rows: SQL Server and
+        // PostgreSQL order equal values as they like, differently from one query to the next.
+        return ordered.ThenBy(x => x.Id);
     }
 }

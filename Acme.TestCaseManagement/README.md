@@ -345,6 +345,11 @@ symbol packages. Requires the .NET SDK 10 (see `global.json`).
   Angular 22.0 and the LeptonX Lite side menu; it keeps its own light palette instead of following the host's theme.
 - Deleting a test case does not delete its attachments; a pipeline cannot attach files yet; files are held in memory while stored (25 MB limit).
 - Flaky detection and the dashboard read the attempts of the lookback window into memory and work on the dates of the server clock.
+- A review of the whole module (plan.md, section 4.16) left these on purpose or for later: idempotency keys are per tenant, so build the key from the
+  pipeline and the build; lookups by Automation ID lower-case the column and no index serves them (add one on the lowered value on a large table); the code of a test
+  case compares as the database does (case sensitive on SQLite and PostgreSQL); the dashboard and the flaky list read the run items and defects of their scope into
+  memory; the sample host's tokens last 8 hours and cannot be revoked, and its pipeline has no `UseMultiTenancy`, so a tenant-bound API key would publish into the host's
+  tenant (a host with tenants must resolve the tenant first). The locks of sign-off and default gate are in this process unless a distributed lock provider is registered.
 - Results published with an API key have no creator, there is no rate limiting on the publish endpoint, stored idempotency records
   are never cleaned up, and publishing was tested on SQLite with a single tenant only. Requests that share an idempotency key are
   serialized by an in-process lock; with several server nodes register a distributed lock provider. The Automation ID is unique by

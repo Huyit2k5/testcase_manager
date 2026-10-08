@@ -79,6 +79,17 @@ public class StepSuggestionResponseParser_Tests
         StepSuggestionResponseParser.Parse(text).ShouldBeEmpty();
     }
 
+    [Fact]
+    public void A_Text_Of_Nothing_But_Opening_Brackets_Is_Given_Up_Quickly()
+    {
+        var text = new string('{', 250_000);
+        var started = DateTime.UtcNow;
+
+        StepSuggestionResponseParser.Parse(text).ShouldBeEmpty();
+
+        (DateTime.UtcNow - started).ShouldBeLessThan(TimeSpan.FromSeconds(2));
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]

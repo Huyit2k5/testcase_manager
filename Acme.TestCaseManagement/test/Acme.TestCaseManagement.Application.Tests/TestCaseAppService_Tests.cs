@@ -245,4 +245,34 @@ public class TestCaseAppService_Tests : TestCaseManagementApplicationTestBase
         await Should.ThrowAsync<EntityNotFoundException>(() => _testCases.GetAsync(created.Id));
         (await _testCases.GetListAsync(new GetTestCaseListInput())).TotalCount.ShouldBe(0);
     }
+
+    [Theory]
+    [InlineData("Priority")]
+    [InlineData("Severity")]
+    [InlineData("Status")]
+    [InlineData("Priority desc")]
+    public async Task Paging_Over_A_Column_With_Many_Equal_Values_Neither_Repeats_Nor_Skips_A_Test_Case(string sorting)
+    {
+        var suite = await CreateSuiteAsync("Paging");
+        for (var i = 1; i <= 13; i++)
+        {
+            // Every test case has the same priority, severity and status, so the sort column alone cannot order them.
+            await _testCases.CreateAsync(NewTestCase(suite.Id, $"TC-PAGE-{i:000}", steps: 1));
+        }
+
+        var seen = new List<string>();
+        for (var page = 0; page < 3; page++)
+        {
+            var result = await _testCases.GetListAsync(new GetTestCaseListInput { Sorting = sorting, SkipCount = page * 5, MaxResultCount = 5 });
+            result.TotalCount.ShouldBe(13);
+            seen.AddRange(result.Items.Select(i => i.Code));
+        }
+
+        seen.Count.ShouldBe(13);
+        seen.Distinct().Count().ShouldBe(13);
+
+        // The same request gives the same order every time.
+        var again = (await _testCases.GetListAsync(new GetTestCaseListInput { Sorting = sorting, MaxResultCount = 13 })).Items.Select(i => i.Code).ToList();
+        again.Take(5).ShouldBe(seen.Take(5));
+    }
 }

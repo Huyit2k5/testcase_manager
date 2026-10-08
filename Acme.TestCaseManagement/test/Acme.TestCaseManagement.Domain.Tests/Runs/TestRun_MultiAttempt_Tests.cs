@@ -102,7 +102,7 @@ public class TestRun_MultiAttempt_Tests : TestCaseManagementDomainTestBase
     }
 
     [Fact]
-    public async Task AddTestCase_Should_Reject_The_Same_Version_Twice()
+    public async Task AddTestCase_Should_Reject_The_Same_Test_Case_Twice_And_The_Run_Itself_The_Same_Version()
     {
         await WithUnitOfWorkAsync(async () =>
         {
@@ -112,7 +112,12 @@ public class TestRun_MultiAttempt_Tests : TestCaseManagementDomainTestBase
             var exception = await Should.ThrowAsync<BusinessException>(
                 () => _runManager.AddTestCaseAsync(run, testCase.Id, null));
 
-            exception.Code.ShouldBe(TestCaseManagementErrorCodes.DuplicateTestRunItem);
+            // The manager answers per test case (a newer version of the same test case is refused too, see the application tests)...
+            exception.Code.ShouldBe(TestCaseManagementErrorCodes.TestCaseAlreadyInRun);
+
+            // ...and the run keeps its own guard against the same version, for anyone who adds items directly.
+            var versionId = run.Items.Single().TestCaseVersionId;
+            Should.Throw<BusinessException>(() => run.AddItem(versionId, null)).Code.ShouldBe(TestCaseManagementErrorCodes.DuplicateTestRunItem);
         });
     }
 

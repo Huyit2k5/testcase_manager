@@ -61,6 +61,7 @@ export class AutomationComponent implements OnInit {
   /** The key just created; its secret is on this screen and nowhere else, and is gone once the dialog is closed. */
   protected readonly created = signal<ApiKeyCreated | null>(null);
   protected readonly copied = signal(false);
+  protected readonly saving = signal(false);
 
   protected readonly origin = inject(TCM_API_URL) || (typeof location === 'undefined' ? '' : location.origin);
   protected readonly githubExample = githubActionsExample(this.origin);
@@ -85,14 +86,20 @@ export class AutomationComponent implements OnInit {
 
   protected save(): void {
     const form = this.form();
-    if (!form || !form.name.trim()) { return; }
-    // The date is the end of that day in UTC, as the API compares in UTC.
-    const expiresAt = form.expiresOn ? `${form.expiresOn}T23:59:59Z` : null;
-    this.service.create({ name: form.name.trim(), expiresAt }).subscribe(key => {
-      this.form.set(null);
-      this.copied.set(false);
-      this.created.set(key);
-      this.reload();
+    // Enter submits the form even while the button is disabled, and a second key would be a second secret.
+    if (!form || !form.name.trim() || this.saving()) { return; }
+    // The date is the end of that day where the user is, sent as an instant: the list shows it in local time too, so the day stays the same.
+    const expiresAt = form.expiresOn ? new Date(`${form.expiresOn}T23:59:59`).toISOString() : null;
+    this.saving.set(true);
+    this.service.create({ name: form.name.trim(), expiresAt }).subscribe({
+      next: key => {
+        this.saving.set(false);
+        this.form.set(null);
+        this.copied.set(false);
+        this.created.set(key);
+        this.reload();
+      },
+      error: () => this.saving.set(false),
     });
   }
 

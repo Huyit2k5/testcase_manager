@@ -18,10 +18,10 @@ export interface TcmMenuItem {
 /** The pages of the module, in menu order. The standalone app builds its tabs from this, an ABP application its sidebar. */
 export const TCM_MENU: readonly TcmMenuItem[] = [
   { path: 'dashboard', label: 'nav.dashboard', abpName: 'TestCaseManagement::Menu:Dashboard', permission: Permissions.TestRuns.Default, policy: Permissions.TestRuns.Default, order: 1 },
-  { path: 'repository', label: 'nav.repository', abpName: 'TestCaseManagement::Menu:Repository', policy: Permissions.TestCases.Default, order: 2 },
+  { path: 'repository', label: 'nav.repository', abpName: 'TestCaseManagement::Menu:Repository', permission: Permissions.TestCases.Default, policy: Permissions.TestCases.Default, order: 2 },
   { path: 'shared-steps', label: 'nav.sharedSteps', abpName: 'TestCaseManagement::Menu:SharedSteps', permission: Permissions.SharedSteps.Default, policy: Permissions.SharedSteps.Default, order: 3 },
-  { path: 'runs', label: 'nav.runs', abpName: 'TestCaseManagement::Menu:Runs', policy: Permissions.TestPlans.Default, order: 4 },
-  { path: 'traceability', label: 'nav.traceability', abpName: 'TestCaseManagement::Menu:Traceability', policy: Permissions.Requirements.Default, order: 5 },
-  { path: 'quality', label: 'nav.quality', abpName: 'TestCaseManagement::Menu:Quality', policy: Permissions.QualityGates.Default, order: 6 },
+  { path: 'runs', label: 'nav.runs', abpName: 'TestCaseManagement::Menu:Runs', permission: Permissions.TestPlans.Default, policy: Permissions.TestPlans.Default, order: 4 },
+  { path: 'traceability', label: 'nav.traceability', abpName: 'TestCaseManagement::Menu:Traceability', permission: Permissions.Requirements.Default, policy: Permissions.Requirements.Default, order: 5 },
+  { path: 'quality', label: 'nav.quality', abpName: 'TestCaseManagement::Menu:Quality', permission: Permissions.QualityGates.Default, policy: Permissions.QualityGates.Default, order: 6 },
   { path: 'automation', label: 'nav.automation', abpName: 'TestCaseManagement::Menu:Automation', permission: Permissions.ApiKeys.Default, policy: Permissions.ApiKeys.Default, order: 7 },
 ];

@@ -15,6 +15,7 @@ using Acme.TestCaseManagement.TestCases.Dtos;
 using Shouldly;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities;
+using Volo.Abp.DistributedLocking;
 using Xunit;
 
 namespace Acme.TestCaseManagement;
@@ -343,5 +344,69 @@ public class SignOffAppService_Tests : TestCaseManagementApplicationTestBase
         (await _signOff.GetListAsync(new GetSignOffListInput { Status = SignOffStatus.Approved })).TotalCount.ShouldBe(0);
         (await _signOff.GetListAsync(new GetSignOffListInput { Sorting = "creationTime", MaxResultCount = 1 })).Items.Single().Id.ShouldBe(first.Id);
         (await _signOff.GetListAsync(new GetSignOffListInput())).Items.ShouldAllBe(r => r.Approvals.Count == 1 && r.IntegrityVerified);
+    }
+
+    [Fact]
+    public async Task Two_Approvals_Of_The_Same_Sign_Off_Cannot_Run_At_Once()
+    {
+        await _gates.CreateAsync(new CreateUpdateQualityGateDto { Name = "Two", MinPassRate = 50m, RequiredApprovals = 2, IsDefault = true });
+        var (plan, _) = await PlanWithResultsAsync("LOCK", Results(2));
+        SignOffReportDto report;
+        using (ChangeUser(_qaLead)) report = await _signOff.SignOffAsync(new StartSignOffDto { TestPlanId = plan.Id });
+        report.Status.ShouldBe(SignOffStatus.Pending);
+
+        // Another approval of the same report is in progress (its lock is held): this one is told to try again, and changes nothing.
+        var held = await GetRequiredService<IAbpDistributedLock>().TryAcquireAsync($"tcm::signoff:{report.Id}");
+        held.ShouldNotBeNull();
+        using (ChangeUser(_productOwner))
+        {
+            (await Should.ThrowAsync<BusinessException>(() => _signOff.ApproveAsync(report.Id, new ApproveSignOffDto())))
+                .Code.ShouldBe(TestCaseManagementErrorCodes.OperationInProgress);
+        }
+
+        (await _signOff.GetAsync(report.Id)).Status.ShouldBe(SignOffStatus.Pending);
+
+        // The lock of an approval that finished is gone: the next one goes through and completes the report.
+        await held!.DisposeAsync();
+        using (ChangeUser(_productOwner))
+        {
+            (await _signOff.ApproveAsync(report.Id, new ApproveSignOffDto())).Status.ShouldBe(SignOffStatus.Approved);
+        }
+    }
+
+    [Fact]
+    public async Task Starting_A_Sign_Off_Waits_For_Another_Start_For_The_Same_Plan()
+    {
+        await _gates.CreateAsync(new CreateUpdateQualityGateDto { Name = "Single", MinPassRate = 50m, RequiredApprovals = 1, IsDefault = true });
+        var (plan, _) = await PlanWithResultsAsync("START", Results(2));
+        var held = await GetRequiredService<IAbpDistributedLock>().TryAcquireAsync($"tcm::signoff-start:{plan.Id}:");
+
+        using (ChangeUser(_qaLead))
+        {
+            (await Should.ThrowAsync<BusinessException>(() => _signOff.SignOffAsync(new StartSignOffDto { TestPlanId = plan.Id })))
+                .Code.ShouldBe(TestCaseManagementErrorCodes.OperationInProgress);
+        }
+
+        await held!.DisposeAsync();
+        using (ChangeUser(_qaLead))
+        {
+            (await _signOff.SignOffAsync(new StartSignOffDto { TestPlanId = plan.Id })).Status.ShouldBe(SignOffStatus.Approved);
+        }
+    }
+
+    [Fact]
+    public async Task Saving_A_Default_Quality_Gate_Waits_For_Another_Save_Of_The_Default_But_Not_A_Plain_Gate()
+    {
+        var held = await GetRequiredService<IAbpDistributedLock>().TryAcquireAsync("tcm::qualitygate-default");
+
+        (await Should.ThrowAsync<BusinessException>(
+                () => _gates.CreateAsync(new CreateUpdateQualityGateDto { Name = "Default A", MinPassRate = 90m, RequiredApprovals = 1, IsDefault = true })))
+            .Code.ShouldBe(TestCaseManagementErrorCodes.OperationInProgress);
+        (await _gates.CreateAsync(new CreateUpdateQualityGateDto { Name = "Plain", MinPassRate = 90m, RequiredApprovals = 1, IsDefault = false }))
+            .IsDefault.ShouldBeFalse();
+
+        await held!.DisposeAsync();
+        (await _gates.CreateAsync(new CreateUpdateQualityGateDto { Name = "Default B", MinPassRate = 90m, RequiredApprovals = 1, IsDefault = true }))
+            .IsDefault.ShouldBeTrue();
     }
 }

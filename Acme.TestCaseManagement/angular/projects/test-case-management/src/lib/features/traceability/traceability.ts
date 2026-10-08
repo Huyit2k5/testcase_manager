@@ -34,6 +34,10 @@ export class TraceabilityComponent implements OnInit {
   protected readonly form = signal<RequirementForm | null>(null);
   protected readonly linkForm = signal<{ row: RtmRow; testCaseIds: string[] } | null>(null);
 
+  protected readonly busy = signal(false);
+  /** Counts the matrix requests, so that a slow answer to an old filter cannot replace the current one. */
+  private matrixRequest = 0;
+
   protected search = '';
   protected planId = '';
   protected environment = '';
@@ -48,19 +52,21 @@ export class TraceabilityComponent implements OnInit {
   protected readonly badgeOf = badge;
 
   ngOnInit(): void {
-    this.planService.list().subscribe(r => this.plans.set(r.items));
+    // Plans are only a filter here and need their own permission; without it the filter stays empty.
+    if (this.auth.can(Permissions.TestPlans.Default)) { this.planService.list().subscribe(r => this.plans.set(r.items)); }
     this.load();
   }
 
   protected label(type: object, value: number): string { return this.i18n.enumText(type, value); }
 
   protected load(): void {
+    const request = ++this.matrixRequest;
     this.rtmService.matrix({
       filter: this.search,
       testPlanId: this.planId || null,
       environment: this.environment,
       status: this.status === '' ? null : this.status,
-    }).subscribe(m => this.matrix.set(m));
+    }).subscribe(m => { if (request === this.matrixRequest) { this.matrix.set(m); } });
   }
 
   protected newRequirement(): void {
@@ -80,16 +86,21 @@ export class TraceabilityComponent implements OnInit {
 
   protected saveRequirement(): void {
     const form = this.form();
-    if (!form) { return; }
+    if (!form || this.busy()) { return; }
+    this.busy.set(true);
     const body = {
       code: form.code, title: form.title, description: form.description || null,
       acceptanceCriteria: form.acceptanceCriteria || null, priority: form.priority, milestoneId: form.milestoneId || null,
     };
     const request = form.id ? this.requirementService.update(form.id, body) : this.requirementService.create(body);
-    request.subscribe(() => {
-      this.toast.success(this.i18n.t('rtm.saved'));
-      this.form.set(null);
-      this.load();
+    request.subscribe({
+      next: () => {
+        this.busy.set(false);
+        this.toast.success(this.i18n.t('rtm.saved'));
+        this.form.set(null);
+        this.load();
+      },
+      error: () => this.busy.set(false),
     });
   }
 
@@ -107,11 +118,16 @@ export class TraceabilityComponent implements OnInit {
 
   protected link(): void {
     const form = this.linkForm();
-    if (!form?.testCaseIds.length) { return; }
-    this.requirementService.link(form.row.requirementId, form.testCaseIds).subscribe(() => {
-      this.toast.success(this.i18n.t('rtm.linked'));
-      this.linkForm.set(null);
-      this.load();
+    if (!form?.testCaseIds.length || this.busy()) { return; }
+    this.busy.set(true);
+    this.requirementService.link(form.row.requirementId, form.testCaseIds).subscribe({
+      next: () => {
+        this.busy.set(false);
+        this.toast.success(this.i18n.t('rtm.linked'));
+        this.linkForm.set(null);
+        this.load();
+      },
+      error: () => this.busy.set(false),
     });
   }
 

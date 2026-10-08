@@ -23,6 +23,8 @@ public static class TestCaseManagementErrorCodes
     // Runs
     public const string InvalidExecutionStatus = "TestCaseManagement:InvalidExecutionStatus";
     public const string TestRunAlreadyCompleted = "TestCaseManagement:TestRunAlreadyCompleted";
+    public const string TestCaseAlreadyInRun = "TestCaseManagement:TestCaseAlreadyInRun";
+    public const string TestPlanArchived = "TestCaseManagement:TestPlanArchived";
     public const string TestRunItemNotFound = "TestCaseManagement:TestRunItemNotFound";
     public const string DuplicateTestRunItem = "TestCaseManagement:DuplicateTestRunItem";
 
@@ -57,6 +59,10 @@ public static class TestCaseManagementErrorCodes
     public const string SharedStepGroupTooLarge = "TestCaseManagement:SharedStepGroupTooLarge";
     public const string SharedStepGroupInUse = "TestCaseManagement:SharedStepGroupInUse";
     public const string SharedStepsNotLinked = "TestCaseManagement:SharedStepsNotLinked";
+    public const string SharedStepGroupAlreadyUsed = "TestCaseManagement:SharedStepGroupAlreadyUsed";
+
+    // Concurrency
+    public const string OperationInProgress = "TestCaseManagement:OperationInProgress";
 
     // Step suggestions (AI hook)
     public const string StepSuggestionNotConfigured = "TestCaseManagement:StepSuggestionNotConfigured";

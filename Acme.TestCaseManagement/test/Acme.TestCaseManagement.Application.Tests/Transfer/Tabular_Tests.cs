@@ -221,6 +221,88 @@ public class Tabular_Tests
         XlsxTable.Read(written, 11, Limits.MaxUncompressedBytes).Rows.Count.ShouldBe(11);
     }
 
+    private static byte[] Workbook(params (uint Row, string Cell, string Text)[] cells)
+    {
+        using var stream = new MemoryStream();
+        using (var document = SpreadsheetDocument.Create(stream, SpreadsheetDocumentType.Workbook))
+        {
+            var workbook = document.AddWorkbookPart();
+            workbook.Workbook = new Workbook();
+            var worksheet = workbook.AddNewPart<WorksheetPart>();
+            var data = new SheetData();
+            foreach (var group in cells.GroupBy(c => c.Row))
+            {
+                var row = new Row { RowIndex = group.Key };
+                foreach (var cell in group)
+                {
+                    row.Append(new Cell { CellReference = cell.Cell, DataType = CellValues.InlineString, InlineString = new InlineString(new Text(cell.Text)) });
+                }
+
+                data.Append(row);
+            }
+
+            worksheet.Worksheet = new Worksheet(data);
+            workbook.Workbook.AppendChild(new Sheets(new Sheet { Id = workbook.GetIdOfPart(worksheet), SheetId = 1U, Name = "S" }));
+            workbook.Workbook.Save();
+        }
+
+        return stream.ToArray();
+    }
+
+    [Fact]
+    public void Xlsx_Keeps_Blank_Rows_Between_Filled_Ones_So_That_Row_Numbers_Stay_True()
+    {
+        var table = XlsxTable.Read(Workbook((1, "A1", "H"), (5, "A5", "x")), 100, Limits.MaxUncompressedBytes);
+
+        table.Rows.Count.ShouldBe(4);
+        table.Rows[3][0].ShouldBe("x");
+    }
+
+    [Theory]
+    [InlineData(2_000_000_000u)]
+    [InlineData(1_048_577u)]
+    public void Xlsx_Refuses_A_Row_Number_That_No_Sheet_Can_Have_Instead_Of_Allocating_Blank_Rows_For_It(uint row)
+    {
+        var started = DateTime.UtcNow;
+
+        Should.Throw<TableException>(() => XlsxTable.Read(Workbook((1, "A1", "H"), (row, "A" + row, "x")), 100, Limits.MaxUncompressedBytes))
+            .Problem.ShouldBe(TableProblem.Unreadable);
+
+        (DateTime.UtcNow - started).ShouldBeLessThan(TimeSpan.FromSeconds(5));
+    }
+
+    [Fact]
+    public void Xlsx_Counts_The_Span_Of_Blank_Rows_Against_The_Row_Limit()
+    {
+        // Two filled rows, a million blank ones between them: a few hundred bytes that would cost a million list entries.
+        var workbook = Workbook((1, "A1", "H"), (1_000_000, "A1000000", "x"));
+
+        Should.Throw<TableException>(() => XlsxTable.Read(workbook, 10_000, Limits.MaxUncompressedBytes)).Problem.ShouldBe(TableProblem.TooManyRows);
+    }
+
+    [Theory]
+    [InlineData("XFE1")]
+    [InlineData("ZZZZ1")]
+    [InlineData("ZZZZZZZZ1")]
+    public void Xlsx_Refuses_A_Column_Beyond_The_Last_Column_Of_A_Sheet(string cell)
+    {
+        var started = DateTime.UtcNow;
+
+        Should.Throw<TableException>(() => XlsxTable.Read(Workbook((1, "A1", "H"), (2, "A2", "x"), (2, cell, "y")), 100, Limits.MaxUncompressedBytes))
+            .Problem.ShouldBe(TableProblem.Unreadable);
+
+        (DateTime.UtcNow - started).ShouldBeLessThan(TimeSpan.FromSeconds(5));
+    }
+
+    [Fact]
+    public void Xlsx_Accepts_The_Last_Column_Of_A_Sheet()
+    {
+        var table = XlsxTable.Read(Workbook((1, "A1", "H"), (2, "XFD2", "last")), 100, Limits.MaxUncompressedBytes);
+
+        table.Rows.Single().Count.ShouldBe(XlsxTable.MaxSheetColumns);
+        table.Rows.Single()[XlsxTable.MaxSheetColumns - 1].ShouldBe("last");
+    }
+
     // ---- TableFile
 
     [Fact]

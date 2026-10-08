@@ -37,9 +37,16 @@ public class TestRunManager : DomainService
     public virtual async Task<TestRun> CreateRunAsync(
         string title, string environment, Guid? testPlanId = null, Guid? assignedToUserId = null)
     {
-        if (testPlanId.HasValue && await _planRepository.FindAsync(testPlanId.Value) == null)
+        if (testPlanId.HasValue)
         {
-            throw new BusinessException(TestCaseManagementErrorCodes.TestPlanNotFound).WithData("PlanId", testPlanId.Value);
+            var plan = await _planRepository.FindAsync(testPlanId.Value)
+                       ?? throw new BusinessException(TestCaseManagementErrorCodes.TestPlanNotFound).WithData("PlanId", testPlanId.Value);
+
+            // Archived is the end of the plan's life: its reports must not change after that.
+            if (plan.Status == PlanStatus.Archived)
+            {
+                throw new BusinessException(TestCaseManagementErrorCodes.TestPlanArchived).WithData("Name", plan.Name);
+            }
         }
 
         return new TestRun(GuidGenerator.Create(), CurrentTenant.Id, title, environment, testPlanId, assignedToUserId);
@@ -62,6 +69,20 @@ public class TestRunManager : DomainService
         if (version == null)
         {
             throw new BusinessException(TestCaseManagementErrorCodes.TestCaseNotApproved).WithData("Code", testCase.Code);
+        }
+
+        // One item per test case: the duplicate check of the run is per version, and every edit of an approved test case makes a new
+        // version, so the same test case could otherwise be scheduled twice (and counted twice in the totals and the gate).
+        var scheduled = run.Items.Select(i => i.TestCaseVersionId).ToList();
+        if (scheduled.Count > 0)
+        {
+            var already = (await _versionRepository.GetListAsync(v => scheduled.Contains(v.Id) && v.TestCaseId == testCaseId)).FirstOrDefault();
+            if (already != null)
+            {
+                throw new BusinessException(TestCaseManagementErrorCodes.TestCaseAlreadyInRun)
+                    .WithData("Code", testCase.Code)
+                    .WithData("Version", already.VersionNumber);
+            }
         }
 
         return run.AddItem(version.Id, assignedUserId);

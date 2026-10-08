@@ -215,6 +215,8 @@ export class TestCaseFormComponent implements OnInit {
   }
 
   protected save(): void {
+    // Enter in a field submits the form even while the button is disabled, so the guard is here.
+    if (this.saving()) { return; }
     if (this.model.steps.length === 0) {
       this.toast.error(this.i18n.t('form.needStep'));
       return;

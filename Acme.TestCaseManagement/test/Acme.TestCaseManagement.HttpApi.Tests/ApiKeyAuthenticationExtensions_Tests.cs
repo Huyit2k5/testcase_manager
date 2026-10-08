@@ -53,6 +53,22 @@ public class ApiKeyAuthenticationExtensions_Tests
         options.ForwardDefaultSelector!(Request(h => h[ApiKeyDefaults.HeaderName] = "tcm_00000000_x")).ShouldBe(ApiKeyDefaults.Scheme);
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void An_Empty_Api_Key_Header_Next_To_A_Bearer_Token_Does_Not_Hide_The_Token(string emptyKey)
+    {
+        var options = BuildDefaultSchemeOptions();
+        var request = Request(h =>
+        {
+            h.Authorization = "Bearer abc";
+            h[ApiKeyDefaults.HeaderName] = emptyKey;
+        });
+
+        request.Request.IsApiKeyRequest().ShouldBeFalse();
+        options.ForwardDefaultSelector!(request).ShouldBe(BearerScheme);
+    }
+
     [Fact]
     public void Any_other_request_goes_where_it_went_before()
     {
