@@ -58,6 +58,11 @@ public static class TestCaseManagementErrorCodes
     public const string SharedStepGroupInUse = "TestCaseManagement:SharedStepGroupInUse";
     public const string SharedStepsNotLinked = "TestCaseManagement:SharedStepsNotLinked";
 
+    // Step suggestions (AI hook)
+    public const string StepSuggestionNotConfigured = "TestCaseManagement:StepSuggestionNotConfigured";
+    public const string StepSuggestionFailed = "TestCaseManagement:StepSuggestionFailed";
+    public const string StepSuggestionNoUsableSteps = "TestCaseManagement:StepSuggestionNoUsableSteps";
+
     // Tags
     public const string InvalidTag = "TestCaseManagement:InvalidTag";
     public const string TooManyTags = "TestCaseManagement:TooManyTags";

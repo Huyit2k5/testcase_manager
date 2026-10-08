@@ -16,6 +16,7 @@ particular host application: users, tenants and auditing come from ABP abstracti
   distinguishes *covered* from *passed* and exposes blocking defects.
 - **Import and export** – the test library and the results of a run as Excel (.xlsx) or CSV, one row per step or per attempt;
   imports are checked completely first (dry run) and are all or nothing.
+- **AI assistance** – proposed steps from a requirement text through a configured OpenAI-compatible model (or a provider of the host's own); a person reviews before anything is added.
 - **Quality gate and sign-off** – configurable gates (minimum pass rate, all P1 executed, no open Critical or
   High defect) evaluated per plan or milestone; sign-off is refused while the gate fails, freezes the evaluated
   figures with a SHA-256 hash, and completes when enough distinct approvers have signed.
@@ -170,6 +171,7 @@ All routes start with `api/test-case-management/`.
 | `flaky-tests` | `GET` the flakiness score of test cases, `POST flaky-tests/apply` to flag them in the library |
 | `shared-step-groups` | the library of reusable groups of steps: list, get, create, update, delete, usage, and a bulk update of the test cases that are behind |
 | `test-cases/{id}/shared-steps` | `POST` copies a group into a test case, `.../{groupId}/refresh` brings the copy up to date, `DELETE .../{groupId}` detaches it |
+| `step-suggestions` | `GET status` (is a model configured) and `POST`: proposed steps from a requirement text, nothing saved |
 | `attachments` | upload (multipart), list, download and delete files of test cases and of execution attempts |
 | `automation/results` | `POST`: a pipeline publishes automated results (API key, or a user with `AutomationResults.Publish`) |
 
@@ -179,7 +181,7 @@ Group `TestCaseManagement`. Each `...Default` permission allows reading; the chi
 
 | Permission | Children |
 |---|---|
-| `TestCaseManagement.TestCases` | `Create`, `Update`, `Delete`, `Approve` |
+| `TestCaseManagement.TestCases` | `Create`, `Update`, `Delete`, `Approve`, `SuggestSteps` (ask the AI model for steps) |
 | `TestCaseManagement.TestSuites` | `Manage` |
 | `TestCaseManagement.TestPlans` | `Manage` (also required to create, populate, assign and complete runs) |
 | `TestCaseManagement.TestRuns` | `Execute` (record executions, manage defect links) |
@@ -277,6 +279,41 @@ DbContext also needs `DbSet<Attachment>`. Limits are `TestCaseManagementAttachme
 whitelist (images, PDF, text and logs, archives, Office files, short videos; no SVG or HTML). A file follows the permission of what it is attached to:
 `TestCases` / `TestCases.Update` for a test case, `TestRuns` / `TestRuns.Execute` for an attempt. Downloads are always attachments with a fixed content type.
 
+## AI step suggestions
+
+In the test case form a person can ask an AI model to propose steps from a requirement text, review them, and add the ones they want. The
+button appears only when a model is configured and the user holds `TestCases.SuggestSteps`; nothing is saved until the test case is saved.
+
+**Turn it on** with the host's configuration (appsettings, user secrets, environment variables, a secret store); no code is needed:
+
+```json
+"TestCaseManagement": {
+  "AiSuggestions": {
+    "Endpoint": "https://api.openai.com/v1/chat/completions",
+    "ApiKey": "(in user secrets or an environment variable, not in appsettings.json)",
+    "Model": "gpt-4o-mini"
+  }
+}
+```
+
+The endpoint is the full URL of a chat completions endpoint. OpenAI and servers that run a model inside the company (Ollama
+`http://host:11434/v1/chat/completions`, vLLM, LM Studio) speak it, and then the requirement text does not leave the network; the key may be left out
+for them. `ApiKeyHeader` puts the key in another header than `Authorization: Bearer` (Azure OpenAI wants `api-key`; not tried). Other settings:
+`TimeoutSeconds` (30), `MaxResponseBytes` (256 KB), `SystemPrompt` (the instruction to the model). Without an `Endpoint` the feature is off.
+
+**Another service**: implement `IStepSuggestionProvider` and register it in place of the built-in one:
+
+```csharp
+[Dependency(ReplaceServices = true)]
+[ExposeServices(typeof(IStepSuggestionProvider))]
+public class MyProvider : IStepSuggestionProvider, ITransientDependency { /* IsEnabled, SuggestAsync */ }
+```
+
+**Safety.** The key is never stored, shown, returned, logged or put in an error; the answer of any provider is cleaned (empty and repeated steps
+dropped, control characters removed, lengths and counts capped) and the requirement is passed as data, not as instructions. The permission is separate
+because the text leaves the application: the sample host gives it to the QA lead and the tester. There is no quota or rate limit. The audit log of the call does not keep
+the requirement text. Details: plan.md, section 4.15.
+
 ## Quality gate rules in one place
 
 - **Pass rate** = Passed / (all run items − Skipped), using the current (latest-attempt) status. The gate compares
@@ -317,6 +354,6 @@ symbol packages. Requires the .NET SDK 10 (see `global.json`).
 
 `angular/` holds a ready-made UI (Angular 22) for the module, as a library folder (`angular/projects/test-case-management/`) that hosts share
 as source, and a small standalone app that runs it with a JWT sign-in: test repository with suite tree, versions and defects;
-plans and runs with execution and retest; the traceability matrix; quality gates and two-user sign-off; API keys for pipelines; a dashboard with burn-down, velocity, defect density and flaky tests; attachments with screenshot paste; tags and filters; shared steps, in English and
+plans and runs with execution and retest; the traceability matrix; quality gates and two-user sign-off; API keys for pipelines; a dashboard with burn-down, velocity, defect density and flaky tests; attachments with screenshot paste; tags and filters; shared steps; AI step suggestions, in English and
 Vietnamese with a language switch. See
 [angular/README.md](angular/README.md). It is not packed into the NuGet packages.

@@ -228,3 +228,18 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 - [x] T096 Fix what running it showed: Bootstrap class clashes, dialog z-index, route id binding, calls the user may not make, errors shown through the host.
 - [x] T097 Tests and browser runs: unit tests of the host contracts, the routes and the menu (85 Angular tests); a browser run of the whole module in the second host (sign-in, sidebar, repository, attachments, run, API key, dashboard, permissions in the Roles screen, a user with three permissions, Vietnamese); the earlier browser script again on the standalone app; the full build.
 - [x] T098 Document the decisions and the steps (plan.md 4.14, README "Using the module in an ABP application").
+
+---
+
+## Phase 17: AI step suggestions (FR-027)
+
+(Phase 16, the guide for production deployment, is not done yet.)
+
+**Goal**: Let a person turn a requirement text into proposed test steps with an AI model, review them and add the ones they want, without the module storing or showing a key, trusting the model's answer, or saving anything on its own.
+
+- [x] T099 [P] Contracts: `IStepSuggestionProvider` (the hook) with its request type, `IStepSuggestionAppService` (status, suggest), DTOs and limits; permission `TestCases.SuggestSteps` (localized en, vi); error codes and messages (not configured, failed, no usable steps).
+- [x] T100 [P] Application: `TestCaseManagementAiOptions` bound from `TestCaseManagement:AiSuggestions`; the OpenAI-compatible provider (key as a bearer token or in a named header, timeout, response size limit, no redirect, nothing secret in logs or errors); the response parser and the cleaning of every provider's answer; `StepSuggestionAppService`.
+- [x] T101 HttpApi and sample host: `StepSuggestionController` (`GET status`, `POST`), the permission for QA lead and tester, the configuration section in `appsettings.json`; contract and convention tests (17 controllers and services).
+- [x] T102 Tests: parser and cleaning; the provider against a fake model (request shape, key placement, answer shapes, refusal, network error, timeout, size, endpoint validity, secrets absent from errors and logs); the service with a fake provider; HTTP with the model configured only through configuration (permissions, validation, errors in two languages, the key never in an answer).
+- [x] T103 Angular: the suggestion dialog in the test case form (button only when enabled and permitted, requirement prefilled, pick, add to the form); proxy, permission, English and Vietnamese texts; unit tests and a browser run against a fake OpenAI-compatible server.
+- [x] T104 Document the decisions and the configuration (plan.md 4.15, README "AI step suggestions"); run the full build.

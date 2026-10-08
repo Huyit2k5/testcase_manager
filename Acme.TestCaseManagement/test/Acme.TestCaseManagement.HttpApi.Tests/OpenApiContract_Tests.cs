@@ -113,6 +113,9 @@ public class OpenApiContract_Tests
         "SharedStepGroup_GetUsage GET /shared-step-groups/{id}/usage",
         "SharedStepGroup_UpdateTestCases POST /shared-step-groups/{id}/update-test-cases",
 
+        "StepSuggestion_GetStatus GET /step-suggestions/status",
+        "StepSuggestion_Suggest POST /step-suggestions",
+
         "Attachment_GetList GET /attachments",
         "Attachment_Upload POST /attachments",
         "Attachment_Download GET /attachments/{id}/content",

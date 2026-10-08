@@ -1,4 +1,6 @@
 using Acme.TestCaseManagement.Automation;
+using Acme.TestCaseManagement.StepSuggestions;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Application;
@@ -23,6 +25,13 @@ public class TestCaseManagementApplicationModule : AbpModule
         {
             options.ValueProviders.Add<ApiKeyPermissionValueProvider>();
         });
+
+        // Step suggestions (FR-027): the built-in provider reads the host's configuration section TestCaseManagement:AiSuggestions.
+        // Without an endpoint there, suggestions are off. A redirect is not followed: a key must not travel to another address.
+        Configure<TestCaseManagementAiOptions>(context.Services.GetConfiguration().GetSection(TestCaseManagementAiOptions.Section));
+        context.Services
+            .AddHttpClient(OpenAiCompatibleStepSuggestionProvider.HttpClientName)
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
 
         Configure<AbpAutoMapperOptions>(options =>
         {

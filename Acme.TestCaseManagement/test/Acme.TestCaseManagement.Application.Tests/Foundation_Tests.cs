@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using Acme.TestCaseManagement.Permissions;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
@@ -40,7 +40,7 @@ public class Foundation_Tests : TestCaseManagementApplicationTestBase
             .Where(type => type is { IsClass: true, IsAbstract: false } && typeof(IApplicationService).IsAssignableFrom(type))
             .ToList();
 
-        services.Count.ShouldBe(16);
+        services.Count.ShouldBe(17);
 
         foreach (var service in services)
         {

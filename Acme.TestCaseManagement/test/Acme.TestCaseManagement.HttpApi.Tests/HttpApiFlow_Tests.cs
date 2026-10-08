@@ -1,3 +1,4 @@
+using Acme.TestCaseManagement.StepSuggestions;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Text;
@@ -310,6 +311,10 @@ public class HttpApiFlow_Tests
         // ---- Tags: label a test case and ask for the tags in use (see HttpApiTags_Tests) ------------------------------------
         (await qaLead.PutAsync<TestCaseDto>($"{Root}/test-cases/{automated.Id}/tags", new SetTestCaseTagsDto { Tags = { "flow" } })).Tags.ShouldBe(new[] { "flow" });
         (await qaLead.GetAsync<List<TagSummaryDto>>($"{Root}/test-cases/tags")).ShouldContain(t => t.Name == "flow");
+
+        // ---- Step suggestions (see HttpApiStepSuggestions_Tests): this host has no model, so the status says so and a request is refused.
+        (await qaLead.GetAsync<StepSuggestionStatusDto>($"{Root}/step-suggestions/status")).Enabled.ShouldBeFalse();
+        (await qaLead.SendExpectingErrorAsync(HttpMethod.Post, $"{Root}/step-suggestions", new SuggestStepsInput { RequirementText = "As a user I can sign in." })).Status.ShouldBe(System.Net.HttpStatusCode.Forbidden);
 
         // ---- Shared steps: a group in the library, copied into a test case, and taken out again (see HttpApiSharedSteps_Tests) --
         var sharedGroup = await qaLead.PostAsync<SharedStepGroupDto>($"{Root}/shared-step-groups", new CreateUpdateSharedStepGroupDto

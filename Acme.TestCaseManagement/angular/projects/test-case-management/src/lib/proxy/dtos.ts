@@ -264,3 +264,10 @@ export interface SharedStepUsage {
   testCaseId: string; code: string; title: string; status: number; linkedRevision: number; linkedStepCount: number; isOutdated: boolean;
 }
 export interface UpdateSharedStepUsersResult { updated: number; codes: string[]; newVersions: number }
+
+// ---- Step suggestions (AI) ---------------------------------------------------------------------------------------------
+
+export interface StepSuggestionStatus { enabled: boolean; maxRequirementLength: number; maxSteps: number; defaultSteps: number }
+export interface SuggestStepsInput { requirementText: string; title?: string | null; maxSteps?: number | null; language?: string | null }
+export interface SuggestedStep { action: string; expectedResult: string; testData: string | null }
+export interface StepSuggestionResult { steps: SuggestedStep[] }

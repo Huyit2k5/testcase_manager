@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { apiRoot } from '../core/host';
 import { Observable, map } from 'rxjs';
 import {
-  AddDefect, ApiKey, Attachment, SaveSharedStepGroup, SharedStepGroup, SharedStepGroupSummary, SharedStepUsage, TagSummary, UpdateSharedStepUsersResult, ApiKeyCreated, ApplyFlakyFlagsResult, CreateRun, Dashboard, FlakyTestList, DefectLink, EvaluateInput, ExecuteItem, PagedResult, QualityGate, QualityGateEvaluation,
+  StepSuggestionResult, StepSuggestionStatus, SuggestStepsInput, AddDefect, ApiKey, Attachment, SaveSharedStepGroup, SharedStepGroup, SharedStepGroupSummary, SharedStepUsage, TagSummary, UpdateSharedStepUsersResult, ApiKeyCreated, ApplyFlakyFlagsResult, CreateRun, Dashboard, FlakyTestList, DefectLink, EvaluateInput, ExecuteItem, PagedResult, QualityGate, QualityGateEvaluation,
   Requirement, RtmMatrix, RtmRequest, SavePlan, SaveQualityGate, SaveRequirement, SaveTestCase, SignOffReport, StartSignOff,
   TestCase, TestCaseDefect, TestCaseListRequest, TestCaseVersion, TestExecution, TestPlan, TestRun, TestRunListRequest,
   TestSuite, TestSuiteTree,
@@ -255,4 +255,13 @@ export class SharedStepGroupService {
   updateTestCases(id: string, testCaseIds?: string[] | null): Observable<UpdateSharedStepUsersResult> {
     return this.http.post<UpdateSharedStepUsersResult>(`${this.root}/shared-step-groups/${id}/update-test-cases`, { testCaseIds: testCaseIds ?? null });
   }
+}
+
+@Injectable({ providedIn: 'root' })
+export class StepSuggestionService {
+  private readonly http = inject(HttpClient);
+  private readonly root = apiRoot();
+
+  status(): Observable<StepSuggestionStatus> { return this.http.get<StepSuggestionStatus>(`${this.root}/step-suggestions/status`); }
+  suggest(input: SuggestStepsInput): Observable<StepSuggestionResult> { return this.http.post<StepSuggestionResult>(`${this.root}/step-suggestions`, input); }
 }

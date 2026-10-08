@@ -8,6 +8,7 @@
     <PackageReference Include="Volo.Abp.Ddd.Application" />
     <PackageReference Include="Volo.Abp.AutoMapper" />
     <PackageReference Include="DocumentFormat.OpenXml" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
     <InternalsVisibleTo Include="Acme.TestCaseManagement.Application.Tests" />
     <ProjectReference Include="..\Acme.TestCaseManagement.Domain\Acme.TestCaseManagement.Domain.csproj" />
     <ProjectReference Include="..\Acme.TestCaseManagement.Application.Contracts\Acme.TestCaseManagement.Application.Contracts.csproj" />

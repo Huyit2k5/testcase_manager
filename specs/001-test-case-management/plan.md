@@ -894,6 +894,65 @@ the host to Tiếng Việt translates the sidebar and the pages. The standalone 
 - A host with MVC or Blazor UI can use the API but not these pages.
 - One SQLite database and one tenant, as before; SQL Server and PostgreSQL were not run.
 
+### 4.15. Phase 17: AI step suggestions (FR-027)
+
+(Phase 16, the guide for production deployment, has not been done yet; this phase was done first because it was asked for first.)
+
+FR-027 asks for an "integration hook for AI-powered test step generation from requirements text". A person writes or pastes a requirement, the
+module asks an AI model for steps, and the person decides which of them go into the test case.
+
+**The decision: a hook plus one built-in provider that is configured, not coded.** `IStepSuggestionProvider` (`IsEnabled`, `SuggestAsync`) is the
+extension point; `StepSuggestionAppService` (`step-suggestions`: `GET status`, `POST`) is what the screen calls, and it works with whatever provider
+is registered. The module ships `OpenAiCompatibleStepSuggestionProvider`, which calls a chat completions endpoint and is set up entirely from the
+host's configuration section `TestCaseManagement:AiSuggestions` (`Endpoint`, `ApiKey`, `Model`, and optionally `ApiKeyHeader`, `TimeoutSeconds`,
+`MaxResponseBytes`, `SystemPrompt`): a host writes no code. Without an `Endpoint` the provider reports `IsEnabled = false`, the status says so, and
+the screen shows no button. A host that uses a service with another protocol registers its own provider in place of the built-in one.
+
+**Why that protocol.** The chat completions shape is spoken by OpenAI and by the servers that run models inside a company (Ollama, vLLM, LM Studio),
+where the text never leaves the network, which is the safest answer for confidential requirements. The key goes in `Authorization: Bearer` by default
+or in a header the host names (`ApiKeyHeader`, for example `api-key`), and the full URL is the setting, query string included, so a service such as
+Azure OpenAI should work with `ApiKeyHeader = api-key` and its own URL; that was not tried. Anthropic's own API has another shape and needs a
+provider of the host's.
+
+**The model is not trusted, and neither is the text.**
+- The key lives only in the host's configuration (user secrets, environment variables, a secret store): it is not in the database, not on a screen,
+  not in an API answer, not in a log, not in an error message. A refused or failed call logs the status and the host name of the endpoint, never the
+  body (which may repeat the requirement), the URL (which may carry a key) or the message of the exception. A test checks each of those.
+- The redirect of the HTTP client is switched off, so a key cannot follow a redirect to another address; the answer is read up to a limit (256 KB) and
+  the wait is limited (30 s).
+- The requirement and the title go to the model as data between markers that are new for every request (a random token), with a system
+  prompt that says to ignore instructions inside them, so the text can neither contain nor build the end marker and close its own frame; the
+  title is put on one line inside the frame; the language is only ever one of the names the module knows, never the caller's text. This
+  reduces prompt injection, it does not make it impossible, which is why a person reviews.
+- A header name that cannot be sent (a setting error) is reported at once and nothing is sent, instead of dropping the key and getting a 401 for
+  every user; a key sent over plain `http` is logged as a warning (it travels unencrypted, which is acceptable inside a trusted network).
+- The answer is read leniently (a code fence, a sentence before the JSON, even one with brackets in it, other spellings of the fields: every
+  opening bracket is tried, up to 50, until one gives steps) and then **cleaned for every provider**, the
+  built-in or a host's: steps without an action or an expected result and repeated steps are dropped, control and zero-width characters are removed (an emoji is never cut in half),
+  every field is capped (4000 characters, test data 1000) and so is the number of steps (at most 20, 8 by default).
+- Nothing is saved by the service. The screen adds the steps the person ticked to the open form, and they exist only when the test case is saved.
+- It has its own permission, `TestCases.SuggestSteps`, because the text leaves the application: in the sample host the QA lead and the tester hold it,
+  the product owner and the API keys do not. The status needs it too, so a person without it is never told a model exists.
+
+**The minimum length counts the trimmed text** (ten spaces are refused by the API as well as by the screen).
+
+**Front end.** In the test case form a "Suggest steps with AI" button (only when the status is enabled): a dialog starts the requirement from the
+description and the title, asks for 3 to 20 steps in the language of the screen, and lists the proposals with a tick each; "Add n step(s)" puts them in
+the form (replacing the blank first step of a new form). English and Vietnamese. In an ABP host the button follows the host's permissions like the rest.
+
+**Verified.** 44 application tests (parser, built-in provider against a fake model with the points above, service with a fake provider), 10 HTTP tests
+against the sample host configured only through its configuration section, with a fake model that is down, refuses, says nothing, or answers; 13 Angular
+tests; the browser run of the standalone app against a fake OpenAI-compatible server (key checked, English and Vietnamese answers, a model that is down, an
+answer without steps, a product owner without the button). **Not tried against a real service**: no key was available, so OpenAI, Ollama and Azure are
+untested except through the protocol they share.
+
+**Not covered.**
+- No quota, rate limit or cost control: anyone with the permission can send requests, and the host pays for them. `max_tokens` is not set.
+- ABP's auditing records the call (who, when, how long) but not the requirement text or the title: those two members are marked `DisableAuditing` (a test
+  checks it), because they may be confidential. The steps that come back are not audited either.
+- One request at a time, no streaming, no memory between requests, no feedback on the quality of the proposals.
+- Suggestions are for the steps of a test case only: no suggestion of test cases from a requirement, of test data, or of a title.
+
 ## 5. Security, RBAC & Permissions
 
 Defined in `TestCaseManagementPermissions`:

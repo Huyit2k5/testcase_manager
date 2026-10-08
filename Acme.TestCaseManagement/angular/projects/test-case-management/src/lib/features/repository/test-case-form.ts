@@ -3,15 +3,16 @@ import { FormsModule } from '@angular/forms';
 import { ModalComponent } from '../../core/modal';
 import { ToastService } from '../../core/core';
 import { I18nService, TranslatePipe } from '../../core/i18n/i18n';
-import { SaveTestCase, TestCase, TestStep } from '../../proxy/dtos';
+import { SaveTestCase, SuggestedStep, TestCase, TestStep } from '../../proxy/dtos';
 import { ExecutionType, PriorityLevel, SeverityLevel, TestKind, TestLayer, enumOptions } from '../../proxy/enums';
 import { TestCaseService } from '../../proxy/services';
+import { StepSuggestionsComponent } from '../suggestions/step-suggestions';
 import { TagInputComponent } from '../tags/tag-input';
 import { SuiteOption } from './suite-options';
 
 @Component({
   selector: 'app-test-case-form',
-  imports: [FormsModule, TranslatePipe, ModalComponent, TagInputComponent],
+  imports: [FormsModule, TranslatePipe, ModalComponent, TagInputComponent, StepSuggestionsComponent],
   template: `
     <app-modal [title]="existing() ? ('form.editCase' | t: { code: existing()!.code }) : ('form.newCase' | t)" [wide]="true" (closed)="closed.emit()">
       <form id="tc-form" (ngSubmit)="save()">
@@ -115,6 +116,7 @@ import { SuiteOption } from './suite-options';
         </table>
         <div class="row" style="margin-top:8px">
           <button type="button" class="btn sm" (click)="addStep()">{{ 'form.addStep' | t }}</button>
+          <app-step-suggestions [title]="model.title" [description]="model.description" (chosen)="addSuggested($event)" />
         </div>
 
         @if (existing() && existing()!.status === 2) {
@@ -189,6 +191,17 @@ export class TestCaseFormComponent implements OnInit {
 
   protected addStep(): void {
     this.model.steps.push({ action: '', expectedResult: '', testData: '' });
+  }
+
+  /** Adds the steps the user picked from the AI proposals; a step that is still blank (the one a new form starts with) makes room for them. */
+  protected addSuggested(steps: SuggestedStep[]): void {
+    const last = this.model.steps[this.model.steps.length - 1];
+    if (last && !last.sharedStepGroupId && !last.action.trim() && !last.expectedResult.trim() && !last.testData?.trim()) {
+      this.model.steps.pop();
+    }
+    for (const step of steps) {
+      this.model.steps.push({ action: step.action, expectedResult: step.expectedResult, testData: step.testData ?? '' });
+    }
   }
 
   protected removeStep(index: number): void {

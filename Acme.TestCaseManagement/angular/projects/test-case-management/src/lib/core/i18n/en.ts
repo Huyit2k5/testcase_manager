@@ -537,6 +537,20 @@ export const en = {
   'shared.inserted': 'The steps are added.',
   'shared.refreshed': 'The steps are up to date.',
   'shared.detached': 'The group is detached.',
+  'suggest.button': 'Suggest steps with AI',
+  'suggest.title': 'Suggest steps with AI',
+  'suggest.intro': 'Describe the requirement, or paste the user story or acceptance criteria. The model proposes steps; you review them and add the ones you want. Nothing is saved until you save the test case.',
+  'suggest.privacy': 'The text you write here is sent to the AI model your administrator has configured.',
+  'suggest.requirement': 'Requirement',
+  'suggest.count': 'Number of steps',
+  'suggest.chars': '{n} / {max} characters',
+  'suggest.tooShort': 'Write at least 10 characters.',
+  'suggest.generate': 'Generate steps',
+  'suggest.generating': 'Generating...',
+  'suggest.results': 'Proposed steps',
+  'suggest.addSelected': 'Add {count} step(s) to the test case',
+  'suggest.pick': 'Add step {n}',
+  'suggest.added': '{count} step(s) added. Review them, then save the test case.',
 } as const;
 
 export type MessageKey = keyof typeof en;

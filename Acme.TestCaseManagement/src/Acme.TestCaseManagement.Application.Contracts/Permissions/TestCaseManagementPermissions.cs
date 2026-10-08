@@ -13,6 +13,9 @@ public static class TestCaseManagementPermissions
         public const string Update = Default + ".Update";
         public const string Delete = Default + ".Delete";
         public const string Approve = Default + ".Approve";
+
+        /// <summary>Asking the configured AI model to propose steps from a requirement text. What is sent leaves the application.</summary>
+        public const string SuggestSteps = Default + ".SuggestSteps";
     }
 
     public static class TestSuites

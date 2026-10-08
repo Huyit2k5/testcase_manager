@@ -39,7 +39,8 @@ public class HostDataSeedContributor : IDataSeedContributor, ITransientDependenc
     private static readonly string[] TesterPermissions =
     {
         TestCaseManagementPermissions.TestCases.Default, TestCaseManagementPermissions.TestCases.Create,
-        TestCaseManagementPermissions.TestCases.Update, TestCaseManagementPermissions.TestSuites.Default,
+        TestCaseManagementPermissions.TestCases.Update, TestCaseManagementPermissions.TestCases.SuggestSteps,
+        TestCaseManagementPermissions.TestSuites.Default,
         TestCaseManagementPermissions.TestPlans.Default, TestCaseManagementPermissions.TestRuns.Default,
         TestCaseManagementPermissions.TestRuns.Execute, TestCaseManagementPermissions.Requirements.Default,
         TestCaseManagementPermissions.QualityGates.Default, TestCaseManagementPermissions.SignOff.Default,
