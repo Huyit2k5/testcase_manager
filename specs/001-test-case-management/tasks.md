@@ -268,3 +268,13 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 - [x] T113 Fix what MySQL showed (two tests that assumed SQLite's case sensitivity and time precision); all suites pass on MySQL 8.4 and on SQLite.
 - [x] T114 `Scale_Tests`: 1,000 to 10,000 test cases with 100,000 run items; the times of the dashboard, the flaky list, the gate and the lists; what the time is spent on.
 - [x] T115 Document the way to run on MySQL, the figures and what would improve them (plan.md 4.17, README).
+
+---
+
+## Phase 19: Assigning testers in the run page
+
+**Goal**: Use what the back end already had (the assignee of a run item) in the screens, without giving the module a user table of its own.
+
+- [x] T116 `TCM_USER_DIRECTORY`: the contract with which a host says who can be assigned; the default (nobody), the ABP adapter (lookup, then the Identity list) and the sample host's `GET /api/host/users`.
+- [x] T117 Run page: Tester column with a select for who manages plans, filter by tester with the done/total of each person, assignee when adding test cases, a refused change put back.
+- [x] T118 Tests (9 unit, 2 HTTP) and a trial in the ABP sample application; document the contract and the permission found there (plan.md 4.18, README).

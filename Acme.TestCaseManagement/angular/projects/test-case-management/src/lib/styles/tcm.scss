@@ -157,6 +157,10 @@
   .files .info { flex: 1; min-width: 0; overflow-wrap: anywhere; }
   .thumb { width: 56px; height: 42px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); flex: none; }
   .thumb.kind { display: grid; place-items: center; font-size: .7rem; font-weight: 700; color: var(--muted); }
+  .thumb-button { border: 0; background: none; padding: 0; cursor: zoom-in; flex: none; line-height: 0; }
+  .preview { max-height: 70vh; overflow: auto; text-align: center; }
+  .preview img { max-width: 100%; height: auto; border-radius: 6px; }
+  .preview pre { text-align: left; margin: 0; padding: 12px; background: var(--surface-2, #f1f5f9); border: 1px solid var(--border); border-radius: 8px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: .82rem; }
   button.link { background: none; border: 0; padding: 0; color: var(--primary); cursor: pointer; font: inherit; text-align: left; text-decoration: underline; }
 
   .chips { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }

@@ -1058,6 +1058,32 @@ more than 15 minutes of CPU before it was stopped. Tools and imports that insert
 **Not covered.** The Pomelo provider; MySQL 5.7 or MariaDB (only 8.4 was run); a migration made with `dotnet ef` for a MySQL DbContext (the schema was created from the model); more than one
 server node; the dashboard queries rewritten as aggregates.
 
+### 4.18. Phase 19: assigning testers in the run page
+
+The back end could already assign a person to each item of a run (`AssignedUserId`, `PUT /runs/{id}/items/{itemId}/assignee`, and an assignee when test cases are added) and
+required `TestPlans.Manage` for it, but no screen used it. The run page now does.
+
+**What the page does.** The table of a run has a *Tester* column. Who holds `TestPlans.Manage` sees a select per item on a run that is not completed (a completed run
+shows the name only); a person who may only execute sees the name. The dialog that adds test cases offers "Assign the new test cases to". Above the table a filter shows
+*All testers*, *My tests*, *Not assigned* or one person, each with how many of their items are done out of how many they have (`Ann Lee (3/5)`). A failed assignment
+puts the select back to what the server has. Anyone may still execute an item that is assigned to someone else: the assignment says who is expected to, not who may.
+
+**The users belong to the host.** The module has no user table, so the host provides the list through a new contract, `TCM_USER_DIRECTORY` (`list(): Observable<{ id, userName, displayName }[]>`).
+The default knows nobody: the assignment, the filter and the dialog's select are then hidden and an assigned person shows as "Assigned". A directory that fails (for example no
+permission to list users) is treated the same way, silently.
+- *Standalone app:* the sample host has a small `GET /api/host/users` (signed-in users, the active ones, at most 100).
+- *ABP application:* `provideTestCaseManagementForAbp()` registers an adapter that reads ABP's user lookup and, when that is refused, the Identity user list.
+  Found while trying it: the lookup has a permission of its own (`AbpIdentity.UserLookup`) that a standard ABP application does not define, so even `admin` gets a 403
+  from it; the fallback needs `AbpIdentity.Users`. A role that assigns testers but holds neither sees no assignment. A host that wants it for such roles provides
+  its own `TCM_USER_DIRECTORY` (an endpoint of its own that lists the people of the project).
+
+**Tests.** 9 unit tests of the page (a select per item and the request it sends, clearing, who may not assign, a completed run, no directory, a failing directory, the three filters and
+the counts, the dialog, a refused change), 2 HTTP tests of the sample host's list. Tried in the browser in the ABP sample application: two users made through ABP's API, assigned
+from the run page, filtered.
+
+**Not done.** A notification to the person who is assigned; a "my work" page across runs (the filter is per run); limiting execution to the assignee; assigning many items at once
+from the table (the dialog assigns the test cases it adds); more than 100 people in the list (it would need a search box).
+
 ## 5. Security, RBAC & Permissions
 
 Defined in `TestCaseManagementPermissions`:

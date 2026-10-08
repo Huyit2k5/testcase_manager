@@ -1,10 +1,10 @@
-import { HTTP_INTERCEPTORS, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, HttpClient, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http';
 import { EnvironmentInjector, EnvironmentProviders, Injectable, computed, inject, makeEnvironmentProviders, provideAppInitializer, runInInjectionContext } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ConfigStateService, EnvironmentService, PermissionService, RoutesService, SessionStateService, eLayoutType } from '@abp/ng.core';
 import { ToasterService } from '@abp/ng.theme.shared';
-import { Observable } from 'rxjs';
-import { AuthService, TCM_API_URL, TCM_BASE_PATH, TCM_LANGUAGE, TCM_MENU, TCM_NOTIFIER, TcmUser, errorInterceptor } from 'test-case-management';
+import { Observable, catchError, map } from 'rxjs';
+import { AuthService, TCM_API_URL, TCM_BASE_PATH, TCM_LANGUAGE, TCM_MENU, TCM_NOTIFIER, TCM_USER_DIRECTORY, TcmDirectoryUser, TcmUser, TcmUserDirectory, errorInterceptor } from 'test-case-management';
 
 /** Where the module is mounted in the ABP application's router (see the route in app.routes.ts). */
 export const TCM_ABP_BASE_PATH = '/test-case-management';
@@ -44,6 +44,28 @@ export class TcmErrorInterceptor implements HttpInterceptor {
 }
 
 /**
+ * The people a test can be assigned to, from ABP's own APIs (the first 100 users by name): the user lookup, and when the
+ * caller may not use it (it has a permission of its own, "AbpIdentity.UserLookup", that a standard application does not
+ * define or grant) the list of Identity users, which needs "AbpIdentity.Users". For someone who holds neither the list is
+ * empty, and the module hides the assignment.
+ */
+export function abpUserDirectory(): TcmUserDirectory {
+  const http = inject(HttpClient);
+  const api = inject(EnvironmentService).getApiUrl(undefined).replace(/\/+$/, '');
+  type Person = { id: string; userName: string; name?: string | null; surname?: string | null; isActive?: boolean };
+  const params = { maxResultCount: 100, sorting: 'userName' };
+  const people = (items: Person[]): TcmDirectoryUser[] => items
+    .filter(u => u.isActive !== false)
+    .map(u => ({ id: u.id, userName: u.userName, displayName: [u.name, u.surname].filter(Boolean).join(' ').trim() || u.userName }));
+  return {
+    list: () => http.get<{ items: Person[] }>(`${api}/api/identity/users/lookup/search`, { params }).pipe(
+      map(result => people(result.items)),
+      catchError(() => http.get<{ items: Person[] }>(`${api}/api/identity/users`, { params }).pipe(map(result => people(result.items)))),
+    ),
+  };
+}
+
+/**
  * Connects the module to an ABP Angular application: its sign-in and permissions, its language switch, its toasts and
  * the address of its API. Add it to the application config, next to provideAbpCore().
  */
@@ -53,6 +75,7 @@ export function provideTestCaseManagementForAbp(): EnvironmentProviders {
     { provide: HTTP_INTERCEPTORS, useClass: TcmErrorInterceptor, multi: true },
     { provide: TCM_API_URL, useFactory: () => inject(EnvironmentService).getApiUrl(undefined).replace(/\/+$/, '') },
     { provide: TCM_BASE_PATH, useValue: TCM_ABP_BASE_PATH },
+    { provide: TCM_USER_DIRECTORY, useFactory: abpUserDirectory },
     {
       provide: TCM_LANGUAGE,
       useFactory: () => {

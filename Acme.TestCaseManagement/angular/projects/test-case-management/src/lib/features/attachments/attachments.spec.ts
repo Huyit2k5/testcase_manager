@@ -150,4 +150,46 @@ describe('AttachmentsComponent', () => {
     expect(created.length).toBe(1);
     expect(revoked).toEqual(created);
   });
+
+  type Preview = { file: Attachment; kind: string; url: string; text: string; cut: boolean } | null;
+
+  it('shows an image in a dialog from the file it already downloaded for the thumbnail, without fetching it again', () => {
+    start([file({ id: 'img' })]);
+    http.expectOne('/api/test-case-management/attachments/img/content').flush(new Blob(['x']));
+
+    call('open', file({ id: 'img' }));
+
+    http.expectNone('/api/test-case-management/attachments/img/content');
+    expect(read<Preview>('preview')).toMatchObject({ kind: 'image', url: 'blob:thumb' });
+    call('closePreview');
+    expect(read<Preview>('preview')).toBeNull();
+  });
+
+  it('shows the text of a log, and says when only the beginning is shown', () => {
+    const log = file({ id: 'log', fileName: 'console.log', contentType: 'application/octet-stream' });
+    start([log]);
+    call('open', log);
+    http.expectOne('/api/test-case-management/attachments/log/content').flush(new Blob(['line 1 line 2']));
+
+    return vi.waitFor(() => expect(read<Preview>('preview')).toMatchObject({ kind: 'text', text: 'line 1 line 2', cut: false }));
+  });
+
+  it('does not show a file of another type: it offers the download instead of an empty dialog', () => {
+    const zip = file({ id: 'zip', fileName: 'dump.zip', contentType: 'application/zip' });
+    start([zip]);
+    call('open', zip);
+    // The download is asked for; nothing opens.
+    http.expectOne('/api/test-case-management/attachments/zip/content');
+    expect(read<Preview>('preview')).toBeNull();
+  });
+
+  it('ignores a file that arrives after the dialog was closed', () => {
+    const log = file({ id: 'late', fileName: 'late.txt', contentType: 'text/plain' });
+    start([log]);
+    call('open', log);
+    call('closePreview');
+    http.expectOne('/api/test-case-management/attachments/late/content').flush(new Blob(['late']));
+
+    return new Promise<void>(resolve => setTimeout(() => { expect(read<Preview>('preview')).toBeNull(); resolve(); }, 20));
+  });
 });

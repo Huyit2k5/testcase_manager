@@ -1,4 +1,4 @@
-import { Component, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -9,6 +9,7 @@ import { ToastService } from '../../core/core';
 import { TCM_BASE_PATH } from '../../core/host';
 import { FormatDatePipe, I18nService, TranslatePipe } from '../../core/i18n/i18n';
 import { badge } from '../../core/ui';
+import { UserNames } from '../../core/users';
 import { AddDefect, DefectLink, TestExecution, TestRun, TestRunItem } from '../../proxy/dtos';
 import { AttachmentOwnerType, RunStatus, SeverityLevel, TestResultStatus, TransferFormat, enumOptions } from '../../proxy/enums';
 import { TestRunService } from '../../proxy/services';
@@ -33,6 +34,7 @@ export class RunDetailComponent {
   private readonly transfer = inject(TransferService);
   private readonly i18n = inject(I18nService);
   protected readonly auth = inject(AuthService);
+  protected readonly users = inject(UserNames);
   protected readonly perm = Permissions;
 
   /** Bound from the route parameter :id. */
@@ -47,7 +49,9 @@ export class RunDetailComponent {
   private loadRequest = 0;
   protected readonly executeForm = signal<ExecuteForm | null>(null);
   protected readonly history = signal<{ item: TestRunItem; attempts: TestExecution[] } | null>(null);
-  protected readonly addForm = signal<{ testCaseIds: string[] } | null>(null);
+  protected readonly addForm = signal<{ testCaseIds: string[]; assignedUserId: string } | null>(null);
+  /** Which items to list: 'all', 'me', 'none' (nobody assigned) or the id of a user. */
+  protected readonly testerFilter = signal('all');
   protected readonly importOpen = signal(false);
   protected readonly formats = TransferFormat;
 
@@ -60,8 +64,53 @@ export class RunDetailComponent {
   protected readonly resultOptions = enumOptions(TestResultStatus).filter(o => o.value !== TestResultStatus.Untested);
   protected readonly severityOptions = enumOptions(SeverityLevel);
 
+  /** The items that the tester filter lets through. */
+  protected readonly visibleItems = computed(() => {
+    const items = this.run()?.items ?? [];
+    const filter = this.testerFilter();
+    const me = this.auth.user()?.userId;
+    return items.filter(i => filter === 'all' || (filter === 'me' ? !!me && i.assignedUserId === me : filter === 'none' ? !i.assignedUserId : i.assignedUserId === filter));
+  });
+
+  /** For each person with work in the run: how many of their items are done and how many there are. */
+  protected readonly workload = computed(() => {
+    const byUser = new Map<string, { id: string; done: number; total: number }>();
+    for (const item of this.run()?.items ?? []) {
+      if (!item.assignedUserId) { continue; }
+      const entry = byUser.get(item.assignedUserId) ?? { id: item.assignedUserId, done: 0, total: 0 };
+      entry.total++;
+      if (item.currentStatus !== TestResultStatus.Untested) { entry.done++; }
+      byUser.set(item.assignedUserId, entry);
+    }
+    return [...byUser.values()].map(e => ({ ...e, name: this.users.nameOf(e.id) ?? this.i18n.t('run.unknownUser') })).sort((a, b) => a.name.localeCompare(b.name));
+  });
+
   constructor() {
+    this.users.load();
     effect(() => this.load(this.id()));
+  }
+
+  /** The assignment can be changed by who manages plans, on a run that is not completed, when the host can list its users. */
+  protected canAssign(run: TestRun): boolean { return this.isOpen(run) && this.auth.can(Permissions.TestPlans.Manage) && this.users.available(); }
+
+  protected testerName(item: TestRunItem): string {
+    return item.assignedUserId ? this.users.nameOf(item.assignedUserId) ?? this.i18n.t('run.unknownUser') : '';
+  }
+
+  protected assign(item: TestRunItem, userId: string): void {
+    const run = this.run();
+    if (!run || this.busy()) { return; }
+    this.busy.set(true);
+    this.service.assignTester(run.id, item.id, userId || null).subscribe({
+      next: updated => {
+        this.busy.set(false);
+        if (this.run()?.id === updated.id) { this.run.set(updated); }
+        const key = userId ? 'run.assigned' : 'run.unassignedDone';
+        this.toast.success(this.i18n.t(key, { code: item.testCaseCode ?? '', name: this.users.nameOf(userId) ?? '' }));
+      },
+      // The select shows the new choice; put it back to what the server has.
+      error: () => { this.busy.set(false); this.run.update(r => (r ? { ...r } : r)); },
+    });
   }
 
   protected label(type: object, value: number): string { return this.i18n.enumText(type, value); }
@@ -185,7 +234,7 @@ export class RunDetailComponent {
   protected addItems(): void {
     const form = this.addForm();
     if (!form?.testCaseIds.length) { return; }
-    this.service.addItems(this.id(), form.testCaseIds).subscribe(run => {
+    this.service.addItems(this.id(), form.testCaseIds, form.assignedUserId || null).subscribe(run => {
       this.toast.success(this.i18n.t('run.casesAdded'));
       this.addForm.set(null);
       this.run.set(run);

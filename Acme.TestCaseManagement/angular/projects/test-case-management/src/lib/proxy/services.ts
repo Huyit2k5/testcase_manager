@@ -95,8 +95,12 @@ export class TestRunService {
   }
   get(id: string): Observable<TestRun> { return this.http.get<TestRun>(`${this.root}/runs/${id}`); }
   create(input: CreateRun): Observable<TestRun> { return this.http.post<TestRun>(`${this.root}/runs`, input); }
-  addItems(id: string, testCaseIds: string[]): Observable<TestRun> {
-    return this.http.post<TestRun>(`${this.root}/runs/${id}/items`, { testCaseIds });
+  addItems(id: string, testCaseIds: string[], assignedUserId: string | null = null): Observable<TestRun> {
+    return this.http.post<TestRun>(`${this.root}/runs/${id}/items`, { testCaseIds, assignedUserId });
+  }
+  /** Null clears the assignment. */
+  assignTester(runId: string, itemId: string, assignedUserId: string | null): Observable<TestRun> {
+    return this.http.put<TestRun>(`${this.root}/runs/${runId}/items/${itemId}/assignee`, { assignedUserId });
   }
   complete(id: string): Observable<TestRun> { return this.http.post<TestRun>(`${this.root}/runs/${id}/complete`, null); }
   execute(runId: string, itemId: string, input: ExecuteItem): Observable<TestExecution> {

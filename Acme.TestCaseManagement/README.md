@@ -279,6 +279,13 @@ DbContext also needs `DbSet<Attachment>`. Limits are `TestCaseManagementAttachme
 whitelist (images, PDF, text and logs, archives, Office files, short videos; no SVG or HTML). A file follows the permission of what it is attached to:
 `TestCases` / `TestCases.Update` for a test case, `TestRuns` / `TestRuns.Execute` for an attempt. Downloads are always attachments with a fixed content type.
 
+## Assigning testers
+
+A run item can be assigned to a person, from the run page (a *Tester* column, a filter, and a choice when test cases are added). The module has no users of its own, so the host says who can be
+assigned with `TCM_USER_DIRECTORY` (`list(): Observable<{ id, userName, displayName }[]>`). `provideTestCaseManagementForAbp()` registers one over ABP's user lookup, falling back to the Identity user list
+(permission `AbpIdentity.Users`; ABP's `AbpIdentity.UserLookup` is not defined in a standard application). Without a directory, or when it fails, the assignment is hidden and nothing else changes.
+A host whose testers do not hold those permissions provides its own directory.
+
 ## AI step suggestions
 
 In the test case form a person can ask an AI model to propose steps from a requirement text, review them, and add the ones they want. The

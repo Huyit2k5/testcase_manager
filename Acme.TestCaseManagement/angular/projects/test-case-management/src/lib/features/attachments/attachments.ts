@@ -1,5 +1,6 @@
 import { Component, DestroyRef, OnInit, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ModalComponent } from '../../core/modal';
 import { ToastService } from '../../core/core';
 import { FormatDatePipe, I18nService, TranslatePipe } from '../../core/i18n/i18n';
 import { formatSize } from '../../core/ui';
@@ -7,10 +8,13 @@ import { Attachment } from '../../proxy/dtos';
 import { AttachmentService } from '../../proxy/services';
 import { saveFile } from '../../proxy/transfer';
 
+/** How much of a text file the dialog shows. */
+const PREVIEW_CHARS = 200_000;
+
 /** The files of one test case or one execution attempt: upload (button, drop or paste), list, download, delete. */
 @Component({
   selector: 'app-attachments',
-  imports: [FormatDatePipe, TranslatePipe],
+  imports: [FormatDatePipe, TranslatePipe, ModalComponent],
   template: `
     <div class="attachments" [attr.data-test]="'attachments-' + ownerId()">
       @if (canWrite()) {
@@ -28,12 +32,14 @@ import { saveFile } from '../../proxy/transfer';
           @for (file of files(); track file.id) {
             <li>
               @if (thumbs()[file.id]; as url) {
-                <img class="thumb" [src]="url" [alt]="file.fileName" />
+                <button type="button" class="thumb-button" (click)="open(file)" [attr.aria-label]="'att.view' | t: { name: file.fileName }">
+                  <img class="thumb" [src]="url" [alt]="file.fileName" />
+                </button>
               } @else {
                 <span class="thumb kind">{{ extension(file) }}</span>
               }
               <div class="info">
-                <button type="button" class="link" (click)="download(file)">{{ file.fileName }}</button>
+                <button type="button" class="link" (click)="open(file)">{{ file.fileName }}</button>
                 <div class="muted">
                   {{ size(file.size) }} · {{ file.creationTime | fdate: 'short' }}@if (file.description) { · {{ file.description }} }
                 </div>
@@ -48,6 +54,25 @@ import { saveFile } from '../../proxy/transfer';
         <p class="muted">{{ 'att.none' | t }}</p>
       }
     </div>
+
+    @if (preview(); as view) {
+      <app-modal [title]="view.file.fileName" [wide]="true" (closed)="closePreview()">
+        <div class="preview" data-test="attachment-preview">
+          @if (view.kind === 'image') {
+            <img [src]="view.url" [alt]="view.file.fileName" />
+          } @else if (view.kind === 'text') {
+            <pre>{{ view.text }}</pre>
+            @if (view.cut) { <p class="muted">{{ 'att.cut' | t }}</p> }
+          } @else {
+            <p class="muted">{{ 'att.noPreview' | t }}</p>
+          }
+        </div>
+        <ng-container slot="footer">
+          <button type="button" class="btn" (click)="download(view.file)">{{ 'att.download' | t }}</button>
+          <button type="button" class="btn primary" (click)="closePreview()">{{ 'common.close' | t }}</button>
+        </ng-container>
+      </app-modal>
+    }
   `,
 })
 export class AttachmentsComponent implements OnInit {
@@ -63,6 +88,9 @@ export class AttachmentsComponent implements OnInit {
   /** Object URLs of the images, by attachment id; revoked when the panel goes away. */
   protected readonly thumbs = signal<Record<string, string>>({});
   protected readonly over = signal(false);
+  /** The file shown in the dialog: images and text are shown, any other type only offers the download. */
+  protected readonly preview = signal<{ file: Attachment; kind: 'image' | 'text' | 'other'; url: string; text: string; cut: boolean } | null>(null);
+  private previewRequest = 0;
   protected readonly busy = signal(false);
   protected readonly size = formatSize;
   private readonly destroyRef = inject(DestroyRef);
@@ -95,6 +123,43 @@ export class AttachmentsComponent implements OnInit {
       },
       error: () => this.loading.delete(file.id),   // a missing image is shown as its extension
     });
+  }
+
+  /** What the dialog can show of a file: an image, or text (a log, JSON, CSV...). Anything else is downloaded. */
+  private kindOf(file: Attachment): 'image' | 'text' | 'other' {
+    if (file.contentType.startsWith('image/') && file.contentType !== 'image/svg+xml') { return 'image'; }
+    const isText = file.contentType.startsWith('text/') || /json|xml|csv|yaml|log/.test(file.contentType)
+      || /\.(log|txt|json|csv|xml|md|yml|yaml)$/i.test(file.fileName);
+    return isText ? 'text' : 'other';
+  }
+
+  protected open(file: Attachment): void {
+    const kind = this.kindOf(file);
+    if (kind === 'other') { this.download(file); return; }
+    const request = ++this.previewRequest;
+    const done = (view: { kind: 'image' | 'text'; url: string; text: string; cut: boolean }): void => {
+      if (request === this.previewRequest) { this.preview.set({ file, ...view }); }
+    };
+    if (kind === 'image') {
+      // The thumbnail's object URL is the file itself, already downloaded.
+      const url = this.thumbs()[file.id];
+      if (url) { done({ kind, url, text: '', cut: false }); return; }
+    }
+    this.service.content(file.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async blob => {
+      if (kind === 'image') {
+        const url = URL.createObjectURL(blob);
+        this.thumbs.update(all => ({ ...all, [file.id]: url }));
+        done({ kind, url, text: '', cut: false });
+      } else {
+        const text = await blob.text();
+        done({ kind, url: '', text: text.slice(0, PREVIEW_CHARS), cut: text.length > PREVIEW_CHARS });
+      }
+    });
+  }
+
+  protected closePreview(): void {
+    this.previewRequest++;
+    this.preview.set(null);
   }
 
   protected extension(file: Attachment): string {

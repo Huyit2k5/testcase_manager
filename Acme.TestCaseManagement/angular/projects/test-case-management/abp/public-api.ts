@@ -1,1 +1,1 @@
-export { AbpAuthAdapter, TCM_ABP_BASE_PATH, TcmErrorInterceptor, provideTestCaseManagementForAbp, provideTestCaseManagementMenu } from './adapter';
+export { AbpAuthAdapter, TCM_ABP_BASE_PATH, abpUserDirectory, TcmErrorInterceptor, provideTestCaseManagementForAbp, provideTestCaseManagementMenu } from './adapter';
