@@ -1,5 +1,5 @@
 <div class="page">
-  <p><a [routerLink]="base + '/runs'">&larr; {{ 'nav.runs' | t }}</a></p>
+  <a class="back-link" [routerLink]="base + '/runs'"><span aria-hidden="true">&larr;</span> {{ 'nav.runs' | t }}</a>
 
   @if (run(); as r) {
     <div class="page-head">

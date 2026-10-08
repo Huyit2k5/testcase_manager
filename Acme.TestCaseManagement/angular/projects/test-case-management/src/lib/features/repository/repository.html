@@ -32,7 +32,7 @@
 
     <section>
       <div class="card">
-        <form class="row" (ngSubmit)="applyFilters()">
+        <form class="row filters" (ngSubmit)="applyFilters()">
           <input class="grow" name="search" [(ngModel)]="search" [placeholder]="'repo.searchPlaceholder' | t" [attr.aria-label]="'common.search' | t" />
           <select name="priority" [(ngModel)]="priority" (ngModelChange)="applyFilters()" [attr.aria-label]="'common.priority' | t" style="width: auto">
             <option value="">{{ 'repo.anyPriority' | t }}</option>

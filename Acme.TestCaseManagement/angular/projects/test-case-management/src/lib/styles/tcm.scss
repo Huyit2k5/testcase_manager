@@ -24,15 +24,21 @@
   h3 { font-size: .95rem; margin: 16px 0 8px; }
   a { color: var(--primary); }
   .muted { color: var(--muted); }
+  .back-link {
+    display: inline-flex; align-items: center; gap: 6px; margin: 0 0 8px -10px; padding: 4px 12px 4px 10px;
+    border-radius: 999px; color: var(--muted); font-size: .85rem; font-weight: 600; text-decoration: none;
+  }
+  .back-link:hover, .back-link:focus-visible { background: var(--muted-bg); color: var(--primary); text-decoration: none; }
   .mono { font-family: ui-monospace, Consolas, monospace; font-size: .85em; }
   .right { text-align: right; }
   .nowrap { white-space: nowrap; }
 
   /* ---- layout */
-  .page { max-width: 1280px; margin: 0 auto; padding: 20px 16px 48px; }
+  .page { max-width: 1280px; margin: 0 auto; padding: 16px 16px 40px; }
   .page-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
   .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .grow { flex: 1; }
+  .grow { flex: 1 1 120px; min-width: 0; }
+  .row > input.grow { width: auto; }
   .split { display: grid; grid-template-columns: 280px 1fr; gap: 16px; align-items: start; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
@@ -43,7 +49,7 @@
   .card > h2:first-child { margin-top: 0; }
 
   .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 16px; }
-  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; }
   .stat b { display: block; font-size: 1.5rem; line-height: 1.2; }
   .stat span { color: var(--muted); font-size: .8rem; }
 
@@ -63,6 +69,18 @@
     background: var(--surface); color: var(--text); font: inherit;
   }
   input:focus, select:focus, textarea:focus, button:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+  select:not([multiple]), input:not([type=checkbox]):not([type=radio]):not([type=file]) {
+    padding: 7px 10px;
+  }
+  select:not([multiple]) {
+    appearance: none; -webkit-appearance: none; padding-right: 30px; cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%2364748b' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center;
+  }
+  /* Controls that sit side by side (a filter bar) are one height, whatever the host's theme gives its inputs and buttons. */
+  .row > input, .row > select, .row > .btn:not(.sm), form.row > .btn { height: 36px; }
+  .row > select, .row > .btn { flex: 0 0 auto; }
+  .row.filters > input.grow { flex-basis: 100%; }
   input[type=checkbox] { width: auto; }
   textarea { min-height: 64px; resize: vertical; }
   .field { margin-bottom: 12px; }
@@ -80,6 +98,10 @@
   .btn.primary:hover:not(:disabled) { filter: brightness(1.08); background: var(--primary); }
   .btn.danger { color: var(--bad); }
   .btn.sm { padding: 3px 9px; font-size: .8rem; }
+  /* Row actions in a table: quiet until the pointer is on the row, so a column of them does not read as a column of buttons. */
+  td .btn.sm { border-color: transparent; background: transparent; color: var(--primary); }
+  td .btn.sm.danger { color: var(--bad); }
+  tr:hover td .btn.sm, td .btn.sm:focus-visible { border-color: var(--border); background: var(--surface); }
   .btn:disabled { opacity: .5; cursor: not-allowed; }
   .icon-btn { border: 0; background: transparent; color: var(--muted); font-size: 1.4rem; line-height: 1; padding: 0 6px; }
 
