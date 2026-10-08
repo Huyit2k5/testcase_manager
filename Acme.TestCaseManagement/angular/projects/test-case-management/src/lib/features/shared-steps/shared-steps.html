@@ -46,7 +46,7 @@
 </div>
 
 @if (form(); as f) {
-  <app-modal [title]="(f.id ? 'shared.editTitle' : 'shared.newGroup') | t" [wide]="true" (closed)="form.set(null)">
+  <app-modal [side]="true" [title]="(f.id ? 'shared.editTitle' : 'shared.newGroup') | t" [wide]="true" (closed)="form.set(null)">
     <form id="groupForm" (ngSubmit)="save()">
       <div class="field">
         <label for="sg-name">{{ 'common.name' | t }}</label>
@@ -87,7 +87,7 @@
 }
 
 @if (usage(); as u) {
-  <app-modal [title]="'shared.usageTitle' | t: { name: u.group.name }" [wide]="true" (closed)="usage.set(null)">
+  <app-modal [side]="true" [title]="'shared.usageTitle' | t: { name: u.group.name }" [wide]="true" (closed)="usage.set(null)">
     <p class="muted">{{ 'shared.usageNote' | t: { revision: u.group.revision } }}</p>
     @if (u.items.length) {
       <table>

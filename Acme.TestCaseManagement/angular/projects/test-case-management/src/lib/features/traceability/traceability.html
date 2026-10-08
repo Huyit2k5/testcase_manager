@@ -82,7 +82,7 @@
 </div>
 
 @if (form(); as f) {
-  <app-modal [title]="(f.id ? 'rtm.editRequirement' : 'rtm.newRequirementTitle') | t" (closed)="form.set(null)">
+  <app-modal [side]="true" [title]="(f.id ? 'rtm.editRequirement' : 'rtm.newRequirementTitle') | t" (closed)="form.set(null)">
     <form id="req-form" (ngSubmit)="saveRequirement()">
       <div class="form-grid">
         <div class="field"><label for="rq-code">{{ 'common.code' | t }}</label><input id="rq-code" name="code" required maxlength="64" [(ngModel)]="f.code" placeholder="REQ-PAY-01" /></div>
@@ -106,7 +106,7 @@
 }
 
 @if (linkForm(); as l) {
-  <app-modal [title]="'rtm.linkTitle' | t: { code: l.row.code }" [wide]="true" (closed)="linkForm.set(null)">
+  <app-modal [side]="true" [title]="'rtm.linkTitle' | t: { code: l.row.code }" [wide]="true" (closed)="linkForm.set(null)">
     <app-case-picker [onlyApproved]="false" [exclude]="linkedIds(l.row)" [(selectedIds)]="l.testCaseIds" />
     <ng-container slot="footer">
       <button type="button" class="btn" (click)="linkForm.set(null)">{{ 'common.cancel' | t }}</button>

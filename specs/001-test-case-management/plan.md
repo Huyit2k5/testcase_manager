@@ -1119,6 +1119,18 @@ fresh sample database, because the lists page at 20 rows and old runs push the n
 **Not done.** The delete button of a suite and of a test case (inside the detail panel, next to words), the delete of an attachment and the "x" that unlinks a defect or a test case are still words or a cross; a "next states" menu
 for a run; a run cannot be deleted at all (no endpoint).
 
+### 4.20. Phase 21: details in a drawer
+
+A suggestion of the person who tries the screens: the details of a record open in a panel that slides in from the right edge, about half of the window, with the list still in view behind it, instead of a dialog in the middle.
+
+- `ModalComponent` has a `side` mode (the same component, so Escape, the focus trap, the stack of open dialogs and the return of the focus are the same): full height at the right edge, a slide-in of a fifth of a second (none when the
+  system asks for reduced motion), the backdrop dimmed like a dialog's, full width under 640 px.
+- *Resizable.* A handle on the left edge: drag it, or use the arrow keys (left widens, right narrows, 32 px a step) with the handle focused. The width is one choice for all the drawers, between 440 px and 92% of the window, kept in the browser
+  (`tcm.drawerWidth`) and used by the next drawer; it starts at half of the window (at most 760 px).
+- *Which screens.* The detail of a test case and its form; the attempts of a run item and the form that records a result; a requirement and the choice of its test cases; a group of shared steps and where it is used; a sign-off report.
+  Questions, the small forms (a suite, a plan, a key), the pickers of a new run, the import dialogs, the preview of a file and the AI proposals stay dialogs in the middle (they open over a drawer when they need to).
+- Tests of the drawer (the mode, the arrows, the limits, the memory, Escape).
+
 ## 5. Security, RBAC & Permissions
 
 Defined in `TestCaseManagementPermissions`:

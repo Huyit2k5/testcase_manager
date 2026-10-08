@@ -19,7 +19,7 @@ import { ConfirmService } from '../../core/confirm';
   selector: 'app-test-case-detail',
   imports: [FormsModule, ModalComponent, FormatDatePipe, TranslatePipe, AttachmentsComponent, TagInputComponent],
   template: `
-    <app-modal [title]="testCase().code + ' - ' + testCase().title" [wide]="true" (closed)="closed.emit()">
+    <app-modal [side]="true" [title]="testCase().code + ' - ' + testCase().title" [wide]="true" (closed)="closed.emit()">
       <div class="row" style="margin-bottom:12px">
         <span class="badge" [class]="badgeOf('case', testCase().status)">{{ label(statuses, testCase().status) }}</span>
         <span class="badge" [class]="badgeOf('priority', testCase().priority)">{{ 'detail.priorityBadge' | t: { value: label(priorities, testCase().priority) } }}</span>

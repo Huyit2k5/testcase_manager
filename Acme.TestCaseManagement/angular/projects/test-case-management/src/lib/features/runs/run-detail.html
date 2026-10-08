@@ -101,7 +101,7 @@
 }
 
 @if (executeForm(); as form) {
-  <app-modal [title]="'run.executeTitle' | t: { code: form.item.testCaseCode }" [wide]="true" (closed)="executeForm.set(null)">
+  <app-modal [side]="true" [title]="'run.executeTitle' | t: { code: form.item.testCaseCode }" [wide]="true" (closed)="executeForm.set(null)">
     <p class="muted">{{ 'run.executeIntro' | t: { title: form.item.testCaseTitle, version: form.item.versionNumber, user: auth.user()?.userName } }}</p>
     <form id="exec-form" (ngSubmit)="execute()">
       <div class="form-grid">
@@ -146,7 +146,7 @@
 }
 
 @if (history(); as h) {
-  <app-modal [title]="'run.attemptsOf' | t: { code: h.item.testCaseCode }" [wide]="true" (closed)="history.set(null)">
+  <app-modal [side]="true" [title]="'run.attemptsOf' | t: { code: h.item.testCaseCode }" [wide]="true" (closed)="history.set(null)">
     @for (attempt of h.attempts; track attempt.id) {
       <div class="card">
         <div class="row" style="justify-content: space-between">

@@ -33,6 +33,7 @@ export const vi: Record<MessageKey, string> = {
   'confirm.ok': 'Đồng ý',
   'confirm.continue': 'Tiếp tục',
   'run.linkDefectTitle': 'Liên kết lỗi',
+  'drawer.resize': 'Kéo để đổi độ rộng',
   'common.add': 'Thêm',
   'common.remove': 'Gỡ',
   'common.loading': 'Đang tải...',

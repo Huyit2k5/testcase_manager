@@ -1,2 +1,7 @@
 ﻿# The sample main application the module is plugged into to test it (generated with `abp new`; see plan.md 4.14).
 sandbox/
+
+# Secrets for trying the module with a real service (never commit).
+.env
+.env.*
+!.env.example

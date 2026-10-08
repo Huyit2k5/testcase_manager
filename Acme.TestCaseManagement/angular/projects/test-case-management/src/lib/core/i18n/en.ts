@@ -31,6 +31,7 @@ export const en = {
   'confirm.ok': 'OK',
   'confirm.continue': 'Continue',
   'run.linkDefectTitle': 'Link a defect',
+  'drawer.resize': 'Drag to resize the panel',
   'common.add': 'Add',
   'common.remove': 'Remove',
   'common.loading': 'Loading...',

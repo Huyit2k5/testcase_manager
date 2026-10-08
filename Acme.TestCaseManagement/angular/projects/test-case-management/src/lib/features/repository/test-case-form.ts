@@ -14,7 +14,7 @@ import { SuiteOption } from './suite-options';
   selector: 'app-test-case-form',
   imports: [FormsModule, TranslatePipe, ModalComponent, TagInputComponent, StepSuggestionsComponent],
   template: `
-    <app-modal [title]="existing() ? ('form.editCase' | t: { code: existing()!.code }) : ('form.newCase' | t)" [wide]="true" (closed)="closed.emit()">
+    <app-modal [side]="true" [title]="existing() ? ('form.editCase' | t: { code: existing()!.code }) : ('form.newCase' | t)" [wide]="true" (closed)="closed.emit()">
       <form id="tc-form" (ngSubmit)="save()">
         <div class="form-grid">
           <div class="field">

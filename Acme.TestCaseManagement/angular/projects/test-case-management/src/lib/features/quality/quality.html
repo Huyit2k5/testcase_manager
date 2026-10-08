@@ -145,7 +145,7 @@
 }
 
 @if (selectedReport(); as r) {
-  <app-modal [title]="r.title" [wide]="true" (closed)="selectedReport.set(null)">
+  <app-modal [side]="true" [title]="r.title" [wide]="true" (closed)="selectedReport.set(null)">
     <div class="row" style="margin-bottom: 12px">
       <span class="badge" [class]="badgeOf('signoff', r.status)">{{ label(statusEnum, r.status) }}</span>
       <span class="badge" [class]="r.integrityVerified ? 'ok' : 'bad'">{{ (r.integrityVerified ? 'qg.integrityOk' : 'qg.integrityFail') | t }}</span>

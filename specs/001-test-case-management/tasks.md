@@ -290,3 +290,12 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 - [x] T121 `ConfirmService` and the question dialog of the shell instead of `confirm()` and `prompt()` in eleven places; fallback without a shell; tests; a preview dialog for attachments.
 - [x] T122 `Idempotency-Key` header read by the endpoint of the pipeline, with a test; found by sending results to the sample application as a pipeline would.
 - [x] T123 Run the whole verification again after these changes: all back-end suites, the Angular tests and build, and the browser scripts of the standalone app and of the ABP application. It found a failing production build (style budget), a menu that closed on scroll and pages wider than a phone; fixed (plan.md 4.19).
+
+---
+
+## Phase 21: Details in a drawer
+
+**Goal**: Open the details of a record in a resizable panel at the right edge, with the list dimmed behind it.
+
+- [x] T124 `side` mode of `ModalComponent` with a resize handle (mouse and keyboard), a width kept for all drawers, full width on a phone; tests.
+- [x] T125 Use it for the detail and form of a test case, the attempts and the result of a run item, requirements, shared steps and sign-off reports (plan.md 4.20).
