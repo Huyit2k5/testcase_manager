@@ -278,3 +278,15 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 - [x] T116 `TCM_USER_DIRECTORY`: the contract with which a host says who can be assigned; the default (nobody), the ABP adapter (lookup, then the Identity list) and the sample host's `GET /api/host/users`.
 - [x] T117 Run page: Tester column with a select for who manages plans, filter by tester with the done/total of each person, assignee when adding test cases, a refused change put back.
 - [x] T118 Tests (9 unit, 2 HTTP) and a trial in the ABP sample application; document the contract and the permission found there (plan.md 4.18, README).
+
+---
+
+## Phase 20: Polishing the screens and a bug in the idempotency key
+
+**Goal**: Remove what looked unfinished in the screens, and fix what a pipeline demo showed.
+
+- [x] T119 Filter bar and fields (one height, a select with its own arrow, the host theme's reset outweighed), quiet row actions, the back link of the run page.
+- [x] T120 Icons for edit and delete in four tables, `app-row-menu` for the next states of a plan; tests (naming, choice, Escape, a click elsewhere).
+- [x] T121 `ConfirmService` and the question dialog of the shell instead of `confirm()` and `prompt()` in eleven places; fallback without a shell; tests; a preview dialog for attachments.
+- [x] T122 `Idempotency-Key` header read by the endpoint of the pipeline, with a test; found by sending results to the sample application as a pipeline would.
+- [x] T123 Run the whole verification again after these changes: all back-end suites, the Angular tests and build, and the browser scripts of the standalone app and of the ABP application. It found a failing production build (style budget), a menu that closed on scroll and pages wider than a phone; fixed (plan.md 4.19).

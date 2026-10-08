@@ -17,7 +17,7 @@ export const appConfig: ApplicationConfig = {
       provide: TCM_USER_DIRECTORY,
       useFactory: () => {
         const http = inject(HttpClient);
-        return { list: () => http.get<{ id: string; userName: string; displayName: string }[]>('/api/host/users')) };
+        return { list: () => http.get<{ id: string; userName: string; displayName: string }[]>('/api/host/users') };
       },
     },
     provideAppInitializer(() => inject(LocalAuthService).restore()),

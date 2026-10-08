@@ -45,7 +45,10 @@
   @media (max-width: 860px) { .split, .grid-2, .grid-3 { grid-template-columns: 1fr; } }
 
   .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
-  .card.flush { padding: 0; overflow: hidden; }
+  .card.flush { padding: 0; overflow-x: auto; }
+  /* A wide table scrolls inside its card instead of pushing the page wider (a grid item does not shrink below its content unless told to). */
+  .card { overflow-x: auto; }
+  .split > *, .grid-2 > *, .grid-3 > * { min-width: 0; }
   .card > h2:first-child { margin-top: 0; }
 
   .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 16px; }

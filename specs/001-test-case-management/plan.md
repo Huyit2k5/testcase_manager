@@ -1084,6 +1084,41 @@ from the run page, filtered.
 **Not done.** A notification to the person who is assigned; a "my work" page across runs (the filter is per run); limiting execution to the assignee; assigning many items at once
 from the table (the dialog assigns the test cases it adds); more than 100 people in the list (it would need a search box).
 
+### 4.19. Phase 20: polishing the screens, and a bug found with a pipeline demo
+
+Looking at the screens in the ABP sample application (and at what the people who will use them would see) showed a list of small things; they were fixed one after the other, with the unit tests of each.
+
+**Screens**
+- *Filters and fields.* A select looked different from an input and from a button (the host theme resets the padding of a select); every control of a row of filters has the same height, a select has its own arrow, and
+  the search box takes the first line of the filter bar. The padding is set with a selector that the host theme's rule cannot outweigh.
+- *Row actions.* Edit and delete in the tables of plans, requirements, shared steps and quality gates are icons (a pencil and a bin, named for people who do not see them with `aria-label` and `title`); the next states of
+  a plan are one "..." button that opens a menu (`app-row-menu`: placed with fixed coordinates so that the table's rounded clipping cannot cut it, opens upwards near the bottom of the window, closes on a choice,
+  Escape, a click elsewhere, scrolling and resizing). Words stay where the action is the main one of the page (Execute, Retest, History, Link tests).
+- *Questions.* `confirm()` and `prompt()` of the browser are replaced by a dialog of the module (`ConfirmService`, shown by the shell): a warning icon and a red button named after the action for what destroys
+  (delete, revoke, remove, detach), a question icon and a blue button for the rest, a field with a disabled "Add" until something is typed for the issue key. It opens over another dialog (the stack of dialogs answers
+  Escape to the top one), a second question cancels the first, a page that goes away settles the open question. Where no shell is showing, the service falls back to the browser's boxes, so a question is never left unasked.
+- *Attachments* open in a dialog: images from the file already downloaded for the thumbnail, text files (log, JSON, CSV...) as text (the first 200,000 characters), anything else is downloaded as before. SVG is not shown inline
+  (it can carry script).
+- *Back link* of the run page is a quiet pill with an arrow, not an underlined link; the page head and the number cards are a little tighter.
+
+**A bug found by running a pipeline against the sample application.** The documentation, the sample on the Automation page and the README say to send the idempotency key in the `Idempotency-Key` header, but the
+endpoint read only the `idempotencyKey` field of the body: a pipeline that did what it was told got no protection, and the same request sent twice recorded two runs. The controller now reads the header when the body has no key
+(the body wins when both are there). A test sends the same request twice with the header and sees one run.
+
+**Verification after these changes (T123).** Everything was run again and found three more things, all fixed:
+- *The production build of the standalone app failed*: the styles of the module (12 kB) were above the 8 kB error budget of a component style (the shell loads them), and a mistyped line in `app.config.ts` that the unit tests do not compile.
+  The standalone budget is now 16 kB (warning) and 32 kB (error). The ABP template's own budget is 2 kB (warning) and 100 kB (error): a production build of the ABP sample application passes with a warning only.
+  A host with the stricter default budget must raise `anyComponentStyle` the same way, or add `tcm.scss` to its global `styles`.
+- *The "..." menu closed itself when the browser scrolled to show it* (any scroll closed it). It follows its button now and closes when the button leaves the window.
+- *On a phone (390 px wide) the repository, quality and automation pages were wider than the screen*, pushed by the tables; a wide table now scrolls inside its card and a grid item may shrink. No page is wider than the window at 390 px, and no card
+  shows a scroll bar at 1440 px.
+
+Results: back end 211 + 375 + 82 tests (SQLite); Angular 160 tests; standalone production build; standalone browser script, 47 steps (its steps for the plan's status, the question dialogs and the attachment preview were rewritten for the new screens; the run needs a
+fresh sample database, because the lists page at 20 rows and old runs push the new rows to the second page); three browser scripts of the ABP application (repository and attachments, API keys and permissions, AI suggestions); the ABP production build.
+
+**Not done.** The delete button of a suite and of a test case (inside the detail panel, next to words), the delete of an attachment and the "x" that unlinks a defect or a test case are still words or a cross; a "next states" menu
+for a run; a run cannot be deleted at all (no endpoint).
+
 ## 5. Security, RBAC & Permissions
 
 Defined in `TestCaseManagementPermissions`:
