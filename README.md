@@ -208,6 +208,7 @@ Module đã đủ chức năng để thử trong một ứng dụng ABP thật. 
 
 | Tài liệu | Nội dung |
 |---|---|
+| [`docs/HUONG_DAN_SU_DUNG.md`](docs/HUONG_DAN_SU_DUNG.md) | **Hướng dẫn sử dụng cho cả đội**: khái niệm, sơ đồ, bài tập thực hành theo vai trò, quy ước, hỏi đáp (tiếng Việt) |
 | [`Acme.TestCaseManagement/README.md`](Acme.TestCaseManagement/README.md) | Hướng dẫn kỹ thuật chi tiết: gói, tích hợp, API, quyền, import/export, CI/CD, MySQL, giới hạn (tiếng Anh) |
 | [`BUSINESS_ANALYSIS_TEST_CASE_MANAGEMENT.md`](BUSINESS_ANALYSIS_TEST_CASE_MANAGEMENT.md) | Phân tích nghiệp vụ và thiết kế module (tiếng Việt) |
 | [`specs/001-test-case-management/spec.md`](specs/001-test-case-management/spec.md) | Đặc tả: 27 yêu cầu chức năng, kịch bản người dùng |
