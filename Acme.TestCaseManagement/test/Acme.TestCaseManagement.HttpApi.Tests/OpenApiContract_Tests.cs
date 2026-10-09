@@ -307,7 +307,7 @@ public class OpenApiContract_Tests
             ignoreOrder: true);
 
         QueryParameters(document, "TestRun_GetList").ShouldBe(
-            new[] { "ProjectId", "Filter", "TestPlanId", "Status", "Environment", "Sorting", "SkipCount", "MaxResultCount" },
+            new[] { "ProjectId", "Filter", "TestPlanId", "NoPlan", "Status", "Environment", "Sorting", "SkipCount", "MaxResultCount" },
             ignoreOrder: true);
     }
 

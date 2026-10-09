@@ -65,6 +65,52 @@ public class TestRunAppService_Tests : TestCaseManagementApplicationTestBase
     }
 
     [Fact]
+    public async Task A_Plan_Counts_Its_Runs_And_The_Runs_Without_A_Plan_Can_Be_Listed_On_Their_Own()
+    {
+        var plan = await _plans.CreateAsync(new CreateTestPlanDto { Name = "Plan A" });
+        var empty = await _plans.CreateAsync(new CreateTestPlanDto { Name = "Plan B" });
+        foreach (var title in new[] { "A1", "A2" })
+        {
+            await _runs.CreateAsync(new CreateTestRunDto { Title = title, Environment = "Staging", TestPlanId = plan.Id });
+        }
+        await _runs.CreateAsync(new CreateTestRunDto { Title = "Loose", Environment = "UAT" });
+
+        var plans = (await _plans.GetListAsync(new GetTestPlanListInput())).Items;
+        plans.Single(p => p.Id == plan.Id).RunCount.ShouldBe(2);
+        plans.Single(p => p.Id == empty.Id).RunCount.ShouldBe(0);
+        (await _plans.GetAsync(plan.Id)).RunCount.ShouldBe(2);
+        (await _plans.CreateAsync(new CreateTestPlanDto { Name = "Plan C" })).RunCount.ShouldBe(0);
+
+        (await _runs.GetListAsync(new GetTestRunListInput { TestPlanId = plan.Id })).Items.Select(r => r.Title).OrderBy(t => t).ShouldBe(new[] { "A1", "A2" });
+        (await _runs.GetListAsync(new GetTestRunListInput { NoPlan = true })).Items.Select(r => r.Title).ShouldBe(new[] { "Loose" });
+        // Without a plan wins over a plan that is named too.
+        (await _runs.GetListAsync(new GetTestRunListInput { NoPlan = true, TestPlanId = plan.Id })).TotalCount.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task The_List_Of_Runs_Carries_The_Progress_Of_Each_Run_And_The_List_Matches_The_Run()
+    {
+        var first = await CreateRunWithItemsAsync(2);
+        var second = await _runs.CreateAsync(new CreateTestRunDto { Title = "Empty", Environment = "UAT" });
+        await _runs.ExecuteItemAsync(first.Id, first.Items[0].Id, new ExecuteTestItemDto { Status = TestResultStatus.Failed, DurationSeconds = 1 });
+        await _runs.ExecuteItemAsync(first.Id, first.Items[0].Id, new ExecuteTestItemDto { Status = TestResultStatus.Passed, DurationSeconds = 1 });
+        await _runs.ExecuteItemAsync(first.Id, first.Items[1].Id, new ExecuteTestItemDto { Status = TestResultStatus.Failed, DurationSeconds = 1 });
+
+        var listed = (await _runs.GetListAsync(new GetTestRunListInput())).Items;
+
+        var summary = listed.Single(r => r.Id == first.Id).Summary;
+        (summary.TotalItems, summary.ExecutedItems, summary.Passed, summary.Failed, summary.Untested).ShouldBe((2, 2, 1, 1, 0));
+        summary.CompletionPercentage.ShouldBe(100);
+        // The first attempt of one item failed and of the other failed: nothing passed the first time.
+        summary.FirstTimePassRate.ShouldBe(0);
+        var detail = (await _runs.GetAsync(first.Id)).Summary;
+        (summary.TotalItems, summary.Passed, summary.Failed, summary.FirstTimePassRate).ShouldBe((detail.TotalItems, detail.Passed, detail.Failed, detail.FirstTimePassRate));
+
+        listed.Single(r => r.Id == second.Id).Summary.TotalItems.ShouldBe(0);
+        listed.Single(r => r.Id == second.Id).Items.ShouldBeEmpty();   // the list stays light: the items come with the run itself
+    }
+
+    [Fact]
     public async Task Executing_An_Item_Twice_Should_Create_Two_Executions_And_Not_Mutate_The_Master_Test_Case()
     {
         var run = await CreateRunWithItemsAsync(1);

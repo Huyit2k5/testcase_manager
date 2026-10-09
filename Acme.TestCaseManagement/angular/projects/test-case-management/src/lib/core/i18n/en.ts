@@ -602,6 +602,19 @@ export const en = {
   'project.restoredDone': 'The project is back.',
   'project.confirmDelete': "Delete project '{name}'? It is empty, so nothing is lost.",
   'project.deleted': 'The project is deleted.',
+  'runs.searchRuns': 'Search runs by title',
+  'runs.searchPlans': 'Search plans by name',
+  'runs.noRunMatches': 'No run matches the filters.',
+  'runs.noPlanMatches': 'No plan matches the filters.',
+  'runs.showing': 'Showing {from}-{to} of {total}',
+  'runs.viewByPlan': 'By plan',
+  'runs.viewList': 'List',
+  'runs.view': 'View of the runs',
+  'runs.runCount': '{count} run(s)',
+  'runs.noPlanGroup': 'Runs without a plan',
+  'runs.groupEmpty': 'No run in this plan yet.',
+  'runs.groupTruncated': 'Showing {shown} of {total} runs. Use the list view to filter them.',
+  'runs.toggleGroup': 'Show or hide the runs of {name}',
 } as const;
 
 export type MessageKey = keyof typeof en;

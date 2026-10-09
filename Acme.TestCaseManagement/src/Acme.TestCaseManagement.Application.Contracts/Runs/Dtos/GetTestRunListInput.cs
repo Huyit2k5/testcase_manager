@@ -13,6 +13,9 @@ public class GetTestRunListInput : PagedAndSortedResultRequestDto
 
     public Guid? TestPlanId { get; set; }
 
+    /// <summary>Only the runs that belong to no plan. Wins over <see cref="TestPlanId"/>.</summary>
+    public bool NoPlan { get; set; }
+
     public RunStatus? Status { get; set; }
 
     public string? Environment { get; set; }

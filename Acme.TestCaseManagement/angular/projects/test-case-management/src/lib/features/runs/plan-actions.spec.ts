@@ -16,6 +16,7 @@ describe('The actions of a plan in the list', () => {
 
   beforeEach(() => {
     localStorage.clear();
+    localStorage.setItem('tcm.runsView', 'list');   // these tests are about the list view; the default shows the runs under their plans
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([]), grant('*')] });
     http = TestBed.inject(HttpTestingController);

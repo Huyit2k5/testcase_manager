@@ -18,4 +18,7 @@ public class TestPlanDto : AuditedEntityDto<Guid>
     public DateTime? EndDate { get; set; }
 
     public PlanStatus Status { get; set; }
+
+    /// <summary>How many runs the plan has (all of them, whatever their status).</summary>
+    public int RunCount { get; set; }
 }

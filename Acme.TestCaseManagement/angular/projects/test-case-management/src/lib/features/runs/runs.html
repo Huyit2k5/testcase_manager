@@ -2,6 +2,10 @@
   <div class="page-head">
     <h1>{{ 'runs.title' | t }}</h1>
     <div class="row">
+      <div class="segmented" role="group" [attr.aria-label]="'runs.view' | t" data-test="run-view">
+        <button type="button" class="btn sm" [class.primary]="view() === 'plan'" [attr.aria-pressed]="view() === 'plan'" (click)="setView('plan')">{{ 'runs.viewByPlan' | t }}</button>
+        <button type="button" class="btn sm" [class.primary]="view() === 'list'" [attr.aria-pressed]="view() === 'list'" (click)="setView('list')">{{ 'runs.viewList' | t }}</button>
+      </div>
       @if (auth.can(perm.TestPlans.Manage)) {
         <button type="button" class="btn" (click)="newPlan()">{{ 'runs.newPlan' | t }}</button>
         <button type="button" class="btn primary" (click)="newRun()">{{ 'runs.newRun' | t }}</button>
@@ -9,15 +13,21 @@
     </div>
   </div>
 
-  <h2>{{ 'runs.runs' | t }}</h2>
-  <div class="card flush">
+  <!-- The table of runs, for the list and for each group. -->
+  <ng-template #runTable let-rows let-withPlan="withPlan">
     <table>
-      <thead><tr><th>{{ 'runs.colRun' | t }}</th><th>{{ 'common.plan' | t }}</th><th>{{ 'common.environment' | t }}</th><th>{{ 'common.status' | t }}</th><th>{{ 'runs.colProgress' | t }}</th><th>{{ 'runs.colPassed' | t }}</th><th>{{ 'runs.colFailed' | t }}</th></tr></thead>
+      <thead>
+        <tr>
+          <th>{{ 'runs.colRun' | t }}</th>
+          @if (withPlan) { <th>{{ 'common.plan' | t }}</th> }
+          <th>{{ 'common.environment' | t }}</th><th>{{ 'common.status' | t }}</th><th>{{ 'runs.colProgress' | t }}</th><th>{{ 'runs.colPassed' | t }}</th><th>{{ 'runs.colFailed' | t }}</th>
+        </tr>
+      </thead>
       <tbody>
-        @for (run of runs(); track run.id) {
+        @for (run of rows; track run.id) {
           <tr>
             <td><a [routerLink]="[base + '/runs', run.id]">{{ run.title }}</a></td>
-            <td>{{ planName(run.testPlanId) }}</td>
+            @if (withPlan) { <td>{{ planName(run.testPlanId) }}</td> }
             <td>{{ run.environment }}</td>
             <td><span class="badge" [class]="badgeOf('run', run.status)">{{ label(runEnum, run.status) }}</span></td>
             <td style="min-width: 120px">
@@ -29,35 +39,150 @@
         }
       </tbody>
     </table>
-    @if (!runs().length) { <div class="empty">{{ 'runs.noRun' | t }}</div> }
-  </div>
+  </ng-template>
 
-  <h2 style="margin-top: 24px">{{ 'runs.plans' | t }}</h2>
-  <div class="card flush">
-    <table>
-      <thead><tr><th>{{ 'common.plan' | t }}</th><th>{{ 'runs.colMilestone' | t }}</th><th>{{ 'runs.colSchedule' | t }}</th><th>{{ 'common.status' | t }}</th><th></th></tr></thead>
-      <tbody>
-        @for (plan of plans(); track plan.id) {
-          <tr>
-            <td>{{ plan.name }}<div class="muted">{{ plan.description }}</div></td>
-            <td class="mono">{{ plan.milestoneId ? plan.milestoneId.substring(0, 8) : '-' }}</td>
-            <td class="nowrap">@if (plan.startDate) { {{ plan.startDate | fdate: 'mediumDate' }} - {{ plan.endDate | fdate: 'mediumDate' }} } @else { - }</td>
-            <td><span class="badge" [class]="badgeOf('plan', plan.status)">{{ label(planEnum, plan.status) }}</span></td>
-            <td class="right nowrap">
-              @if (auth.can(perm.TestPlans.Manage)) {
-                @if (transitions(plan).length) {
-                  <app-row-menu [label]="'runs.changeStatus' | t" [heading]="'runs.moveTo' | t" [items]="nextStates(plan)" (chosen)="movePlan(plan, $event)" />
-                }
-                <button type="button" tcmIcon="edit" [attr.aria-label]="'common.edit' | t" [attr.title]="'common.edit' | t" (click)="editPlan(plan)"></button>
-                <button type="button" tcmIcon="trash" [attr.aria-label]="'common.delete' | t" [attr.title]="'common.delete' | t" (click)="deletePlan(plan)"></button>
+  <ng-template #planFilters>
+    <div class="card">
+      <div class="row" data-test="plan-filters">
+        <input class="grow" name="planSearch" [ngModel]="planSearch()" (ngModelChange)="setPlanSearch($event)" [placeholder]="'runs.searchPlans' | t" [attr.aria-label]="'common.search' | t" />
+        <select name="planStatus" [ngModel]="planStatus()" (ngModelChange)="setPlanStatus($event)" [attr.aria-label]="'common.status' | t" style="width: auto">
+          <option value="">{{ 'common.anyStatus' | t }}</option>
+          @for (o of planStatusOptions; track o.value) { <option [ngValue]="o.value">{{ label(planEnum, o.value) }}</option> }
+        </select>
+      </div>
+    </div>
+  </ng-template>
+
+  <ng-template #planPager>
+    @if (filteredPlans().length > planPageSize) {
+      <div class="row" style="justify-content: space-between; margin-top: 8px" data-test="plan-pager">
+        <span class="muted">{{ 'runs.showing' | t: { from: planPage() * planPageSize + 1, to: min(filteredPlans().length, (planPage() + 1) * planPageSize), total: filteredPlans().length } }}</span>
+        <div class="row">
+          <button type="button" class="btn sm" [disabled]="planPage() === 0" (click)="gotoPlans(-1)">{{ 'common.previous' | t }}</button>
+          <span class="muted">{{ 'repo.page' | t: { page: planPage() + 1 } }}</span>
+          <button type="button" class="btn sm" [disabled]="(planPage() + 1) * planPageSize >= filteredPlans().length" (click)="gotoPlans(1)">{{ 'common.next' | t }}</button>
+        </div>
+      </div>
+    }
+  </ng-template>
+
+  <!-- What can be done to a plan: next states, edit, delete. -->
+  <ng-template #planActions let-plan>
+    @if (auth.can(perm.TestPlans.Manage)) {
+      @if (transitions(plan).length) {
+        <app-row-menu [label]="'runs.changeStatus' | t" [heading]="'runs.moveTo' | t" [items]="nextStates(plan)" (chosen)="movePlan(plan, $event)" />
+      }
+      <button type="button" tcmIcon="edit" [attr.aria-label]="'common.edit' | t" [attr.title]="'common.edit' | t" (click)="editPlan(plan)"></button>
+      <button type="button" tcmIcon="trash" [attr.aria-label]="'common.delete' | t" [attr.title]="'common.delete' | t" (click)="deletePlan(plan)"></button>
+    }
+  </ng-template>
+
+  @if (view() === 'plan') {
+    <!-- The runs under their plans. -->
+    <ng-container [ngTemplateOutlet]="planFilters" />
+
+    @for (plan of pagedPlans(); track plan.id) {
+      <section class="card flush group" data-test="plan-group">
+        <header class="group-head">
+          <button type="button" class="group-toggle" [attr.aria-expanded]="isOpen(plan.id)" [attr.aria-label]="'runs.toggleGroup' | t: { name: plan.name }" (click)="toggleGroup(plan.id)">
+            <span class="chevron" aria-hidden="true">{{ isOpen(plan.id) ? '▾' : '▸' }}</span>
+            <span class="group-name">{{ plan.name }}</span>
+          </button>
+          <span class="badge" [class]="badgeOf('plan', plan.status)">{{ label(planEnum, plan.status) }}</span>
+          <span class="muted nowrap">{{ 'runs.runCount' | t: { count: plan.runCount } }}</span>
+          @if (plan.startDate) { <span class="muted nowrap">{{ plan.startDate | fdate: 'mediumDate' }} - {{ plan.endDate | fdate: 'mediumDate' }}</span> }
+          <span class="grow"></span>
+          <span class="nowrap"><ng-container [ngTemplateOutlet]="planActions" [ngTemplateOutletContext]="{ $implicit: plan }" /></span>
+        </header>
+        @if (isOpen(plan.id)) {
+          <div class="group-body">
+            @if (plan.description) { <p class="muted group-note">{{ plan.description }}</p> }
+            @if (groupOf(plan.id).runs.length) {
+              <ng-container [ngTemplateOutlet]="runTable" [ngTemplateOutletContext]="{ $implicit: groupOf(plan.id).runs, withPlan: false }" />
+              @if (groupOf(plan.id).total > groupOf(plan.id).runs.length) {
+                <p class="muted group-note">{{ 'runs.groupTruncated' | t: { shown: groupOf(plan.id).runs.length, total: groupOf(plan.id).total } }}</p>
               }
-            </td>
-          </tr>
+            } @else {
+              <div class="empty">{{ 'runs.groupEmpty' | t }}</div>
+            }
+          </div>
         }
-      </tbody>
-    </table>
-    @if (!plans().length) { <div class="empty">{{ 'runs.noPlan' | t }}</div> }
-  </div>
+      </section>
+    }
+    @if (!plans().length) { <div class="card"><div class="empty">{{ 'runs.noPlan' | t }}</div></div> } @else if (!filteredPlans().length) { <div class="card"><div class="empty">{{ 'runs.noPlanMatches' | t }}</div></div> }
+
+    @if (noPlanTotal() > 0) {
+      <section class="card flush group" data-test="no-plan-group">
+        <header class="group-head">
+          <button type="button" class="group-toggle" [attr.aria-expanded]="isOpen('none')" [attr.aria-label]="'runs.toggleGroup' | t: { name: ('runs.noPlanGroup' | t) }" (click)="toggleGroup('none')">
+            <span class="chevron" aria-hidden="true">{{ isOpen('none') ? '▾' : '▸' }}</span>
+            <span class="group-name">{{ 'runs.noPlanGroup' | t }}</span>
+          </button>
+          <span class="muted nowrap">{{ 'runs.runCount' | t: { count: noPlanTotal() } }}</span>
+        </header>
+        @if (isOpen('none')) {
+          <div class="group-body">
+            <ng-container [ngTemplateOutlet]="runTable" [ngTemplateOutletContext]="{ $implicit: groupOf('none').runs, withPlan: false }" />
+            @if (noPlanTotal() > groupOf('none').runs.length) {
+              <p class="muted group-note">{{ 'runs.groupTruncated' | t: { shown: groupOf('none').runs.length, total: noPlanTotal() } }}</p>
+            }
+          </div>
+        }
+      </section>
+    }
+    <ng-container [ngTemplateOutlet]="planPager" />
+  } @else {
+    <!-- One list of runs, filtered and paged by the server. -->
+    <h2>{{ 'runs.runs' | t }}</h2>
+    <div class="card">
+      <form class="row" (ngSubmit)="filterRuns()" data-test="run-filters">
+        <input class="grow" name="runSearch" [(ngModel)]="runSearch" [placeholder]="'runs.searchRuns' | t" [attr.aria-label]="'common.search' | t" />
+        <select name="runPlan" [(ngModel)]="runPlan" (ngModelChange)="filterRuns()" [attr.aria-label]="'common.plan' | t" style="width: auto">
+          <option value="">{{ 'rtm.allPlans' | t }}</option>
+          @for (plan of plans(); track plan.id) { <option [value]="plan.id">{{ plan.name }}</option> }
+        </select>
+        <select name="runStatus" [(ngModel)]="runStatus" (ngModelChange)="filterRuns()" [attr.aria-label]="'common.status' | t" style="width: auto">
+          <option value="">{{ 'common.anyStatus' | t }}</option>
+          @for (o of runStatusOptions; track o.value) { <option [ngValue]="o.value">{{ label(runEnum, o.value) }}</option> }
+        </select>
+        <input name="runEnvironment" [(ngModel)]="runEnvironment" [placeholder]="'common.environment' | t" [attr.aria-label]="'common.environment' | t" style="width: 140px" />
+        <button type="submit" class="btn">{{ 'common.apply' | t }}</button>
+      </form>
+    </div>
+    <div class="card flush">
+      <ng-container [ngTemplateOutlet]="runTable" [ngTemplateOutletContext]="{ $implicit: runs(), withPlan: true }" />
+      @if (!runs().length) { <div class="empty">{{ (runTotal() === 0 && !runSearch && !runPlan && runStatus === '' && !runEnvironment ? 'runs.noRun' : 'runs.noRunMatches') | t }}</div> }
+    </div>
+    <div class="row" style="justify-content: space-between; margin-top: 8px" data-test="run-pager">
+      <span class="muted">{{ 'runs.showing' | t: { from: runRange().from, to: runRange().to, total: runTotal() } }}</span>
+      <div class="row">
+        <button type="button" class="btn sm" [disabled]="runPage() === 0" (click)="gotoRuns(-1)">{{ 'common.previous' | t }}</button>
+        <span class="muted">{{ 'repo.page' | t: { page: runPage() + 1 } }}</span>
+        <button type="button" class="btn sm" [disabled]="(runPage() + 1) * runPageSize >= runTotal()" (click)="gotoRuns(1)">{{ 'common.next' | t }}</button>
+      </div>
+    </div>
+
+    <h2 style="margin-top: 24px">{{ 'runs.plans' | t }}</h2>
+    <ng-container [ngTemplateOutlet]="planFilters" />
+    <div class="card flush">
+      <table>
+        <thead><tr><th>{{ 'common.plan' | t }}</th><th>{{ 'runs.colMilestone' | t }}</th><th>{{ 'runs.colSchedule' | t }}</th><th>{{ 'common.status' | t }}</th><th></th></tr></thead>
+        <tbody>
+          @for (plan of pagedPlans(); track plan.id) {
+            <tr>
+              <td>{{ plan.name }}<div class="muted">{{ plan.description }}</div></td>
+              <td class="mono">{{ plan.milestoneId ? plan.milestoneId.substring(0, 8) : '-' }}</td>
+              <td class="nowrap">@if (plan.startDate) { {{ plan.startDate | fdate: 'mediumDate' }} - {{ plan.endDate | fdate: 'mediumDate' }} } @else { - }</td>
+              <td><span class="badge" [class]="badgeOf('plan', plan.status)">{{ label(planEnum, plan.status) }}</span></td>
+              <td class="right nowrap"><ng-container [ngTemplateOutlet]="planActions" [ngTemplateOutletContext]="{ $implicit: plan }" /></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      @if (!plans().length) { <div class="empty">{{ 'runs.noPlan' | t }}</div> } @else if (!filteredPlans().length) { <div class="empty">{{ 'runs.noPlanMatches' | t }}</div> }
+    </div>
+    <ng-container [ngTemplateOutlet]="planPager" />
+  }
 </div>
 
 @if (planForm(); as form) {

@@ -75,7 +75,7 @@ export interface ImportReport {
 // ---- Plans
 export interface TestPlan {
   projectId: string; id: string; name: string; description: string | null; milestoneId: string | null;
-  startDate: string | null; endDate: string | null; status: PlanStatus;
+  startDate: string | null; endDate: string | null; status: PlanStatus; runCount: number;
 }
 export interface SavePlan { projectId?: string | null; name: string; description?: string | null; milestoneId?: string | null; startDate?: string | null; endDate?: string | null }
 
@@ -105,7 +105,7 @@ export interface TestExecution {
 }
 export interface CreateRun { projectId?: string | null; testPlanId?: string | null; title: string; environment: string; testCaseIds: string[] }
 export interface ExecuteItem { status: TestResultStatus; actualResult?: string | null; durationSeconds: number; defects: AddDefect[] }
-export interface TestRunListRequest extends PagedRequest { projectId?: string | null; filter?: string; testPlanId?: string | null; status?: RunStatus | null }
+export interface TestRunListRequest extends PagedRequest { projectId?: string | null; filter?: string; testPlanId?: string | null; noPlan?: boolean; status?: RunStatus | null; environment?: string }
 
 // ---- Requirements and RTM
 export interface Requirement {

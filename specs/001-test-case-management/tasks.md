@@ -331,3 +331,11 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 - [x] T135 Angular: `ProjectContext`, the bar in the shell with the page built again on a change, the page that manages projects, the services that send the project; tests.
 - [x] T136 Tests of the back end (17 for the projects, 2 in Domain), update of the ones that count controllers and operations; the sandbox: `DbSet`, migration, run on a copy with two projects; the browser script of the standalone application.
 - [x] T137 The documentation: READMEs, the guide (exercise 10 with 8 pictures), spec FR-028, plan 4.24.
+
+---
+
+## Phase 26: Many runs and plans
+
+- [x] T138 The list of runs carries the progress of each run (it was 0 for all); a test that the list and the run agree.
+- [x] T139 The page of runs and plans: filters, paging of 15 runs, plans filtered and paged in the page; tests (plan.md 4.25).
+- [x] T140 The runs grouped under their plans (`RunCount` on the plan, `NoPlan` on the list of runs, groups opened on request, the view kept), with tests for the back end and the page.

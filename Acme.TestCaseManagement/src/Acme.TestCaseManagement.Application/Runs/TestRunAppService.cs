@@ -19,6 +19,7 @@ public class TestRunAppService : TestCaseManagementAppService, ITestRunAppServic
 {
     private readonly IRepository<TestRun, Guid> _runRepository;
     private readonly IRepository<TestExecution, Guid> _executionRepository;
+    private readonly IRepository<TestRunItem, Guid> _itemRepository;
     private readonly IRepository<TestCaseVersion, Guid> _versionRepository;
     private readonly IRepository<DefectLink, Guid> _defectRepository;
     private readonly ITestCaseRepository _testCaseRepository;
@@ -29,6 +30,7 @@ public class TestRunAppService : TestCaseManagementAppService, ITestRunAppServic
     public TestRunAppService(
         IRepository<TestRun, Guid> runRepository,
         IRepository<TestExecution, Guid> executionRepository,
+        IRepository<TestRunItem, Guid> itemRepository,
         IRepository<TestCaseVersion, Guid> versionRepository,
         IRepository<DefectLink, Guid> defectRepository,
         ITestCaseRepository testCaseRepository,
@@ -39,6 +41,7 @@ public class TestRunAppService : TestCaseManagementAppService, ITestRunAppServic
         _projectManager = projectManager;
         _runRepository = runRepository;
         _executionRepository = executionRepository;
+        _itemRepository = itemRepository;
         _versionRepository = versionRepository;
         _defectRepository = defectRepository;
         _testCaseRepository = testCaseRepository;
@@ -55,7 +58,8 @@ public class TestRunAppService : TestCaseManagementAppService, ITestRunAppServic
     {
         var query = (await _runRepository.GetQueryableAsync())
             .WhereIf(input.ProjectId.HasValue, x => x.ProjectId == input.ProjectId)
-            .WhereIf(input.TestPlanId.HasValue, x => x.TestPlanId == input.TestPlanId)
+            .WhereIf(input.NoPlan, x => x.TestPlanId == null)
+            .WhereIf(!input.NoPlan && input.TestPlanId.HasValue, x => x.TestPlanId == input.TestPlanId)
             .WhereIf(input.Status.HasValue, x => x.Status == input.Status);
 
         if (!string.IsNullOrWhiteSpace(input.Filter))
@@ -74,7 +78,41 @@ public class TestRunAppService : TestCaseManagementAppService, ITestRunAppServic
         var items = await AsyncExecuter.ToListAsync(
             Sort(query, input.Sorting).Skip(input.SkipCount).Take(input.MaxResultCount));
 
-        return new PagedResultDto<TestRunDto>(totalCount, ObjectMapper.Map<List<TestRun>, List<TestRunDto>>(items));
+        var dtos = ObjectMapper.Map<List<TestRun>, List<TestRunDto>>(items);
+        await FillSummariesAsync(dtos);
+
+        return new PagedResultDto<TestRunDto>(totalCount, dtos);
+    }
+
+    /// <summary>
+    /// The list shows the progress of each run, so the summary of the runs of the page is worked out here (the items themselves are not sent).
+    /// Two queries for the whole page: the items of its runs, and the first attempt of each of those items (the only one that counts for the first-time pass rate).
+    /// </summary>
+    protected virtual async Task FillSummariesAsync(List<TestRunDto> runs)
+    {
+        if (runs.Count == 0)
+        {
+            return;
+        }
+
+        var runIds = runs.Select(r => r.Id).ToList();
+        var items = await _itemRepository.GetListAsync(i => runIds.Contains(i.TestRunId));
+
+        var itemQuery = await _itemRepository.GetQueryableAsync();
+        var executionQuery = await _executionRepository.GetQueryableAsync();
+        var firstAttempts = await AsyncExecuter.ToListAsync(
+            executionQuery.Where(e => e.AttemptNumber == 1
+                                      && itemQuery.Where(i => runIds.Contains(i.TestRunId)).Select(i => i.Id).Contains(e.TestRunItemId)));
+
+        var itemsOfRun = items.ToLookup(i => i.TestRunId);
+        var runOfItem = items.ToDictionary(i => i.Id, i => i.TestRunId);
+        var attemptsOfRun = firstAttempts.ToLookup(e => runOfItem.GetValueOrDefault(e.TestRunItemId));
+
+        foreach (var dto in runs)
+        {
+            dto.Summary = ObjectMapper.Map<TestRunMetrics, TestRunSummaryDto>(
+                TestRunMetrics.Calculate(itemsOfRun[dto.Id].ToList(), attemptsOfRun[dto.Id]));
+        }
     }
 
     [Authorize(TestCaseManagementPermissions.TestPlans.Manage)]

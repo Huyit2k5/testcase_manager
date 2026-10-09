@@ -1191,6 +1191,17 @@ Azure Test Plans through the team project, Kiwi TCMS through the product), so th
   checked on the sample application of the sandbox with two projects, and the browser script of the standalone application (without its Automation and AI steps).
 - Not done: permissions per project, a test case code that is unique per project, shared-step groups per project, Jira (see the key above), counts in the bar.
 
+### 4.25. Phase 26: many runs and plans
+
+A screenshot showed the progress columns of the list of runs at 0 for every run. The list of runs never filled the summary of a run (`TestRunDto.Summary` was ignored by the mapper and only the single run filled it), so the list always said 0 passed and no progress. Found by looking at the page; no test read the summary of the list.
+
+- **Fix**: `TestRunAppService.FillSummariesAsync` works out the summary of the runs of the page with two queries (the items of those runs, and the first attempt of each item), with the same `TestRunMetrics.Calculate` as the single run, so the two cannot differ. The items stay out of the list. Test: the list and the run give the same figures.
+- **Many runs**: the page asked for the first 100 runs and cut the rest without saying so. It now asks for 15 at a time (`skipCount`, `maxResultCount`) and shows "Showing a-b of N" with Previous and Next. Filters (title, plan, status, environment) are sent to the server and start again from the first page; a slow answer to an old filter cannot replace the current one.
+- **Plans** are all loaded (up to 1000: the runs need their names and the new-run form needs the choices) and filtered by name and status in the page, 10 to a page, with the pager shown only when there are more than 10.
+- **Grouped by plan** (the view that opens; the choice is kept in `localStorage` `tcm.runsView`): a group for each plan with its status, dates, the number of runs (`TestPlanDto.RunCount`, one grouped count for the page of plans) and the actions of the plan; the first plan opens by itself, the others
+  ask for their runs (up to 100) when opened. A group "Runs without a plan" shows when there are such runs (`GetTestRunListInput.NoPlan`). The list view with its filters and paging is one button away; a group that holds more runs than it shows says so and points to it.
+- Not done: putting running runs first, deleting a run.
+
 ## 5. Security, RBAC & Permissions
 
 Defined in `TestCaseManagementPermissions`:

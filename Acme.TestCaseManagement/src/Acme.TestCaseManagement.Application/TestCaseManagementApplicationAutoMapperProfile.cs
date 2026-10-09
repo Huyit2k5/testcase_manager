@@ -50,7 +50,8 @@ public class TestCaseManagementApplicationAutoMapperProfile : Profile
         CreateMap<TestCaseVersion, TestCaseVersionDto>()
             .ForMember(d => d.Steps, o => o.MapFrom(s => TestStepSnapshot.Deserialize(s.StepsJson)));
 
-        CreateMap<TestPlan, TestPlanDto>();
+        // The number of runs is counted by the application service for the plans it returns.
+        CreateMap<TestPlan, TestPlanDto>().ForMember(d => d.RunCount, o => o.Ignore());
 
         // Items and the summary need data from other aggregates, so TestRunAppService fills them in.
         CreateMap<TestRun, TestRunDto>()

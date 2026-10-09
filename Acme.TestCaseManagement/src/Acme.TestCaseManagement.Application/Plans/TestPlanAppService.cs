@@ -25,7 +25,7 @@ public class TestPlanAppService : TestCaseManagementAppService, ITestPlanAppServ
 
     public virtual async Task<TestPlanDto> GetAsync(Guid id)
     {
-        return ObjectMapper.Map<TestPlan, TestPlanDto>(await _planRepository.GetAsync(id));
+        return await ToDtoAsync(await _planRepository.GetAsync(id));
     }
 
     public virtual async Task<PagedResultDto<TestPlanDto>> GetListAsync(GetTestPlanListInput input)
@@ -45,7 +45,10 @@ public class TestPlanAppService : TestCaseManagementAppService, ITestPlanAppServ
         var items = await AsyncExecuter.ToListAsync(
             Sort(query, input.Sorting).Skip(input.SkipCount).Take(input.MaxResultCount));
 
-        return new PagedResultDto<TestPlanDto>(totalCount, ObjectMapper.Map<List<TestPlan>, List<TestPlanDto>>(items));
+        var dtos = ObjectMapper.Map<List<TestPlan>, List<TestPlanDto>>(items);
+        await FillRunCountsAsync(dtos);
+
+        return new PagedResultDto<TestPlanDto>(totalCount, dtos);
     }
 
     [Authorize(TestCaseManagementPermissions.TestPlans.Manage)]
@@ -63,7 +66,7 @@ public class TestPlanAppService : TestCaseManagementAppService, ITestPlanAppServ
 
         await _planRepository.InsertAsync(plan, autoSave: true);
 
-        return ObjectMapper.Map<TestPlan, TestPlanDto>(plan);
+        return await ToDtoAsync(plan);
     }
 
     [Authorize(TestCaseManagementPermissions.TestPlans.Manage)]
@@ -78,7 +81,7 @@ public class TestPlanAppService : TestCaseManagementAppService, ITestPlanAppServ
 
         await _planRepository.UpdateAsync(plan, autoSave: true);
 
-        return ObjectMapper.Map<TestPlan, TestPlanDto>(plan);
+        return await ToDtoAsync(plan);
     }
 
     [Authorize(TestCaseManagementPermissions.TestPlans.Manage)]
@@ -102,7 +105,36 @@ public class TestPlanAppService : TestCaseManagementAppService, ITestPlanAppServ
         plan.ChangeStatus(input.TargetStatus);
         await _planRepository.UpdateAsync(plan, autoSave: true);
 
-        return ObjectMapper.Map<TestPlan, TestPlanDto>(plan);
+        return await ToDtoAsync(plan);
+    }
+
+    private async Task<TestPlanDto> ToDtoAsync(TestPlan plan)
+    {
+        var dto = ObjectMapper.Map<TestPlan, TestPlanDto>(plan);
+        await FillRunCountsAsync(new List<TestPlanDto> { dto });
+        return dto;
+    }
+
+    /// <summary>One grouped count for all the plans of the page.</summary>
+    private async Task FillRunCountsAsync(List<TestPlanDto> plans)
+    {
+        if (plans.Count == 0)
+        {
+            return;
+        }
+
+        var ids = plans.Select(p => p.Id).ToList();
+        var query = await _runRepository.GetQueryableAsync();
+        var counts = (await AsyncExecuter.ToListAsync(
+                query.Where(r => r.TestPlanId != null && ids.Contains(r.TestPlanId.Value))
+                    .GroupBy(r => r.TestPlanId!.Value)
+                    .Select(g => new { PlanId = g.Key, Count = g.Count() })))
+            .ToDictionary(x => x.PlanId, x => x.Count);
+
+        foreach (var plan in plans)
+        {
+            plan.RunCount = counts.GetValueOrDefault(plan.Id);
+        }
     }
 
     private static IQueryable<TestPlan> Sort(IQueryable<TestPlan> query, string? sorting)

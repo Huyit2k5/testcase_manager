@@ -262,6 +262,8 @@ Các mục trong thanh bên: **Dashboard**, **Test repository**, **Shared steps*
 
 #### Bài 7: Tạo plan, run và giao việc
 
+> Trang **Plans and runs** mặc định hiện các run **theo plan**: mỗi plan là một nhóm bấm mở ra để xem run của nó (cùng tiến độ, số run đạt và không đạt). Nút **List** ở góc trên chuyển sang một danh sách run duy nhất có ô tìm kiếm, lọc theo plan, trạng thái, môi trường và phân trang. Các ảnh dưới đây chụp ở chế độ danh sách cũ.
+
 1. Vào **Plans and runs**, bấm **+ New plan**. Đặt tên theo đợt phát hành (ví dụ "EasyInvoice 2.6 - Phát hành tháng 12"), thêm mô tả, bấm **Save**.
 
    ![Tạo plan](images/guide/b7-01-tao-plan.png)

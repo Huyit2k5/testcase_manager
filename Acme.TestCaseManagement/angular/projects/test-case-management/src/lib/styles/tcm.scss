@@ -34,6 +34,21 @@
   .nowrap { white-space: nowrap; }
 
   /* ---- layout */
+  .segmented { display: inline-flex; gap: 0; }
+  .segmented .btn { border-radius: 0; }
+  .segmented .btn:first-child { border-radius: 8px 0 0 8px; }
+  .segmented .btn:last-child { border-radius: 0 8px 8px 0; margin-left: -1px; }
+  .group { margin-bottom: 12px; }
+  .group-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 14px; }
+  .group-toggle {
+    display: inline-flex; align-items: center; gap: 8px; border: 0; background: none; color: var(--text); font: inherit; font-weight: 600;
+    cursor: pointer; padding: 4px 6px; margin-left: -6px; border-radius: 6px; text-align: left;
+    &:hover { background: var(--hover, rgba(100, 116, 139, .12)); }
+    .chevron { width: 1em; color: var(--muted); }
+  }
+  .group-body { border-top: 1px solid var(--border); }
+  .group-note { margin: 8px 14px; }
+  .group-body table { border: 0; }
   .project-bar {
     display: flex; align-items: center; gap: 10px; flex-wrap: wrap; max-width: 1280px; margin: 0 auto; padding: 10px 16px 0;
     label { font-weight: 600; font-size: .85rem; color: var(--muted); }
