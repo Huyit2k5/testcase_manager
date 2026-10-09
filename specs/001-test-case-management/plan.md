@@ -1131,6 +1131,17 @@ A suggestion of the person who tries the screens: the details of a record open i
   Questions, the small forms (a suite, a plan, a key), the pickers of a new run, the import dialogs, the preview of a file and the AI proposals stay dialogs in the middle (they open over a drawer when they need to).
 - Tests of the drawer (the mode, the arrows, the limits, the memory, Escape).
 
+### 4.21. Phase 22: the hands-on guide, done for real
+
+The guide for the team (`docs/HUONG_DAN_SU_DUNG.md`) was first written from the code. Then every exercise was done on the screens, step by step, with the accounts of the roles (Tester, QA Lead, Product Owner made as roles of
+the ABP sample application, with the permissions of the table in the guide), and the 61 pictures of the guide are those of that run. It found:
+
+- *The tester filter was hidden for a Tester.* The filter "Show" of a run page needed the list of users, which a Tester may not read, so "My tests" was missing exactly for the person who needs it. The filter is always there now;
+  "Mine", "Not assigned" and "All" need no names, and a person whose name cannot be read is simply not listed (the column says "Assigned"). Unit test changed to say it.
+- *The AI answers in the language of the screen* (English screen, English steps): said in the guide.
+- *A QA lead needs `AbpIdentity.Users` to pick a tester* in an ABP application (see 4.18): said in the guide, in the permissions table and in the questions.
+- Several test cases of the sample data did not use the shared steps the exercise on them expects; the exercise uses one that does.
+
 ## 5. Security, RBAC & Permissions
 
 Defined in `TestCaseManagementPermissions`:

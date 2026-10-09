@@ -299,3 +299,9 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 
 - [x] T124 `side` mode of `ModalComponent` with a resize handle (mouse and keyboard), a width kept for all drawers, full width on a phone; tests.
 - [x] T125 Use it for the detail and form of a test case, the attempts and the result of a run item, requirements, shared steps and sign-off reports (plan.md 4.20).
+
+---
+
+## Phase 22: The guide done for real
+
+- [x] T126 Do the ten exercises of the guide on the screens with the accounts of each role, take the 61 pictures, correct the text where the screens differ; fix what that showed (the tester filter without a user directory).

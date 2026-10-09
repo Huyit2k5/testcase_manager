@@ -36,14 +36,14 @@
       </div>
     </div>
 
-    @if (r.items.length && users.available()) {
+    @if (r.items.length) {
       <div class="row" style="margin-bottom: 12px" data-test="tester-filter">
         <label for="tester-filter" style="margin: 0">{{ 'run.filterTester' | t }}</label>
         <select id="tester-filter" name="testerFilter" [ngModel]="testerFilter()" (ngModelChange)="testerFilter.set($event)" style="width: auto">
           <option value="all">{{ 'run.allTesters' | t }}</option>
           @if (auth.user()) { <option value="me">{{ 'run.mine' | t }}</option> }
           <option value="none">{{ 'run.notAssigned' | t }}</option>
-          @for (w of workload(); track w.id) { <option [value]="w.id">{{ w.name }} ({{ w.done }}/{{ w.total }})</option> }
+          @for (w of workload(); track w.id) { @if (w.known) { <option [value]="w.id">{{ w.name }} ({{ w.done }}/{{ w.total }})</option> } }
         </select>
       </div>
     }

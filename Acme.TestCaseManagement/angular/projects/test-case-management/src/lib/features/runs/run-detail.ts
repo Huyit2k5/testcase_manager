@@ -84,7 +84,7 @@ export class RunDetailComponent {
       if (item.currentStatus !== TestResultStatus.Untested) { entry.done++; }
       byUser.set(item.assignedUserId, entry);
     }
-    return [...byUser.values()].map(e => ({ ...e, name: this.users.nameOf(e.id) ?? this.i18n.t('run.unknownUser') })).sort((a, b) => a.name.localeCompare(b.name));
+    return [...byUser.values()].map(e => { const name = this.users.nameOf(e.id); return { ...e, name: name ?? this.i18n.t('run.unknownUser'), known: name !== null }; }).sort((a, b) => a.name.localeCompare(b.name));
   });
 
   constructor() {

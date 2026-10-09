@@ -85,11 +85,15 @@ describe('Assigning testers in a run', () => {
     expect(element().querySelector('[data-test=assign-select]')).toBeNull();
   });
 
-  it('works without a directory: nothing to pick, no filter, and no error', () => {
-    open([], run([item('1', 'u2')]));
+  it('works without a directory: nothing to pick, the filter keeps what needs no names, and no error', () => {
+    open([], run([item('1', 'u2'), item('2', 'u1')]));
     expect(element().querySelector('[data-test=assign-select]')).toBeNull();
-    expect(element().querySelector('[data-test=tester-filter]')).toBeNull();
     expect(element().querySelector('tbody')?.textContent).toContain('Assigned');
+    // Mine, the unassigned and all still work; a person nobody can name is not offered.
+    expect([...element().querySelectorAll('#tester-filter option')].length).toBe(3);
+    sig<string>('testerFilter').set('me');
+    fixture.detectChanges();
+    expect(element().querySelectorAll('tbody tr').length).toBe(1);
   });
 
   it('treats a directory that fails (no permission to list users) like no directory', () => {

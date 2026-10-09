@@ -1,16 +1,21 @@
 # Hướng dẫn sử dụng Test Case Management
 
-Tài liệu thực hành cho cả đội: tester, QA lead, product owner và dev. Đọc hết mất khoảng 15 phút, làm hết các bài tập mất khoảng 45 phút.
+Tài liệu thực hành cho cả đội: tester, QA lead, product owner và dev. Đọc phần khái niệm mất khoảng 10 phút; làm hết 10 bài tập mất khoảng 60 phút.
+
+**Mọi bài tập trong tài liệu này đã được làm thật, từng bước, trên giao diện, bằng đúng tài khoản của vai trò đó**, và các ảnh chụp lấy từ chính lần làm đó (ô vàng là chỗ cần chú ý).
 
 - [1. Ý tưởng chính](#1-ý-tưởng-chính)
 - [2. Ba sơ đồ cần nhớ](#2-ba-sơ-đồ-cần-nhớ)
 - [3. Trước khi bắt đầu](#3-trước-khi-bắt-đầu)
 - [4. Thực hành](#4-thực-hành)
+  - [Phần A: Tester (Bài 1 đến 4)](#phần-a-tester)
+  - [Phần B: QA Lead (Bài 5 đến 9)](#phần-b-qa-lead)
+  - [Phần C: Dev, kết quả từ CI (Bài 10)](#phần-c-dev-kết-quả-test-tự-động-từ-ci)
 - [5. Quy ước của đội](#5-quy-ước-của-đội)
 - [6. Hỏi đáp và xử lý sự cố](#6-hỏi-đáp-và-xử-lý-sự-cố)
 - [Phụ lục: quyền theo vai trò](#phụ-lục-quyền-theo-vai-trò)
 
-> Các bài tập dùng **bộ dữ liệu mẫu EasyInvoice** (hóa đơn điện tử) trên môi trường tập. Tên nút trong tài liệu theo giao diện tiếng Anh (**Execute**, **Approve**...); đổi ngôn ngữ bằng nút ngôn ngữ ở góc trên bên phải, giao diện và thông báo lỗi sẽ chuyển sang tiếng Việt.
+> Các bài tập dùng **bộ dữ liệu mẫu EasyInvoice** (hóa đơn điện tử) trên môi trường tập. Tên nút theo giao diện tiếng Anh (**Execute**, **Approve**...). Số liệu và thời gian trong ảnh có thể khác với của bạn đôi chút.
 
 ---
 
@@ -92,113 +97,328 @@ flowchart TB
 2. Trong thanh bên trái, mở nhóm **Test Case Management**. Chỉ những mục bạn có quyền mới hiện ra.
 3. Nếu không thấy nhóm này, bạn chưa được cấp quyền: nhờ quản trị viên thêm quyền ở **Administration → Roles** (xem [phụ lục](#phụ-lục-quyền-theo-vai-trò)).
 
-Các mục trong thanh bên: **Dashboard**, **Test repository**, **Shared steps**, **Plans and runs**, **Traceability**, **Quality and sign-off**, **Automation**.
+Các tài khoản dùng trong tài liệu (mật khẩu môi trường tập do QA Lead cấp):
+
+| Tài khoản | Vai trò | Dùng ở |
+|---|---|---|
+| `lan.nguyen` | Tester | Bài 1 đến 4 |
+| `hoanganh.le` | QA Lead | Bài 5 đến 10 |
+| `thuy.pham` | Product Owner | Bài 9 (người duyệt thứ hai) |
+
+Các mục trong thanh bên: **Dashboard**, **Test repository**, **Shared steps**, **Plans and runs**, **Traceability**, **Quality and sign-off**, **Automation**. Mỗi vai trò chỉ thấy những mục mình có quyền, ví dụ Tester không thấy **Automation**.
+
+![Thanh bên của Tester](images/guide/b1-01-thanh-ben.png)
 
 ## 4. Thực hành
 
-### Phần A. Dành cho Tester
+### Phần A: Tester
+
+*Tình huống:* QA Lead đã giao cho bạn (Nguyễn Thị Lan) một số test trong đợt hồi quy build 2.5.0-rc2. Bạn chạy chúng và ghi kết quả.
 
 #### Bài 1: Tìm việc của mình và ghi kết quả Passed
 
-1. Vào **Plans and runs**, mở run **"Hồi quy đầy đủ build 2.5.0-rc2"**.
-2. Ở ô **Show** phía trên bảng, chọn **My tests** để chỉ thấy việc được giao cho bạn.
-3. Chọn một test chưa chạy (cột Result là *Untested*) và bấm **Execute**. Một ngăn kéo hiện ra từ bên phải.
-4. Làm theo các bước của test case, chọn **Result = Passed**, ghi thời gian nếu muốn, rồi bấm **Record result**.
+1. Vào **Plans and runs**. Danh sách có các run và plan. Mở run **"Hồi quy đầy đủ build 2.5.0-rc2"**.
 
-Kiểm tra: dòng đó chuyển thành **Passed** và số **Executed** ở đầu trang tăng lên.
+   ![Danh sách run](images/guide/b1-02-danh-sach-run.png)
+
+2. Trang run hiện các ô số (tổng, đạt, lỗi...) và bảng các mục chạy. Phía trên bảng có ô **Show**, mặc định là *All testers*.
+
+   ![Mở run](images/guide/b1-03-mo-run.png)
+
+3. Chọn **My tests** để chỉ thấy việc được giao cho bạn. Bảng thu gọn lại; dòng nào còn **Untested** là việc bạn phải làm, và nút **Execute** nằm ở cuối dòng.
+
+   ![Việc của tôi](images/guide/b1-04-viec-cua-toi.png)
+
+   > Bạn sẽ thấy cột **Tester** ghi "Assigned" thay cho tên người. Đó là bình thường với tài khoản Tester (ứng dụng không cho Tester xem danh sách người dùng); bộ lọc "My tests" vẫn đúng.
+
+4. Bấm **Execute** ở dòng `EINV-API-002`. Một ngăn kéo hiện ra từ bên phải. Làm theo các bước của test case, chọn **Result = Passed**, ghi thời gian (giây) nếu muốn, rồi bấm **Record result**.
+
+   ![Ghi Passed](images/guide/b1-05-ghi-passed.png)
+
+5. Ngăn kéo đóng lại, có thông báo xác nhận, dòng đó chuyển thành **Passed** và số **Attempts** là 1.
+
+   ![Đã ghi](images/guide/b1-06-da-ghi.png)
 
 > Mẹo: ngăn kéo kéo đổi được độ rộng. Kéo thanh nhỏ ở mép trái của nó, hoặc dùng mũi tên trái/phải khi đang chọn thanh đó. Độ rộng được nhớ cho lần sau.
 
 #### Bài 2: Ghi kết quả Failed kèm lỗi và bằng chứng
 
-![Ghi kết quả](images/guide-record-result.png)
-
-1. Bấm **Execute** ở một test khác, chọn **Result = Failed**.
-2. Ở **Actual result**, mô tả **điều gì đã xảy ra thật** (không chỉ viết "lỗi"). Ví dụ: *"Tồn cuối kỳ lệch 2 hóa đơn so với tổng hợp tay"*.
-3. Trong **Defects found**, bấm **+ Link a defect**, nhập hệ thống (Jira), khóa lỗi (ví dụ `EINV-1300`) và mức nghiêm trọng. Bạn tạo lỗi trên Jira trước rồi dán khóa vào đây.
+1. Bấm **Execute** ở dòng `EINV-RPT-002`. Chọn **Result = Failed**.
+2. Ở **Actual result**, mô tả **điều gì đã xảy ra thật** (không chỉ viết "lỗi"). Ví dụ: *"Tồn cuối kỳ lệch 2 hóa đơn so với bảng tổng hợp tay: hệ thống 148, tay 150"*.
+3. Trong **Defects found**, bấm **+ Link a defect**. Ô đầu là hệ thống quản lý lỗi (mặc định Jira), ô thứ hai là **khóa lỗi** (ví dụ `EINV-1300`). Bạn tạo lỗi trên Jira trước rồi dán khóa vào đây.
 4. Bấm **Record result**.
-5. Đính kèm bằng chứng: ở dòng đó bấm **History**, kéo thả tệp vào vùng đính kèm của lần thử, hoặc bấm vào vùng đó rồi **dán ảnh chụp màn hình** bằng Ctrl+V.
 
-![Lịch sử lần thử](images/guide-attempt-history.png)
+   ![Ghi Failed](images/guide/b2-01-ghi-failed.png)
 
-Bấm vào tên tệp: ảnh và log mở xem ngay trong ứng dụng, các loại tệp khác sẽ được tải về.
+5. Dòng chuyển thành **Failed**, và số lỗi mở của run tăng lên.
+
+   ![Đã ghi Failed](images/guide/b2-02-da-ghi-failed.png)
+
+6. Đính kèm bằng chứng: ở dòng đó bấm **History**. Mỗi lần thử có một vùng đính kèm nét đứt. Kéo thả tệp vào đó, hoặc bấm vào vùng đó để chọn tệp, hoặc bấm vào vùng đó rồi **dán ảnh chụp màn hình** bằng Ctrl+V.
+
+   ![Lịch sử lần thử](images/guide/b2-03-lich-su-lan-thu.png)
+
+7. Tệp được tải lên và hiện ngay dưới lần thử, cùng khóa lỗi đã gắn (`Jira EINV-1300`, mức độ, trạng thái Open).
+
+   ![Đã đính kèm](images/guide/b2-04-da-dinh-kem.png)
+
+8. Bấm vào tên tệp: ảnh và log **mở xem ngay trong ứng dụng** (các loại tệp khác sẽ được tải về). Nút **Download** để tải về nếu cần.
+
+   ![Xem log](images/guide/b2-05-xem-log.png)
 
 #### Bài 3: Chạy lại sau khi lỗi được sửa (retest)
 
-1. Ở dòng test đã Failed, bấm **Retest**.
-2. Ghi **Passed** và bấm **Record result**.
-3. Bấm **History**: bạn thấy **hai lần thử** (Failed rồi Passed). Lần cũ không bị xóa. Trạng thái hiện tại của test là lần thử mới nhất.
+1. Giả sử dev đã sửa lỗi `EINV-1300`. Ở dòng test đã Failed, bấm **Retest**.
 
-> Nếu một test cứ lúc Pass lúc Fail dù code không đổi, hệ thống sẽ đánh dấu nó là **flaky** (chập chờn) trên Dashboard. Hãy ghi lại điều đó trong kết quả thực tế để cả đội xử lý.
+   ![Nút Retest](images/guide/b3-01-nut-retest.png)
 
-#### Bài 4: Viết một test case mới, dùng AI gợi ý bước
+2. Mô tả điều bạn thấy lần này, chọn **Result = Passed** và bấm **Record result**.
 
-1. Vào **Test repository**, chọn bộ test cần thêm, bấm **+ New test case**.
-2. Điền **Code** (theo [quy ước](#5-quy-ước-của-đội)), **Title**, độ ưu tiên và mức nghiêm trọng.
-3. Bấm **Suggest steps with AI**, dán yêu cầu hoặc tiêu chí chấp nhận vào, bấm **Generate steps**. AI đề xuất các bước, bạn **tích chọn** bước muốn giữ rồi bấm **Add … step(s)**.
-4. **Đọc kỹ và sửa** các bước cho đúng với hệ thống thật (tên nút, tên màn hình). AI chỉ gợi ý, người viết chịu trách nhiệm nội dung.
-5. Bấm **Save**. Test case ở trạng thái **Draft**, nhờ QA Lead duyệt.
+   ![Ghi Passed lần 2](images/guide/b3-02-ghi-passed-lan-2.png)
 
-### Phần B. Dành cho QA Lead
+3. Bấm **History**: bạn thấy **hai lần thử** (Failed rồi Passed). Lần cũ, cùng lỗi và tệp log của nó, **không bị xóa**. Trạng thái hiện tại của test là lần thử mới nhất.
+
+   ![Hai lần thử](images/guide/b3-03-hai-lan-thu.png)
+
+> Nếu một test cứ lúc Pass lúc Fail dù code không đổi, hệ thống sẽ đánh dấu nó là **flaky** (chập chờn) trên Dashboard (xem Bài 8). Hãy ghi lại điều đó trong kết quả thực tế để cả đội xử lý.
+
+#### Bài 4: Viết test case mới, dùng AI gợi ý bước
+
+1. Vào **Test repository**, chọn bộ test cần thêm ở cây bên trái (ví dụ **Hóa đơn GTGT**), bấm **+ New test case**.
+
+   ![Chọn bộ test](images/guide/b4-01-chon-bo-test.png)
+
+2. Điền **Code** (theo [quy ước](#5-quy-ước-của-đội)), **Title**, độ ưu tiên và mức nghiêm trọng. Ô **Suite** đã tự chọn theo bộ test bạn vừa chọn.
+
+   ![Điền thông tin](images/guide/b4-02-dien-thong-tin.png)
+
+3. Cuộn xuống phần **Steps**, bấm **Suggest steps with AI**. Dán yêu cầu hoặc tiêu chí chấp nhận vào ô **Requirement** rồi bấm **Generate steps** (mất vài giây, tối đa 4000 ký tự).
+
+   ![Nhập yêu cầu](images/guide/b4-03-nhap-yeu-cau.png)
+
+4. AI đề xuất các bước. **Tích chọn** bước muốn giữ rồi bấm **Add … step(s) to the test case**.
+
+   ![Đề xuất của AI](images/guide/b4-04-de-xuat-cua-ai.png)
+
+   > AI trả lời theo **ngôn ngữ giao diện đang chọn**: giao diện tiếng Anh thì các bước bằng tiếng Anh, giao diện tiếng Việt thì tiếng Việt. Đoạn yêu cầu bạn nhập được gửi tới dịch vụ AI do quản trị viên cấu hình, nên đừng dán dữ liệu mật.
+
+5. Các bước được thêm vào form, **chưa lưu**. **Đọc kỹ và sửa** cho đúng với hệ thống thật (tên nút, tên màn hình): AI chỉ gợi ý, người viết chịu trách nhiệm nội dung. Sau đó bấm **Save**.
+
+   ![Các bước đã thêm](images/guide/b4-05-buoc-da-them.png)
+
+6. Test case xuất hiện trong danh sách ở trạng thái **Draft**, phiên bản v0. Nhờ QA Lead duyệt (Bài 5).
+
+   ![Trạng thái Draft](images/guide/b4-06-trang-thai-draft.png)
+
+### Phần B: QA Lead
+
+*Tình huống:* bạn là Lê Hoàng Anh, QA Lead. Bạn duyệt test case của đồng nghiệp, bảo trì bước dùng chung, lập đợt chạy mới, theo dõi chất lượng và cho phép phát hành.
 
 #### Bài 5: Duyệt test case
 
-1. Trong **Test repository**, lọc **Any status → Under review**, hoặc mở test case ở trạng thái Draft.
-2. Bấm vào test case, đọc các bước. Nếu ổn bấm **Approve** (test case Draft có thể duyệt thẳng, hoặc đi qua **Submit for review** nếu đội muốn có bước xem xét riêng). Nếu chưa ổn, bấm **Back to draft** và báo người viết sửa.
+1. Vào **Test repository**, đặt bộ lọc **Any status → Draft** để thấy các test case đang chờ. Test case của Lan, `EINV-INV-007`, nằm trong đó.
 
-#### Bài 6: Dùng bước dùng chung
+   ![Lọc Draft](images/guide/b5-01-loc-draft.png)
 
-1. Vào **Shared steps**, xem nhóm **"Đăng nhập EasyInvoice bằng tài khoản kế toán"** và nơi nó được dùng.
-2. Thử sửa một bước của nhóm (ví dụ đổi chữ trong kết quả mong đợi). Các test case đang dùng sẽ báo **Behind** (cũ hơn nhóm).
-3. Trong một test case, bấm **Update** ở bước dùng chung để cập nhật. Nếu test case đã Approved thì hệ thống tạo **phiên bản mới** và hỏi xác nhận trước.
+2. Bấm vào test case để mở ngăn kéo chi tiết và đọc kỹ từng bước. Nút ở cuối ngăn kéo: **Submit for review** (gửi xem xét), **Approve** (duyệt), **Delete**, **Edit**.
 
-#### Bài 7: Tạo run và giao việc
+   ![Đọc các bước](images/guide/b5-02-doc-cac-buoc.png)
 
-1. Vào **Plans and runs**. Nếu chưa có plan, bấm **+ New plan** đặt tên theo đợt phát hành, rồi chuyển sang **Active** bằng nút `⋯` ở dòng plan.
-2. Bấm **+ New run**: nhập tên, chọn plan, môi trường, tích chọn các test case (chỉ test case đã **Approved** mới hiện).
-3. Mở run vừa tạo. Ở cột **Tester**, chọn người chạy cho từng dòng. Khi **+ Add test cases** thêm test case, bạn cũng chọn người nhận ngay trong hộp thoại.
-4. Dùng ô **Show** để xem khối lượng: mỗi người hiện kèm số đã làm trên tổng số, ví dụ *Nguyễn Thị Lan (7/7)*.
-5. Khi tất cả đã chạy xong, bấm **Complete run**.
+3. Nếu ổn, bấm **Approve**. (Test case Draft duyệt thẳng được; hoặc đi qua **Submit for review** nếu đội muốn có bước xem xét riêng. Nếu chưa ổn, báo người viết sửa.) Lọc lại theo **Approved** và tìm mã: test case đã ở trạng thái **Approved**, phiên bản v1.
+
+   ![Đã duyệt](images/guide/b5-03-da-duyet.png)
+
+#### Bài 6: Bảo trì bước dùng chung
+
+1. Vào **Shared steps**: danh sách các nhóm bước, số bước, bản sửa (revision) và số test case đang dùng. Nhóm "Đăng nhập EasyInvoice bằng tài khoản kế toán" được dùng ở nhiều test case.
+
+   ![Danh sách nhóm](images/guide/b6-01-danh-sach-nhom.png)
+
+2. Bấm **Usage** để xem những test case nào đang dùng nhóm này và chúng còn **Up to date** hay không.
+
+   ![Nơi đang dùng](images/guide/b6-02-noi-dang-dung.png)
+
+3. Đóng lại, bấm biểu tượng **bút chì (Edit)** ở dòng nhóm. Sửa nội dung một bước (ví dụ kết quả mong đợi của bước 2) rồi bấm **Save**. Nhóm lên bản sửa 2. **Chưa test case nào tự thay đổi** cho đến khi bạn cập nhật.
+
+   ![Sửa nhóm](images/guide/b6-03-sua-nhom.png)
+
+4. Mở một test case có dùng nhóm (ví dụ `EINV-AUTH-003`). Ở mục **Shared steps** nó đã báo **Behind** (cũ hơn nhóm), kèm hai nút **Update** và **Detach**.
+
+   ![Bị cũ hơn nhóm](images/guide/b6-04-bi-cu-hon-nhom.png)
+
+5. Bấm **Update**. Vì test case đã **Approved**, hệ thống hỏi xác nhận vì thay đổi sẽ **tạo phiên bản mới**. Bấm **Continue**.
+
+   ![Xác nhận phiên bản mới](images/guide/b6-05-xac-nhan-phien-ban-moi.png)
+
+6. Test case cập nhật theo nhóm: nhãn chuyển thành **Up to date**, phiên bản tăng lên v2.
+
+   ![Đã cập nhật](images/guide/b6-06-da-cap-nhat.png)
+
+#### Bài 7: Tạo plan, run và giao việc
+
+1. Vào **Plans and runs**, bấm **+ New plan**. Đặt tên theo đợt phát hành (ví dụ "EasyInvoice 2.6 - Phát hành tháng 12"), thêm mô tả, bấm **Save**.
+
+   ![Tạo plan](images/guide/b7-01-tao-plan.png)
+
+2. Plan mới ở trạng thái **Draft**. Bấm nút `⋯` ở dòng plan, chọn **Active** trong mục "Move to".
+
+   ![Chuyển sang Active](images/guide/b7-02-chuyen-active.png)
+
+3. Bấm **+ New run**: nhập **Title** và **Environment**, chọn **Plan**. Trong danh sách test case (chỉ test case **Approved** mới hiện), gõ vào ô tìm kiếm để lọc rồi tích chọn các test case cần chạy (dòng "N selected" cho biết đã chọn bao nhiêu). Bấm **Create run**.
+
+   ![Chọn test case](images/guide/b7-03-chon-test-case.png)
+
+4. Run mới ở trạng thái **Planned**, các mục đều **Untested** và chưa giao cho ai.
+
+   ![Run mới](images/guide/b7-04-run-moi.png)
+
+5. Ở cột **Tester**, chọn người chạy cho từng dòng; lưu ngay khi chọn. Ô **Show** phía trên cho biết khối lượng mỗi người.
+
+   ![Giao việc](images/guide/b7-05-giao-viec.png)
+
+6. Cần thêm test case: bấm **+ Add test cases**. Ô **Assign the new test cases to** cho phép chọn ngay người nhận cho các test case vừa thêm.
+
+   ![Thêm test case, giao ngay](images/guide/b7-06-them-test-giao-ngay.png)
+
+7. Test case mới xuất hiện cùng người được giao.
+
+   ![Sau khi thêm](images/guide/b7-07-sau-khi-them.png)
+
+> Khi mọi mục đã chạy xong, bấm **Complete run** để đóng run.
 
 #### Bài 8: Đọc Dashboard và Traceability
 
-- **Dashboard:** *Pass rate* (tỷ lệ đạt), *Burn-down* (còn bao nhiêu test chưa chạy so với kế hoạch), *Defect density* (lỗi trên 100 test đã chạy), *Flaky tests*. Chọn plan ở góc trên để xem riêng từng đợt.
-- **Traceability:** mỗi yêu cầu có trạng thái *Passed / Failed / Blocked / Not run / Uncovered*. **Uncovered** là yêu cầu **chưa có test nào**, đây là chỗ cần viết thêm test trước khi phát hành. Bấm **Link tests** để gắn test case vào yêu cầu.
+1. Vào **Dashboard**. Các ô số trên cùng: *Pass rate* (tỷ lệ đạt), *Completion* (tỷ lệ đã chạy), tốc độ chạy mỗi ngày, mật độ lỗi trên 100 test đã chạy, số test chập chờn. Ô chọn ở góc trên phải mặc định là *All runs* (mọi run).
 
-![Truy vết](images/traceability.png)
+   ![Dashboard](images/guide/b8-01-dashboard.png)
+
+2. Chọn một **plan** để xem riêng từng đợt: mọi số liệu và biểu đồ đổi theo plan đó.
+
+   ![Dashboard theo plan](images/guide/b8-02-dashboard-theo-plan.png)
+
+3. Cuộn xuống **Flaky tests**: test lúc đạt lúc fail (điểm từ 0,3 trở lên là *Flaky*, từ 0,15 là *Watch*). Cột *Passed / Failed / Flips* cho số lần đạt, fail và số lần đổi chiều. Bấm **Flag flaky tests in the library** để đánh dấu cờ vào test case.
+
+   ![Test chập chờn](images/guide/b8-03-test-chap-chon.png)
+
+4. Vào **Traceability**. Mỗi yêu cầu có một trạng thái: *Passed / Failed / Blocked / Not run / Uncovered*. Các ô số trên cùng cho biết yêu cầu nào **chưa có test nào** (**Uncovered**).
+
+   ![Truy vết](images/guide/b8-04-truy-vet.png)
+
+5. Cuộn xuống tìm yêu cầu *Uncovered* (ví dụ "Khởi tạo hóa đơn từ máy tính tiền"): cột test case ghi "No test case linked". Đây là chỗ cần viết thêm test trước khi phát hành.
+
+   ![Yêu cầu chưa có test](images/guide/b8-05-yeu-cau-chua-co-test.png)
+
+6. Để gắn test case có sẵn vào một yêu cầu, bấm **Link tests** ở dòng yêu cầu đó. Tìm test case, tích chọn rồi bấm **Link**.
+
+   ![Gắn test case](images/guide/b8-06-gan-test-case.png)
+
+7. Test case được gắn xuất hiện ngay trong cột "Linked test cases" của yêu cầu.
+
+   ![Đã gắn](images/guide/b8-07-da-gan.png)
 
 #### Bài 9: Cổng chất lượng và sign-off
 
-1. Vào **Quality and sign-off**, chọn plan, bấm **Evaluate**.
-2. Xem từng tiêu chí: **Pass** hoặc **Fail**, kèm danh sách lỗi đang mở.
-3. Khi cổng **không đạt**, nút **Start sign-off** bị khóa: sửa lỗi, chạy lại test rồi đánh giá lại.
-4. Khi cổng đạt, bấm **Start sign-off**, sau đó đủ số người duyệt (khác nhau) bấm **Approve**. Số liệu được đóng băng và có mã băm để không bị sửa về sau.
+1. Vào **Quality and sign-off**. Chọn plan ở ô đầu, chọn cổng (mặc định *Default gate*) rồi bấm **Evaluate**.
 
-### Phần C. Dành cho Dev (kết quả test tự động từ CI)
+   ![Màn hình chất lượng](images/guide/b9-01-man-hinh-chat-luong.png)
 
-![Automation](images/guide-automation.png)
+2. Với plan **chưa sẵn sàng** (còn lỗi mở), kết quả là **Gate not passed**. Bảng liệt kê từng tiêu chí: giá trị yêu cầu, giá trị thực tế và Pass/Fail. Cổng còn xét **lỗi Critical/High đang mở** và việc **mọi test ưu tiên P1 đã chạy**, không chỉ tỷ lệ đạt. Nút **Start sign-off** bị khóa cho tới khi đạt.
 
-1. Mỗi test case có test tự động thì điền **Automation ID**, trùng với tên test trong code (ví dụ `einvoice.api.create-invoice`).
-2. Vào **Automation → New API key**, đặt tên (ví dụ "Jenkins"). **Sao chép khóa ngay**: nó chỉ hiện một lần.
-3. Trong pipeline, sau bước chạy test, gửi kết quả:
+   ![Cổng không đạt](images/guide/b9-02-cong-khong-dat.png)
 
-```bash
-curl --fail-with-body -X POST https://<máy-chủ>/api/test-case-management/automation/results \
-  -H "X-Api-Key: $TCM_API_KEY" \
-  -H "Idempotency-Key: build-123" \
-  -H "Content-Type: application/json" \
-  -d '{ "run": { "title": "CI build 123", "environment": "UAT" },
-        "completeRun": true,
-        "results": [
-          { "automationId": "einvoice.api.create-invoice", "status": "Passed", "durationSeconds": 4 },
-          { "automationId": "einvoice.api.validation", "status": "Failed", "actualResult": "Thiếu thông báo lỗi" }
-        ] }'
-```
+3. Với plan **đã sẵn sàng** (mọi test đã chạy và đạt, không còn lỗi mở), kết quả là **Gate passed** và nút **Start sign-off** mở ra.
 
-- `Idempotency-Key` (ví dụ mã build) giúp **gửi lại không bị ghi trùng**.
-- Automation ID không khớp test case nào sẽ được liệt kê trong phản hồi, các kết quả khác vẫn được ghi.
-- Cùng một test xuất hiện nhiều lần trong yêu cầu được coi là các lần thử lại; test fail rồi pass sẽ được đánh dấu flaky.
-- Khóa bị lộ hoặc không dùng nữa: bấm **Revoke** ở màn hình Automation.
+   ![Cổng đạt](images/guide/b9-03-cong-dat.png)
+
+4. Bấm **Start sign-off**. Ghi **vai trò** của bạn (ví dụ QA Lead) và nhận xét, rồi bấm **Sign**. Hệ thống đánh giá lại cổng và đóng băng số liệu, kèm mã băm SHA-256.
+
+   ![Bắt đầu sign-off](images/guide/b9-04-bat-dau-sign-off.png)
+
+5. Báo cáo sign-off xuất hiện ở trạng thái **Pending**, đã có **1 / 2** chữ ký. Cần thêm người duyệt khác.
+
+   ![Chờ người thứ hai](images/guide/b9-05-cho-nguoi-thu-hai.png)
+
+6. **Người duyệt thứ hai** (ở đây là product owner Phạm Thanh Thủy) đăng nhập, vào cùng màn hình và bấm **Approve** ở dòng báo cáo.
+
+   ![Người thứ hai duyệt](images/guide/b9-06-nguoi-thu-hai-duyet.png)
+
+7. Ghi vai trò (Product Owner) và nhận xét, bấm **Sign**.
+
+   ![Người thứ hai ký](images/guide/b9-07-nguoi-thu-hai-ky.png)
+
+8. Đủ **2 / 2** chữ ký: báo cáo chuyển thành **Approved**, và cột *Integrity* là **Verified** (số liệu không bị sửa sau khi ký).
+
+   ![Đã sign-off](images/guide/b9-08-da-sign-off.png)
+
+9. Bấm vào tên báo cáo để xem chi tiết: bảng tiêu chí đã đóng băng, mã băm SHA-256 và danh sách người ký (ai, vai trò, khi nào, nhận xét).
+
+   ![Chi tiết báo cáo](images/guide/b9-09-chi-tiet-bao-cao.png)
+
+### Phần C: Dev, kết quả test tự động từ CI
+
+*Tình huống:* pipeline Jenkins chạy test API sau mỗi build và cần gửi kết quả về hệ thống.
+
+#### Bài 10: Tạo API key và gửi kết quả từ pipeline
+
+Điều kiện: mỗi test case có test tự động đã điền **Automation ID**, trùng với tên test trong code (ví dụ `einvoice.api.create-invoice`). Trong dữ liệu mẫu, các test `EINV-API-001` đến `003` đã có.
+
+1. Vào **Automation**. Phía trên là danh sách API key, phía dưới là đoạn mã mẫu (curl và GitHub Actions) để sao chép. Bấm **New API key**.
+
+   ![Màn hình Automation](images/guide/b10-01-man-hinh-automation.png)
+
+2. Đặt tên cho khóa theo nơi dùng (ví dụ "Jenkins - API tests EasyInvoice"). Có thể đặt ngày hết hạn, để trống thì khóa dùng đến khi bị thu hồi. Bấm **Create**.
+
+   ![Đặt tên khóa](images/guide/b10-02-dat-ten-khoa.png)
+
+3. **Sao chép khóa ngay**: khóa **chỉ hiện đúng một lần** và không đọc lại được. Hộp thoại cũng cho sẵn lệnh curl đã điền khóa. Bấm **I have saved the key**. Hãy lưu khóa vào "secrets" của CI, không viết vào mã nguồn.
+
+   ![Khóa chỉ hiện một lần](images/guide/b10-03-khoa-chi-hien-mot-lan.png)
+
+   > Khóa trong ảnh này chỉ dùng để minh họa và đã được thu hồi ở bước cuối.
+
+4. Khóa xuất hiện trong danh sách (chỉ hiện đầu khóa), trạng thái **Active**, chưa từng dùng.
+
+   ![Danh sách khóa](images/guide/b10-04-danh-sach-khoa.png)
+
+5. Trong pipeline, sau bước chạy test, gửi kết quả. Lệnh dưới đây đã được chạy thật cho tài liệu này:
+
+   ```bash
+   curl --fail-with-body -X POST https://<máy-chủ>/api/test-case-management/automation/results \
+     -H "X-Api-Key: $TCM_API_KEY" \
+     -H "Idempotency-Key: build-342" \
+     -H "Content-Type: application/json" \
+     -d '{ "run": { "title": "Jenkins #342 - API tests", "environment": "UAT" },
+           "completeRun": true,
+           "results": [
+             { "automationId": "einvoice.api.create-invoice", "status": "Passed", "durationSeconds": 4 },
+             { "automationId": "einvoice.api.validation", "status": "Failed", "actualResult": "Thiếu thông báo lỗi" },
+             { "automationId": "einvoice.api.get-status", "status": "Passed", "durationSeconds": 1 }
+           ] }'
+   ```
+
+   Phản hồi (rút gọn): `accepted: true`, `runCreated: true`, `received: 3`, `recorded: 3`, `unmatched: 0`, `replayed: false`; mỗi kết quả cho biết nó khớp với test case nào (`EINV-API-001`, `002`, `003`).
+
+   - `Idempotency-Key` (ví dụ mã build) giúp **gửi lại không bị ghi trùng**: gửi lần hai với cùng khóa thì `replayed: true`.
+   - Automation ID không khớp test case nào được liệt kê trong phản hồi; các kết quả còn lại vẫn được ghi.
+   - Cùng một test xuất hiện nhiều lần trong yêu cầu được coi là các lần thử lại; test fail rồi pass sẽ được đánh dấu flaky.
+
+6. Vào **Plans and runs**: run **"Jenkins #342 - API tests"** đã được tạo tự động và hoàn tất.
+
+   ![Run từ CI](images/guide/b10-05-run-tu-ci.png)
+
+7. Mở run: 3 mục, 2 Passed và 1 Failed, mỗi dòng khớp đúng test case theo Automation ID.
+
+   ![Kết quả từ CI](images/guide/b10-06-ket-qua-tu-ci.png)
+
+8. Quay lại **Automation**: cột **Last used** của khóa đã có thời gian vừa dùng.
+
+   ![Khóa đã dùng](images/guide/b10-07-khoa-da-dung.png)
+
+9. Khóa bị lộ hoặc không dùng nữa: bấm **Revoke** ở dòng khóa và xác nhận. Khóa chuyển thành **Revoked** và pipeline dùng khóa đó sẽ bị từ chối.
+
+   ![Xác nhận thu hồi](images/guide/b10-08-thu-hoi-xac-nhan.png)
+
+   ![Đã thu hồi](images/guide/b10-09-da-thu-hoi.png)
 
 ## 5. Quy ước của đội
 
@@ -248,8 +468,11 @@ Quyền duyệt, tạo, xóa được cấp riêng. Xem [phụ lục](#phụ-l�
 **Tôi không thêm được test case vào run.**
 Chỉ test case ở trạng thái **Approved** mới được thêm. Một test case cũng chỉ xuất hiện **một lần** trong một run.
 
-**Không có ô chọn người test ở cột Tester.**
-Ứng dụng chưa cung cấp được danh sách người dùng cho module, hoặc bạn không có quyền quản lý plan. Nhờ quản trị viên kiểm tra.
+**Cột Tester chỉ ghi "Assigned", không có tên người.**
+Bình thường với người không có quyền xem danh sách người dùng (ví dụ Tester). Bộ lọc **My tests** vẫn dùng được.
+
+**Tôi là QA Lead nhưng không có ô chọn người test ở cột Tester.**
+Module cần đọc danh sách người dùng của ứng dụng. Trong ứng dụng ABP, vai trò của bạn phải có quyền xem danh sách người dùng (`AbpIdentity.Users`). Nhờ quản trị viên cấp quyền này ở Administration → Roles, hoặc cung cấp danh sách riêng nếu ứng dụng của bạn cấu hình khác.
 
 **Tôi lỡ ghi nhầm kết quả.**
 Không sửa được lần thử cũ (lịch sử chỉ thêm, không sửa). Hãy bấm **Retest** và ghi kết quả đúng; lần mới nhất là trạng thái hiện tại.
@@ -273,7 +496,7 @@ Dịch vụ AI không phản hồi hoặc cấu hình sai. Chưa có thay đổi
 
 ## Phụ lục: quyền theo vai trò
 
-Bảng dưới là bộ quyền của **ba vai trò trong host mẫu**; ứng dụng của bạn cấu hình ở **Administration → Roles**.
+Bảng dưới là bộ quyền của **ba vai trò dùng trong các bài tập** (cấu hình ở **Administration → Roles**).
 
 | Việc | Tester | QA Lead | Product Owner |
 |---|:---:|:---:|:---:|
@@ -284,9 +507,10 @@ Bảng dưới là bộ quyền của **ba vai trò trong host mẫu**; ứng d�
 | Quản lý bộ test, bước dùng chung | | ✔ | |
 | Chạy test, ghi kết quả, gắn lỗi, đính kèm | ✔ | ✔ | |
 | Lập plan và run, giao việc, hoàn tất run | | ✔ | |
-| Quản lý yêu cầu | | ✔ | ✔ |
+| Quản lý yêu cầu, gắn test case vào yêu cầu | | ✔ | ✔ |
 | Cấu hình cổng chất lượng | | ✔ | |
 | Duyệt sign-off | | ✔ | ✔ |
 | Quản lý API key (Automation) | | ✔ | |
+| Xem danh sách người dùng để giao việc (`AbpIdentity.Users`) | | ✔ | |
 
 Quyền "gửi kết quả tự động" chỉ thuộc về **API key**, không thuộc người dùng nào.
