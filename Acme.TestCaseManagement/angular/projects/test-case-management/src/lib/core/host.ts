@@ -46,3 +46,16 @@ export const TCM_USER_DIRECTORY = new InjectionToken<TcmUserDirectory>('TCM_USER
   providedIn: 'root',
   factory: () => ({ list: () => of([]) }),
 });
+
+/**
+ * Parts of the module a host can turn on. Everything here is off until the host asks for it, and the code stays in place:
+ * turning a part on is one line in the host (`{ provide: TCM_FEATURES, useValue: { automation: true } }`).
+ */
+export interface TcmFeatures {
+  /**
+   * The Automation page (API keys for pipelines and the way to publish results from CI), and what only that needs on the other screens:
+   * the Automation ID of a test case and the filter on it. The endpoints of the server do not change.
+   */
+  automation: boolean;
+}
+export const TCM_FEATURES = new InjectionToken<TcmFeatures>('TCM_FEATURES', { providedIn: 'root', factory: () => ({ automation: false }) });

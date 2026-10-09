@@ -46,11 +46,13 @@
             <option value="">{{ 'repo.anyTag' | t }}</option>
             @for (t of tagOptions(); track t.name) { <option [value]="t.name">{{ t.name }} ({{ t.count }})</option> }
           </select>
-          <select name="automation" [(ngModel)]="automation" (ngModelChange)="applyFilters()" [attr.aria-label]="'repo.automation' | t" style="width: auto">
-            <option value="">{{ 'repo.anyAutomation' | t }}</option>
-            <option value="linked">{{ 'repo.automationLinked' | t }}</option>
-            <option value="unlinked">{{ 'repo.automationUnlinked' | t }}</option>
-          </select>
+          @if (features.automation) {
+            <select name="automation" [(ngModel)]="automation" (ngModelChange)="applyFilters()" [attr.aria-label]="'repo.automation' | t" style="width: auto">
+              <option value="">{{ 'repo.anyAutomation' | t }}</option>
+              <option value="linked">{{ 'repo.automationLinked' | t }}</option>
+              <option value="unlinked">{{ 'repo.automationUnlinked' | t }}</option>
+            </select>
+          }
           <button type="submit" class="btn">{{ 'common.search' | t }}</button>
         </form>
       </div>

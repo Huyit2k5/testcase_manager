@@ -9,6 +9,7 @@ import { TestCaseService } from '../../proxy/services';
 import { StepSuggestionsComponent } from '../suggestions/step-suggestions';
 import { TagInputComponent } from '../tags/tag-input';
 import { SuiteOption } from './suite-options';
+import { TCM_FEATURES } from '../../core/host';
 
 @Component({
   selector: 'app-test-case-form',
@@ -79,10 +80,12 @@ import { SuiteOption } from './suite-options';
               @for (o of executionTypes; track o.value) { <option [ngValue]="o.value">{{ label(executionEnum, o.value) }}</option> }
             </select>
           </div>
-          <div class="field">
-            <label for="tc-auto">{{ 'form.automationId' | t }}</label>
-            <input id="tc-auto" name="automationId" [(ngModel)]="model.automationId" />
-          </div>
+          @if (features.automation) {
+            <div class="field">
+              <label for="tc-auto">{{ 'form.automationId' | t }}</label>
+              <input id="tc-auto" name="automationId" [(ngModel)]="model.automationId" />
+            </div>
+          }
         </div>
         <div class="field">
           <label class="check"><input type="checkbox" name="flaky" [(ngModel)]="model.isFlaky" /> {{ 'form.flaky' | t }}</label>
@@ -137,6 +140,7 @@ export class TestCaseFormComponent implements OnInit {
   private readonly service = inject(TestCaseService);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(I18nService);
+  protected readonly features = inject(TCM_FEATURES);
 
   readonly suites = input.required<SuiteOption[]>();
   readonly defaultSuiteId = input<string | null>(null);

@@ -1,6 +1,6 @@
 # Hướng dẫn sử dụng Test Case Management
 
-Tài liệu thực hành cho cả đội: tester, QA lead, product owner và dev. Đọc phần khái niệm mất khoảng 10 phút; làm hết 10 bài tập mất khoảng 60 phút.
+Tài liệu thực hành cho cả đội: tester, QA lead và product owner. Đọc phần khái niệm mất khoảng 10 phút; làm hết 9 bài tập mất khoảng 50 phút.
 
 **Mọi bài tập trong tài liệu này đã được làm thật, từng bước, trên giao diện, bằng đúng tài khoản của vai trò đó**, và các ảnh chụp lấy từ chính lần làm đó (ô vàng là chỗ cần chú ý).
 
@@ -10,7 +10,6 @@ Tài liệu thực hành cho cả đội: tester, QA lead, product owner và dev
 - [4. Thực hành](#4-thực-hành)
   - [Phần A: Tester (Bài 1 đến 4)](#phần-a-tester)
   - [Phần B: QA Lead (Bài 5 đến 9)](#phần-b-qa-lead)
-  - [Phần C: Dev, kết quả từ CI (Bài 10)](#phần-c-dev-kết-quả-test-tự-động-từ-ci)
 - [5. Quy ước của đội](#5-quy-ước-của-đội)
 - [6. Hỏi đáp và xử lý sự cố](#6-hỏi-đáp-và-xử-lý-sự-cố)
 - [Phụ lục: quyền theo vai trò](#phụ-lục-quyền-theo-vai-trò)
@@ -43,7 +42,6 @@ flowchart LR
     REQ[Yêu cầu] --> TC[Test case<br/>viết và duyệt]
     TC --> RUN[Plan và run<br/>giao cho người test]
     RUN --> RES[Kết quả<br/>lỗi và bằng chứng]
-    CI[CI/CD<br/>gửi bằng API key] --> RES
     RES --> TRACE[Truy vết yêu cầu<br/>và Dashboard]
     RES --> GATE[Cổng chất lượng]
     GATE --> SIGN[Sign-off<br/>cho phép phát hành]
@@ -86,9 +84,6 @@ flowchart TB
       P2[Xem dashboard và truy vết]
       P3[Duyệt sign-off]
     end
-    subgraph Dev
-      D1[Gửi kết quả test tự động từ CI]
-    end
 ```
 
 ## 3. Trước khi bắt đầu
@@ -102,10 +97,10 @@ Các tài khoản dùng trong tài liệu (mật khẩu môi trường tập do 
 | Tài khoản | Vai trò | Dùng ở |
 |---|---|---|
 | `lan.nguyen` | Tester | Bài 1 đến 4 |
-| `hoanganh.le` | QA Lead | Bài 5 đến 10 |
+| `hoanganh.le` | QA Lead | Bài 5 đến 9 |
 | `thuy.pham` | Product Owner | Bài 9 (người duyệt thứ hai) |
 
-Các mục trong thanh bên: **Dashboard**, **Test repository**, **Shared steps**, **Plans and runs**, **Traceability**, **Quality and sign-off**, **Automation**. Mỗi vai trò chỉ thấy những mục mình có quyền, ví dụ Tester không thấy **Automation**.
+Các mục trong thanh bên: **Dashboard**, **Test repository**, **Shared steps**, **Plans and runs**, **Traceability**, **Quality and sign-off**. Mỗi vai trò chỉ thấy những mục mình có quyền.
 
 ![Thanh bên của Tester](images/guide/b1-01-thanh-ben.png)
 
@@ -354,72 +349,6 @@ Các mục trong thanh bên: **Dashboard**, **Test repository**, **Shared steps*
 
    ![Chi tiết báo cáo](images/guide/b9-09-chi-tiet-bao-cao.png)
 
-### Phần C: Dev, kết quả test tự động từ CI
-
-*Tình huống:* pipeline Jenkins chạy test API sau mỗi build và cần gửi kết quả về hệ thống.
-
-#### Bài 10: Tạo API key và gửi kết quả từ pipeline
-
-Điều kiện: mỗi test case có test tự động đã điền **Automation ID**, trùng với tên test trong code (ví dụ `einvoice.api.create-invoice`). Trong dữ liệu mẫu, các test `EINV-API-001` đến `003` đã có.
-
-1. Vào **Automation**. Phía trên là danh sách API key, phía dưới là đoạn mã mẫu (curl và GitHub Actions) để sao chép. Bấm **New API key**.
-
-   ![Màn hình Automation](images/guide/b10-01-man-hinh-automation.png)
-
-2. Đặt tên cho khóa theo nơi dùng (ví dụ "Jenkins - API tests EasyInvoice"). Có thể đặt ngày hết hạn, để trống thì khóa dùng đến khi bị thu hồi. Bấm **Create**.
-
-   ![Đặt tên khóa](images/guide/b10-02-dat-ten-khoa.png)
-
-3. **Sao chép khóa ngay**: khóa **chỉ hiện đúng một lần** và không đọc lại được. Hộp thoại cũng cho sẵn lệnh curl đã điền khóa. Bấm **I have saved the key**. Hãy lưu khóa vào "secrets" của CI, không viết vào mã nguồn.
-
-   ![Khóa chỉ hiện một lần](images/guide/b10-03-khoa-chi-hien-mot-lan.png)
-
-   > Khóa trong ảnh này chỉ dùng để minh họa và đã được thu hồi ở bước cuối.
-
-4. Khóa xuất hiện trong danh sách (chỉ hiện đầu khóa), trạng thái **Active**, chưa từng dùng.
-
-   ![Danh sách khóa](images/guide/b10-04-danh-sach-khoa.png)
-
-5. Trong pipeline, sau bước chạy test, gửi kết quả. Lệnh dưới đây đã được chạy thật cho tài liệu này:
-
-   ```bash
-   curl --fail-with-body -X POST https://<máy-chủ>/api/test-case-management/automation/results \
-     -H "X-Api-Key: $TCM_API_KEY" \
-     -H "Idempotency-Key: build-342" \
-     -H "Content-Type: application/json" \
-     -d '{ "run": { "title": "Jenkins #342 - API tests", "environment": "UAT" },
-           "completeRun": true,
-           "results": [
-             { "automationId": "einvoice.api.create-invoice", "status": "Passed", "durationSeconds": 4 },
-             { "automationId": "einvoice.api.validation", "status": "Failed", "actualResult": "Thiếu thông báo lỗi" },
-             { "automationId": "einvoice.api.get-status", "status": "Passed", "durationSeconds": 1 }
-           ] }'
-   ```
-
-   Phản hồi (rút gọn): `accepted: true`, `runCreated: true`, `received: 3`, `recorded: 3`, `unmatched: 0`, `replayed: false`; mỗi kết quả cho biết nó khớp với test case nào (`EINV-API-001`, `002`, `003`).
-
-   - `Idempotency-Key` (ví dụ mã build) giúp **gửi lại không bị ghi trùng**: gửi lần hai với cùng khóa thì `replayed: true`.
-   - Automation ID không khớp test case nào được liệt kê trong phản hồi; các kết quả còn lại vẫn được ghi.
-   - Cùng một test xuất hiện nhiều lần trong yêu cầu được coi là các lần thử lại; test fail rồi pass sẽ được đánh dấu flaky.
-
-6. Vào **Plans and runs**: run **"Jenkins #342 - API tests"** đã được tạo tự động và hoàn tất.
-
-   ![Run từ CI](images/guide/b10-05-run-tu-ci.png)
-
-7. Mở run: 3 mục, 2 Passed và 1 Failed, mỗi dòng khớp đúng test case theo Automation ID.
-
-   ![Kết quả từ CI](images/guide/b10-06-ket-qua-tu-ci.png)
-
-8. Quay lại **Automation**: cột **Last used** của khóa đã có thời gian vừa dùng.
-
-   ![Khóa đã dùng](images/guide/b10-07-khoa-da-dung.png)
-
-9. Khóa bị lộ hoặc không dùng nữa: bấm **Revoke** ở dòng khóa và xác nhận. Khóa chuyển thành **Revoked** và pipeline dùng khóa đó sẽ bị từ chối.
-
-   ![Xác nhận thu hồi](images/guide/b10-08-thu-hoi-xac-nhan.png)
-
-   ![Đã thu hồi](images/guide/b10-09-da-thu-hoi.png)
-
 ## 5. Quy ước của đội
 
 > Đây là **đề xuất khởi đầu**. Cả đội thống nhất và chỉnh sửa trong buổi đầu, rồi cập nhật ngay vào mục này.
@@ -483,9 +412,6 @@ Test lúc Pass lúc Fail dù code không đổi. Nó làm sai tỷ lệ đạt v
 **Cổng chất lượng báo không đạt nhưng tôi thấy test đã pass hết.**
 Cổng còn xét **lỗi đang mở** (Critical/High) và việc **mọi test ưu tiên P1 đã chạy**, không chỉ tỷ lệ đạt. Xem từng dòng tiêu chí và danh sách lỗi mở ở dưới.
 
-**Pipeline gửi kết quả bị ghi trùng.**
-Gửi kèm `Idempotency-Key` (ví dụ mã build) để lần gửi lại được nhận ra.
-
 **Gợi ý bằng AI báo "could not be reached".**
 Dịch vụ AI không phản hồi hoặc cấu hình sai. Chưa có thay đổi nào được lưu. Thử lại sau, và báo quản trị viên kiểm tra cấu hình AI nếu lỗi kéo dài.
 
@@ -510,7 +436,5 @@ Bảng dưới là bộ quyền của **ba vai trò dùng trong các bài tập*
 | Quản lý yêu cầu, gắn test case vào yêu cầu | | ✔ | ✔ |
 | Cấu hình cổng chất lượng | | ✔ | |
 | Duyệt sign-off | | ✔ | ✔ |
-| Quản lý API key (Automation) | | ✔ | |
 | Xem danh sách người dùng để giao việc (`AbpIdentity.Users`) | | ✔ | |
 
-Quyền "gửi kết quả tự động" chỉ thuộc về **API key**, không thuộc người dùng nào.

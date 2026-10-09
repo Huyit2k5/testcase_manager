@@ -15,6 +15,7 @@ import { SuiteOption, flattenSuites } from './suite-options';
 import { TestCaseDetailComponent } from './test-case-detail';
 import { TestCaseFormComponent } from './test-case-form';
 import { ConfirmService } from '../../core/confirm';
+import { TCM_FEATURES } from '../../core/host';
 
 
 const PAGE_SIZE = 20;
@@ -32,6 +33,7 @@ export class RepositoryComponent implements OnInit {
   private readonly i18n = inject(I18nService);
   private readonly confirmer = inject(ConfirmService);
   protected readonly auth = inject(AuthService);
+  protected readonly features = inject(TCM_FEATURES);
   protected readonly perm = Permissions;
 
   protected readonly tree = signal<TestSuiteTree[]>([]);

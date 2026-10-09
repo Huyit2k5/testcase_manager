@@ -305,3 +305,10 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 ## Phase 22: The guide done for real
 
 - [x] T126 Do the ten exercises of the guide on the screens with the accounts of each role, take the 61 pictures, correct the text where the screens differ; fix what that showed (the tester filter without a user directory).
+
+---
+
+## Phase 23: The automation part, switched off
+
+- [x] T127 `TCM_FEATURES` (automation off by default): no sidebar entry or tab, the route redirects, no filter and no Automation ID field; one line to turn it on; code and server untouched.
+- [x] T128 Take the pipeline exercise and its pictures out of the team guide, and say in the READMEs that the part is off and how to turn it on.

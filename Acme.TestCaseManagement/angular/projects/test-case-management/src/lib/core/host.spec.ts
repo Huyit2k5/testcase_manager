@@ -2,15 +2,15 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Injectable, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { ResolveFn, RouterStateSnapshot, provideRouter } from '@angular/router';
+import { CanActivateFn, ResolveFn, Router, RouterStateSnapshot, UrlTree, provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { RepositoryComponent } from '../features/repository/repository';
 import { TestSuiteService } from '../proxy/services';
-import { TCM_MENU } from '../menu';
+import { TCM_MENU, tcmMenu } from '../menu';
 import { createTestCaseManagementRoutes } from '../routes';
 import { AuthService, Permissions, TcmUser } from './auth';
 import { ToastService } from './core';
-import { TCM_API_URL, TCM_BASE_PATH, TCM_LANGUAGE, TCM_NOTIFIER, TcmNotifier } from './host';
+import { TCM_API_URL, TCM_BASE_PATH, TCM_FEATURES, TCM_LANGUAGE, TCM_NOTIFIER, TcmNotifier } from './host';
 import { I18nService, TranslatedTitleStrategy } from './i18n/i18n';
 
 describe('the module inside a host', () => {
@@ -116,10 +116,32 @@ describe('the module inside a host', () => {
     for (const item of TCM_MENU) {
       const route = children.find(r => r.path === item.path);
       expect(route, item.path).toBeDefined();
-      expect(route?.canActivate, item.path).toEqual([guard]);
+      // A page of a part that is off has one more guard, after the host's own.
+      expect(route?.canActivate?.[0], item.path).toBe(guard);
+      expect(route?.canActivate?.length, item.path).toBe(item.feature ? 2 : 1);
     }
     expect(children.find(r => r.path === 'runs/:id')?.canActivate).toEqual([guard]);
     expect(children.find(r => r.path === '')?.redirectTo).toBe('repository');
+  });
+
+  it('keeps the automation part off until the host turns it on: no menu entry, no page, and the page sends the user to the repository', () => {
+    TestBed.configureTestingModule({ providers: [provideRouter([]), { provide: TCM_BASE_PATH, useValue: '/test-case-management' }] });
+    expect(TestBed.inject(TCM_FEATURES).automation).toBe(false);
+    expect(tcmMenu(TestBed.inject(TCM_FEATURES)).map(i => i.path)).not.toContain('automation');
+    expect(tcmMenu({ automation: true }).map(i => i.path)).toContain('automation');
+
+    const [shell] = createTestCaseManagementRoutes();
+    const guard = shell.children!.find(r => r.path === 'automation')!.canActivate!.at(-1) as CanActivateFn;
+    const result = TestBed.runInInjectionContext(() => guard({} as never, {} as never)) as UrlTree | boolean;
+    expect(result instanceof UrlTree).toBe(true);
+    expect(TestBed.inject(Router).serializeUrl(result as UrlTree)).toBe('/test-case-management/repository');
+  });
+
+  it('opens the automation page when the host turns the part on', () => {
+    TestBed.configureTestingModule({ providers: [provideRouter([]), { provide: TCM_FEATURES, useValue: { automation: true } }] });
+    const [shell] = createTestCaseManagementRoutes();
+    const guard = shell.children!.find(r => r.path === 'automation')!.canActivate!.at(-1) as CanActivateFn;
+    expect(TestBed.runInInjectionContext(() => guard({} as never, {} as never))).toBe(true);
   });
 
   it('gives every menu entry a policy, a label key and an ABP name, and unique paths', () => {

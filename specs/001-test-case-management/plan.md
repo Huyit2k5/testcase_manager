@@ -1142,6 +1142,19 @@ the ABP sample application, with the permissions of the table in the guide), and
 - *A QA lead needs `AbpIdentity.Users` to pick a tester* in an ABP application (see 4.18): said in the guide, in the permissions table and in the questions.
 - Several test cases of the sample data did not use the shared steps the exercise on them expects; the exercise uses one that does.
 
+### 4.22. Phase 23: the automation part, switched off
+
+The part of the module that serves pipelines is not needed yet, so its screens are off, and nothing was deleted.
+
+- A host feature switch, `TCM_FEATURES` (`{ automation: boolean }`, **false** unless the host says otherwise). Off, there is no *Automation* entry in the sidebar of an ABP application or in the tabs of the standalone app (`tcmMenu(features)`
+  replaces the plain `TCM_MENU` in both), the route of the page sends the user to the repository (a guard after the host's own), and the repository hides the filter on the Automation ID and the form hides its field. A test case that already
+  has an Automation ID keeps it (the field is only hidden, the value is not cleared).
+- Turn it on with one line in the host: `{ provide: TCM_FEATURES, useValue: { automation: true } }`.
+- The server is unchanged (the endpoints for API keys and for publishing results, the key authentication, their tests). With no key nothing can use them; a host that wants them closed as well leaves out
+  `AddTestCaseManagementApiKeyAuthentication()`.
+- The team guide lost its developer part (the pipeline exercise and its nine pictures) and the roles table its API-key row.
+- Tests: the menu and the route guard in both states; the filter and the field in both states.
+
 ## 5. Security, RBAC & Permissions
 
 Defined in `TestCaseManagementPermissions`:

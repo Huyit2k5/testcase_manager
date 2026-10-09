@@ -1,5 +1,6 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, ResolveFn, Routes } from '@angular/router';
+import { CanActivateFn, ResolveFn, Router, Routes } from '@angular/router';
+import { TCM_BASE_PATH, TCM_FEATURES, TcmFeatures } from './core/host';
 import { I18nService } from './core/i18n/i18n';
 import { TcmShellComponent } from './shell';
 
@@ -8,6 +9,10 @@ const titleOf = (key: string): { title: ResolveFn<string>; data: { titleKey: str
   title: () => inject(I18nService).t(key),
   data: { titleKey: key },
 });
+
+/** Lets the page open only when its part of the module is on; otherwise the user goes to the repository. */
+const featureOn = (feature: keyof TcmFeatures): CanActivateFn => () =>
+  inject(TCM_FEATURES)[feature] || inject(Router).parseUrl(`${inject(TCM_BASE_PATH)}/repository`);
 
 export interface TcmRouteOptions {
   /** Guards that every page of the module sits behind: the host's own sign-in check (and, in ABP, its permission guard). */
@@ -33,7 +38,7 @@ export function createTestCaseManagementRoutes(options: TcmRouteOptions = {}): R
         { path: 'runs/:id', canActivate, ...titleOf('title.run'), loadComponent: () => import('./features/runs/run-detail').then(m => m.RunDetailComponent) },
         { path: 'traceability', canActivate, ...titleOf('title.traceability'), loadComponent: () => import('./features/traceability/traceability').then(m => m.TraceabilityComponent) },
         { path: 'quality', canActivate, ...titleOf('title.quality'), loadComponent: () => import('./features/quality/quality').then(m => m.QualityComponent) },
-        { path: 'automation', canActivate, ...titleOf('title.automation'), loadComponent: () => import('./features/automation/automation').then(m => m.AutomationComponent) },
+        { path: 'automation', canActivate: [...canActivate, featureOn('automation')], ...titleOf('title.automation'), loadComponent: () => import('./features/automation/automation').then(m => m.AutomationComponent) },
       ],
     },
   ];

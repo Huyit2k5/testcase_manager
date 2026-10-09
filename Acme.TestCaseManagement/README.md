@@ -224,6 +224,11 @@ importing needs only `Code` and `Result`, and every row becomes a new attempt.
 
 ## Publishing automated results (CI/CD)
 
+> **The screens of this part are off by default.** The Automation page (API keys and the snippets for pipelines), the Automation ID field of a test case and the filter on it are
+> hidden, and the Automation route sends the user to the repository. Nothing was removed: the server endpoints below, the API-key authentication and the pages are all in place.
+> To turn the part on, tell the Angular host: `{ provide: TCM_FEATURES, useValue: { automation: true } }` (in `app.config.ts`, next to the other providers of the module).
+> Without any key the endpoints cannot be used, so leaving them on the server is harmless; a host that wants them closed too can leave out `AddTestCaseManagementApiKeyAuthentication()`.
+
 A test case is linked to its automated test by the **Automation ID**, which is unique. A pipeline sends its results with an API key
 (create one on the Automation page, or with `POST api-keys`):
 

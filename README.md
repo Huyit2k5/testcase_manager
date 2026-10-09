@@ -25,7 +25,7 @@ Nhiều đội QA vẫn quản lý kiểm thử bằng bảng tính, và các co
 - Viết và duyệt test case, giữ **lịch sử phiên bản bất biến** để mỗi lần chạy luôn gắn với đúng nội dung đã chạy.
 - Lập kế hoạch, giao việc cho từng người test, ghi nhiều lần chạy cho một test, gắn lỗi và bằng chứng.
 - Truy vết từng **yêu cầu** tới test case và kết quả, thấy ngay chỗ nào chưa được kiểm thử.
-- Nhận kết quả test tự động từ **CI/CD**, tự phát hiện test **chập chờn (flaky)**.
+- Tự phát hiện test **chập chờn (flaky)**.
 - **Cổng chất lượng** và **sign-off** có chữ ký: không cho phát hành khi chưa đạt.
 
 Module được viết theo kiến trúc phân lớp của ABP, **không phụ thuộc vào một ứng dụng cụ thể nào**: người dùng, tenant, phân quyền và nhật ký thay đổi đều lấy từ các thành phần chuẩn của ABP. Giao diện Angular đi kèm có thể cắm vào một ứng dụng ABP có sẵn (menu bên trái, phân quyền, ngôn ngữ, thông báo đều theo ứng dụng chủ).
@@ -64,7 +64,7 @@ Module được viết theo kiến trúc phân lớp của ABP, **không phụ t
 - **Sign-off** cần đủ số người duyệt khác nhau, đóng băng số liệu và mã băm SHA-256 để không bị sửa sau.
 
 ### Tích hợp và vận hành
-- **CI/CD**: pipeline gửi kết quả hàng loạt bằng **API key** (chỉ có quyền gửi kết quả), liên kết test case với test tự động qua **Automation ID**, chống ghi trùng bằng `Idempotency-Key`.
+- **CI/CD** (tạm tắt giao diện): máy chủ đã có sẵn cổng nhận kết quả test tự động bằng **API key**, liên kết qua **Automation ID**, chống ghi trùng bằng `Idempotency-Key`. Màn hình Automation và các ô liên quan đang **tắt**, bật bằng một dòng cấu hình `TCM_FEATURES` (mã không bị xóa).
 - **Đa tenant**, **phân quyền chi tiết** theo vai trò (Tester, QA Lead, Product Owner, Admin), **nhật ký thay đổi** theo ABP.
 - **Hai ngôn ngữ**: tiếng Anh và tiếng Việt, cho cả giao diện lẫn thông báo lỗi của API.
 
@@ -75,7 +75,6 @@ flowchart LR
     REQ[Yêu cầu] --> TC[Test case<br/>duyệt, phiên bản]
     TC --> PLAN[Kế hoạch + đợt chạy<br/>giao người test]
     PLAN --> EXEC[Kết quả<br/>lỗi, bằng chứng]
-    CI[CI/CD<br/>API key] --> EXEC
     EXEC --> RTM[Truy vết<br/>và Dashboard]
     EXEC --> GATE[Cổng chất lượng]
     GATE --> SIGN[Sign-off<br/>phát hành]
@@ -171,7 +170,7 @@ Module đã được thử cắm vào một ứng dụng sinh từ template chí
 
 1. **Máy chủ**: tham chiếu sáu dự án `Acme.TestCaseManagement.*`, thêm vào `[DependsOn]` của từng lớp, nhúng mô hình vào DbContext của ứng dụng, tạo migration.
 2. **Angular**: sao chép `angular/projects/test-case-management` vào ứng dụng, thêm `provideTestCaseManagementForAbp()` và `provideTestCaseManagementMenu()`, khai báo một route.
-3. **Pipeline**: gọi `AddTestCaseManagementApiKeyAuthentication()` để nhận kết quả test bằng API key.
+3. **Pipeline** (chỉ khi cần dùng phần tự động hóa, đang tắt): gọi `AddTestCaseManagementApiKeyAuthentication()` để nhận kết quả test bằng API key.
 
 Các bước chi tiết nằm trong [`Acme.TestCaseManagement/README.md`](Acme.TestCaseManagement/README.md), mục *Using the module in an ABP application*.
 

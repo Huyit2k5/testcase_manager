@@ -1,4 +1,5 @@
 import { Permissions } from './core/auth';
+import { TcmFeatures } from './core/host';
 
 export interface TcmMenuItem {
   /** The path under the base path of the module, with no leading slash. */
@@ -13,6 +14,8 @@ export interface TcmMenuItem {
   policy: string;
   /** The order in the menu. */
   order: number;
+  /** The page belongs to a part of the module that is off unless the host turns it on (TCM_FEATURES). */
+  feature?: keyof TcmFeatures;
 }
 
 /** The pages of the module, in menu order. The standalone app builds its tabs from this, an ABP application its sidebar. */
@@ -23,5 +26,10 @@ export const TCM_MENU: readonly TcmMenuItem[] = [
   { path: 'runs', label: 'nav.runs', abpName: 'TestCaseManagement::Menu:Runs', permission: Permissions.TestPlans.Default, policy: Permissions.TestPlans.Default, order: 4 },
   { path: 'traceability', label: 'nav.traceability', abpName: 'TestCaseManagement::Menu:Traceability', permission: Permissions.Requirements.Default, policy: Permissions.Requirements.Default, order: 5 },
   { path: 'quality', label: 'nav.quality', abpName: 'TestCaseManagement::Menu:Quality', permission: Permissions.QualityGates.Default, policy: Permissions.QualityGates.Default, order: 6 },
-  { path: 'automation', label: 'nav.automation', abpName: 'TestCaseManagement::Menu:Automation', permission: Permissions.ApiKeys.Default, policy: Permissions.ApiKeys.Default, order: 7 },
+  { path: 'automation', label: 'nav.automation', abpName: 'TestCaseManagement::Menu:Automation', permission: Permissions.ApiKeys.Default, policy: Permissions.ApiKeys.Default, order: 7, feature: 'automation' },
 ];
+
+/** The pages a host shows: those of TCM_MENU whose part of the module is on. */
+export function tcmMenu(features: TcmFeatures): TcmMenuItem[] {
+  return TCM_MENU.filter(item => !item.feature || features[item.feature]);
+}

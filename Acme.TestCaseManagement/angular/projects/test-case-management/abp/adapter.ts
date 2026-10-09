@@ -4,7 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ConfigStateService, EnvironmentService, PermissionService, RoutesService, SessionStateService, eLayoutType } from '@abp/ng.core';
 import { ToasterService } from '@abp/ng.theme.shared';
 import { Observable, catchError, map } from 'rxjs';
-import { AuthService, TCM_API_URL, TCM_BASE_PATH, TCM_LANGUAGE, TCM_MENU, TCM_NOTIFIER, TCM_USER_DIRECTORY, TcmDirectoryUser, TcmUser, TcmUserDirectory, errorInterceptor } from 'test-case-management';
+import { AuthService, TCM_API_URL, TCM_BASE_PATH, TCM_LANGUAGE, TCM_FEATURES, TCM_NOTIFIER, TCM_USER_DIRECTORY, TcmDirectoryUser, TcmUser, TcmUserDirectory, errorInterceptor, tcmMenu } from 'test-case-management';
 
 /** Where the module is mounted in the ABP application's router (see the route in app.routes.ts). */
 export const TCM_ABP_BASE_PATH = '/test-case-management';
@@ -100,7 +100,7 @@ export function provideTestCaseManagementMenu(): EnvironmentProviders {
       const routes = inject(RoutesService);
       routes.add([
         { name: ROOT_MENU, iconClass: 'fas fa-vial', order: 20, layout: eLayoutType.application },
-        ...TCM_MENU.map(item => ({
+        ...tcmMenu(inject(TCM_FEATURES)).map(item => ({
           path: `${TCM_ABP_BASE_PATH}/${item.path}`,
           name: item.abpName,
           parentName: ROOT_MENU,
