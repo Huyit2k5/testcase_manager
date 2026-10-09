@@ -55,7 +55,7 @@
 | Dữ liệu nội bộ | Kịch bản và lỗi không rời khỏi hệ thống của công ty |
 | Không phí bản quyền theo người dùng | So với dịch vụ SaaS tính theo từng người dùng |
 | Dùng chung hạ tầng ABP | Đăng nhập, phân quyền, audit, đa tenant có sẵn |
-| Tùy biến | Có thể mở rộng theo quy trình nội bộ (ví dụ Jira) |
+| Tùy biến | Có thể mở rộng theo quy trình nội bộ |
 
 ### 1.4. Phạm vi chức năng
 
@@ -66,12 +66,11 @@
 | Dự án | Tạo, sửa, lưu trữ, xóa khi trống; dự án mặc định; chọn dự án đang làm việc |
 | Thư viện test | Cây suite lồng nhau, test case có bước, tag, bộ lọc; vòng duyệt; phiên bản bất biến; nhóm bước dùng chung |
 | Kế hoạch và thực thi | Test plan; test run (trong hoặc ngoài plan); run item gắn đúng phiên bản; gán người test; ghi kết quả đơn lẻ hoặc hàng loạt; nhiều lần chạy |
-| Lỗi và truy vết | Liên kết lỗi (Jira, GitHub…) vào lần chạy Fail; requirement; ma trận truy vết RTM |
+| Truy vết | Requirement; ma trận truy vết RTM |
 | Chất lượng | Quality Gate cấu hình được; nghiệm thu (Sign-off) nhiều người ký có băng SHA-256 |
 | Báo cáo | Dashboard (pass rate, tốc độ, burn-down, mật độ lỗi); phát hiện test chập chờn (flaky) |
 | Nhập / xuất | Test case và kết quả chạy ra Excel / CSV; nhập có chạy thử, tất cả hoặc không gì |
 | Đính kèm | Ảnh, log, video cho test case và cho từng lần chạy |
-| Tự động hóa | Endpoint nhận kết quả từ CI/CD bằng API key, ánh xạ qua `AutomationId` (phần giao diện tắt mặc định) |
 | AI | Gợi ý bước kiểm thử từ nội dung yêu cầu, người dùng duyệt trước khi thêm |
 | Giao diện | Thư viện trang Angular 22, tiếng Anh và tiếng Việt |
 
@@ -95,14 +94,12 @@ flowchart LR
     QT["QA Tester"]
     PO["Product Owner / BA"]
     DEV["Developer"]
-    CI["Pipeline CI/CD"]
     AI["Model AI"]
     SYS(("Hệ thống TCM"))
     QL --> SYS
     QT --> SYS
     PO --> SYS
     DEV -.->|"đọc kết quả, xử lý lỗi"| SYS
-    CI -->|"API key: nạp kết quả"| SYS
     SYS -->|"gợi ý bước"| AI
 ```
 
@@ -140,8 +137,6 @@ Quyền `Default` cho phép **đọc**; quyền con cho phép **thay đổi**. Q
 | `QualityGates` | `Manage` | Quản lý cổng chất lượng |
 | `SignOff` | `Approve` | Bắt đầu và ký nghiệm thu |
 | `SharedSteps` | `Manage` | Quản lý nhóm bước dùng chung, cập nhật hàng loạt |
-| `ApiKeys` | `Manage` | Tạo, thu hồi API key |
-| `AutomationResults` | `Publish` | Nạp kết quả automation (quyền duy nhất của API key) |
 
 Phân quyền hiện áp dụng **toàn hệ thống**, chưa có quyền riêng theo từng dự án (xem mục 12).
 
@@ -166,11 +161,9 @@ flowchart TB
     end
     DB[("CSDL: SQL Server, MySQL, PostgreSQL, SQLite")]
     BLOB[("BlobStoring: file đính kèm")]
-    CI["Pipeline CI/CD"]
     LLM["Model AI tương thích OpenAI (tùy chọn)"]
     U1 --> UI
     UI --> API
-    CI -->|"X-Api-Key"| API
     API --> APP --> DOM --> EF --> DB
     APP --> BLOB
     APP -.-> LLM
@@ -217,7 +210,7 @@ Bảng có tiền tố `Tcm` (`TcmTestCases`, `TcmTestRuns`…), đổi được
 
 ### 3.4. Lớp giao diện Angular
 - Shell có thanh chọn dự án ở đầu; mọi trang tải lại khi đổi dự án.
-- Trang: Dashboard, Test repository, Plans and runs (chi tiết run), Requirements và RTM, Quality gates, Sign-off, Shared steps, Projects, Automation (tắt mặc định).
+- Trang: Dashboard, Test repository, Plans and runs (chi tiết run), Requirements và RTM, Quality gates, Sign-off, Shared steps, Projects.
 - Trang mang style riêng bọc trong `.tcm`, không làm hỏng style của host; menu và quyền tích hợp với host ABP.
 
 ---
@@ -271,7 +264,6 @@ erDiagram
 
     QUALITY_GATE ||--o{ SIGN_OFF_REPORT : "áp dụng"
     SIGN_OFF_REPORT ||--o{ SIGN_OFF_APPROVAL : "chữ ký"
-    API_KEY ||--o{ AUTOMATION_PUBLICATION : "gửi kết quả"
 ```
 
 Người dùng được lưu dưới dạng `Guid` (id) và audit của ABP; module **không có khóa ngoại** tới bảng người dùng của host. Mọi thực thể hỗ trợ `TenantId` (đa tenant).
@@ -282,12 +274,12 @@ Người dùng được lưu dưới dạng `Guid` (id) và audit của ABP; mod
 | :--- | :--- | :--- |
 | **Project** (`TcmProjects`) | `Key`, `Name`, `Description`, `IsArchived` | `Key` 2–10 ký tự chữ hoa / số, bắt đầu bằng chữ, duy nhất, không đổi |
 | **TestSuite** | `ProjectId`, `ParentId?`, `Name`, `Description`, `Order` | Cây không giới hạn cấp |
-| **TestCase** | `SuiteId`, `Code`, `Title`, `Description`, `Preconditions`, `Postconditions`, `Priority`, `Severity`, `Status`, `ExecutionType`, `Kind`, `Layer`, `AutomationId?`, `IsFlaky`, `CurrentVersion`, `Steps`, `Tags` | Thuộc dự án thông qua suite; `Code` duy nhất toàn thư viện |
+| **TestCase** | `SuiteId`, `Code`, `Title`, `Description`, `Preconditions`, `Postconditions`, `Priority`, `Severity`, `Status`, `ExecutionType`, `Kind`, `Layer`, `IsFlaky`, `CurrentVersion`, `Steps`, `Tags` | Thuộc dự án thông qua suite; `Code` duy nhất toàn thư viện |
 | **TestStep** | thứ tự, hành động, dữ liệu test, kết quả mong đợi, liên kết nhóm bước chung | |
 | **TestCaseVersion** | `TestCaseId`, `VersionNumber`, `Title`, `Preconditions`, `Postconditions`, `StepsJson`, `ChangeSummary?` | Bản chụp bất biến lúc duyệt |
 | **SharedStepGroup / SharedStep** | tên, các bước, số hiệu chỉnh sửa (revision) | Test case giữ **bản sao riêng** kèm liên kết |
 | **TestPlan** | `ProjectId`, `Name`, `Description`, `MilestoneId?`, `StartDate`, `EndDate`, `Status` | |
-| **TestRun** | `ProjectId`, `TestPlanId?`, `Title`, `Environment`, `AssignedToUserId?`, `Status` | Có thể đứng ngoài plan (ví dụ run do CI tạo) |
+| **TestRun** | `ProjectId`, `TestPlanId?`, `Title`, `Environment`, `AssignedToUserId?`, `Status` | Có thể đứng ngoài plan |
 | **TestRunItem** | `TestRunId`, `TestCaseVersionId`, `Sequence`, `AssignedUserId?`, `CurrentStatus` | Bắt buộc gắn phiên bản |
 | **TestExecution** | `TestRunItemId`, `AttemptNumber`, `Status`, `ActualResult`, `DurationSeconds` | Chỉ thêm, không sửa |
 | **DefectLink** | `TestExecutionId`, `ExternalSystem`, `IssueKey`, `IssueUrl?`, `Severity`, `IsResolved`, `ResolvedTime?` | Chỉ gắn vào attempt Failed |
@@ -296,7 +288,6 @@ Người dùng được lưu dưới dạng `Guid` (id) và audit của ABP; mod
 | **QualityGate** | `Name`, `Description`, `MinPassRate`, `RequiredApprovals`, `IsDefault` | |
 | **SignOffReport / SignOffApproval** | phạm vi (plan hoặc milestone), `ProjectId`, tên và ngưỡng gate đã chụp, `Status`, `SummaryStatsJson`, `SnapshotHash`, người ký | |
 | **Attachment** | chủ sở hữu (test case hoặc attempt), tên file, loại, dung lượng | Nội dung lưu trong blob container |
-| **ApiKey / AutomationPublication** | khóa cho pipeline (chỉ lưu hash) / bản ghi idempotency | |
 
 ### 4.4. Danh mục giá trị
 
@@ -313,7 +304,6 @@ Người dùng được lưu dưới dạng `Guid` (id) và audit của ABP; mod
 | `TestResultStatus` | Untested, Passed, Failed, Blocked, Skipped |
 | `SignOffStatus` | Pending, Approved, Superseded |
 | `RequirementCoverageStatus` | Uncovered, NotRun, Passed, Failed, Blocked |
-| `AutomationOutcome` | Recorded, Unmatched, Ambiguous, NotApproved, NotInRun |
 | `FlakinessLevel` | Insufficient, Stable, Watch, Flaky |
 
 ---
@@ -459,9 +449,9 @@ flowchart LR
 ```
 
 - Liên kết lỗi chỉ gắn được vào **attempt Failed**, không trùng trong cùng attempt; URL được kiểm tra hợp lệ.
-- Thông tin: hệ thống (Jira, GitHub…), mã issue, URL, severity (Low / Medium / High / Critical), đã xử lý hay chưa.
+- Thông tin: tên hệ thống quản lý lỗi, mã issue, URL, severity (Low / Medium / High / Critical), đã xử lý hay chưa.
 - Quality Gate đếm **theo từng issue** (hệ thống + mã, không phân biệt hoa thường) còn liên kết chưa xử lý.
-- Hiện tại người dùng **nhập mã và URL lỗi** thủ công; chưa gọi API Jira (xem mục 12).
+- Người dùng **nhập mã và URL lỗi** thủ công; hệ thống không kết nối với công cụ quản lý lỗi bên ngoài.
 
 ### 5.6. Requirement và truy vết (RTM)
 
@@ -543,7 +533,7 @@ flowchart TD
 ```
 
 **Test case** (mỗi dòng một bước; các dòng cùng `Code` là một test case):
-`Suite, Code, Title, Description, Preconditions, Postconditions, Priority, Severity, Kind, Layer, ExecutionType, AutomationId, Flaky, Status, Version, StepNo, Action, ExpectedResult, TestData` (và cột `Tags` cách nhau bằng dấu chấm phẩy).
+`Suite, Code, Title, Description, Preconditions, Postconditions, Priority, Severity, Kind, Layer, ExecutionType, Flaky, Status, Version, StepNo, Action, ExpectedResult, TestData` (và cột `Tags` cách nhau bằng dấu chấm phẩy).
 - `Suite` là đường dẫn như `Payments/Cards`; suite chưa có sẽ được tạo nếu người nhập có quyền quản lý suite. `Status`, `Version`, `StepNo` chỉ để tham khảo khi nhập.
 - Nhập vào dự án nào theo tham số `ProjectId`, bỏ trống thì vào dự án mặc định.
 - **Tất cả hoặc không gì:** một dòng sai thì chặn cả file. `DryRun=true` trả báo cáo từng dòng (Created, Updated, Skipped, Invalid, thông báo theo ngôn ngữ) mà không ghi gì.
@@ -554,31 +544,7 @@ flowchart TD
 **Giới hạn và bảo mật:** 5 MiB, 10.000 dòng, 50 MiB sau giải nén, 20.000 test case mỗi lần xuất (`TestCaseManagementTransferOptions`). CSV là UTF-8 có BOM, đọc được dấu phẩy, chấm phẩy, tab; ô có thể chạy như công thức Excel được thêm dấu nháy đơn khi xuất.
 **Quyền:** xuất = quyền đọc; nhập test case = `TestCases.Create` (`Update` để cập nhật, `TestSuites.Manage` để tạo suite); nhập kết quả = `TestRuns.Execute`.
 
-### 5.9. Nạp kết quả automation (CI/CD)
-
-```mermaid
-sequenceDiagram
-    participant CI as Pipeline CI
-    participant API as POST automation/results
-    participant S as Hệ thống
-    CI->>API: X-Api-Key, Idempotency-Key, danh sách kết quả
-    API->>S: Xác thực API key (chỉ quyền Publish)
-    S->>S: Kiểm tra Idempotency-Key
-    S->>S: Ánh xạ AutomationId sang test case
-    alt Khớp
-        S->>S: Thêm attempt (Recorded)
-    else Không khớp hoặc chưa duyệt
-        S->>S: Liệt kê (Unmatched, Ambiguous, NotApproved, NotInRun)
-    end
-    S-->>CI: Báo cáo từng kết quả
-```
-
-- Test case liên kết với script tự động bằng **`AutomationId`** (duy nhất).
-- Request truyền `run` (tạo run mới) hoặc `runId` (run đã có); tối đa 2000 kết quả mỗi lần; `Idempotency-Key` để gửi lại không ghi hai lần; `failOnUnmatched` từ chối cả request nếu có kết quả không khớp; `addMissingToRun` thêm test case đã duyệt còn thiếu; cùng test lặp trong một request tính là retry, test fail rồi pass bị đánh flaky; run không có plan lấy dự án của test case đầu tiên.
-- **API key**: bí mật dạng `tcm_…` chỉ hiện một lần, chỉ lưu hash; key chỉ có quyền `AutomationResults.Publish`, không có người dùng hay vai trò.
-- Phần **giao diện** (trang Automation, ô Automation ID, bộ lọc) tắt mặc định, bật bằng `{ provide: TCM_FEATURES, useValue: { automation: true } }`; endpoint phía server và xác thực API key vẫn nằm trong hệ thống. Nhận định dạng JSON.
-
-### 5.10. Gợi ý bước bằng AI
+### 5.9. Gợi ý bước bằng AI
 
 ```mermaid
 sequenceDiagram
@@ -608,7 +574,6 @@ flowchart LR
     QL(["QA Lead"])
     QT(["QA Tester"])
     PO(["Product Owner / BA"])
-    CI(["Pipeline CI/CD"])
 
     subgraph PRJ["Dự án và thư viện"]
         U1["Quản lý dự án"]
@@ -631,16 +596,13 @@ flowchart LR
         U14["Xem dashboard, flaky"]
         U15["Nhập / xuất Excel, CSV"]
     end
-    subgraph AUT["Tự động hóa"]
-        U16["Nạp kết quả CI/CD"]
-        U17["Quản lý API key"]
-        U18["Gợi ý bước bằng AI"]
+    subgraph AUT["AI"]
+        U16["Gợi ý bước bằng AI"]
     end
 
-    QL --> U1 & U2 & U5 & U6 & U7 & U10 & U12 & U13 & U14 & U17
-    QT --> U3 & U4 & U8 & U9 & U15 & U18
+    QL --> U1 & U2 & U5 & U6 & U7 & U10 & U12 & U13 & U14
+    QT --> U3 & U4 & U8 & U9 & U15 & U16
     PO --> U11 & U13 & U14
-    CI --> U16
 ```
 
 ### 6.2. Danh sách Use Case
@@ -650,7 +612,7 @@ flowchart LR
 | UC-01 | Quản lý dự án | QA Lead | Tạo (key không đổi), sửa tên và mô tả, lưu trữ, khôi phục, xóa khi trống |
 | UC-02 | Chọn dự án đang làm việc | Mọi người | Chọn ở thanh đầu trang; mọi trang theo dự án đó |
 | UC-03 | Quản lý cây suite | QA Lead, Tester | Tạo, đổi tên, di chuyển, xóa; chặn vòng lặp; xóa suite chỉ khi trống |
-| UC-04 | Soạn test case | Tester | Mã, tiêu đề, mô tả, tiền và hậu điều kiện, ưu tiên, severity, loại, tầng, cách chạy, `AutomationId`, bước, tag |
+| UC-04 | Soạn test case | Tester | Mã, tiêu đề, mô tả, tiền và hậu điều kiện, ưu tiên, severity, loại, tầng, cách chạy, bước, tag |
 | UC-05 | Gửi duyệt | Tester | Draft sang UnderReview |
 | UC-06 | Duyệt / trả về nháp | QA Lead | Duyệt sinh phiên bản; trả về nháp để sửa |
 | UC-07 | Ngừng dùng test case | QA Lead | Deprecated; không thêm vào run mới |
@@ -673,9 +635,7 @@ flowchart LR
 | UC-24 | Phát hiện và đánh cờ flaky | QA Lead | Chấm điểm; ghi cờ Flaky vào thư viện |
 | UC-25 | Nhập test case, kết quả | Tester | Excel / CSV, chạy thử trước |
 | UC-26 | Xuất test case, kết quả | Tester | Excel / CSV theo bộ lọc |
-| UC-27 | Nạp kết quả từ CI/CD | Pipeline | API key, `AutomationId`, idempotency |
-| UC-28 | Quản lý API key | QA Lead | Tạo (bí mật hiện một lần), thu hồi |
-| UC-29 | Gợi ý bước bằng AI | Tester | Đề xuất, xem, chọn thêm |
+| UC-27 | Gợi ý bước bằng AI | Tester | Đề xuất, xem, chọn thêm |
 
 ---
 
@@ -690,11 +650,10 @@ flowchart LR
 | BR-TC-04 | Duyệt sinh phiên bản mới; sửa test case đã duyệt đưa về UnderReview, phiên bản cũ vẫn là bản đang dùng | |
 | BR-TC-05 | Người duyệt được phép là tác giả; ghi chú thay đổi không bắt buộc | |
 | BR-TC-06 | Chỉ test case Approved mới vào được run | `TestCaseNotApproved` |
-| BR-TC-07 | `AutomationId` duy nhất | `DuplicateAutomationId` |
-| BR-TC-08 | Tag: tối đa 20, mỗi tag tối đa 50 ký tự, không chứa `,` hay `;` | `InvalidTag`, `TooManyTags` |
-| BR-TC-09 | Thứ tự bước phải hợp lệ khi sắp xếp lại | `InvalidStepOrder` |
-| BR-TC-10 | Cây thư viện không chứa Sprint hay Milestone | |
-| BR-TC-11 | Xóa test case là xóa mềm | |
+| BR-TC-07 | Tag: tối đa 20, mỗi tag tối đa 50 ký tự, không chứa `,` hay `;` | `InvalidTag`, `TooManyTags` |
+| BR-TC-08 | Thứ tự bước phải hợp lệ khi sắp xếp lại | `InvalidStepOrder` |
+| BR-TC-09 | Cây thư viện không chứa Sprint hay Milestone | |
+| BR-TC-10 | Xóa test case là xóa mềm | |
 
 ### 7.2. Phiên bản
 | Mã | Quy tắc |
@@ -775,14 +734,14 @@ Tên sign-off; phạm vi (plan hoặc milestone); tên và ngưỡng của Quali
 
 | Nhóm | Nội dung |
 | :--- | :--- |
-| **Bảo mật** | Mọi application service yêu cầu quyền; API key chỉ có `AutomationResults.Publish`, chỉ lưu hash; khóa AI không lưu, không log; tải xuống đính kèm dùng content type cố định; không cho SVG và HTML; ô CSV có thể chạy như công thức được chặn bằng dấu nháy đơn |
+| **Bảo mật** | Mọi application service yêu cầu quyền; khóa AI không lưu, không log; tải xuống đính kèm dùng content type cố định; không cho SVG và HTML; ô CSV có thể chạy như công thức được chặn bằng dấu nháy đơn |
 | **Đa tenant** | Mọi thực thể có `TenantId` và dùng bộ lọc truy vấn toàn cục của ABP |
 | **Audit** | Dùng audit của ABP (người tạo, người sửa, thời gian, xóa mềm); người ghi kết quả và người ký được lưu |
-| **Toàn vẹn dữ liệu** | Phiên bản và attempt bất biến; nhập dữ liệu tất cả hoặc không gì; sign-off có băng SHA-256; khóa tuần tự cho nghiệm thu, gate mặc định, nạp kết quả trùng khóa idempotency (trong tiến trình; nhiều máy chủ cần distributed lock) |
+| **Toàn vẹn dữ liệu** | Phiên bản và attempt bất biến; nhập dữ liệu tất cả hoặc không gì; sign-off có băng SHA-256; khóa tuần tự cho nghiệm thu, gate mặc định (trong tiến trình; nhiều máy chủ cần distributed lock) |
 | **Hiệu năng** | Danh sách test case phân trang, dưới 1 giây; dashboard và flaky đọc dữ liệu phạm vi vào bộ nhớ, khoảng 6 giây ở 100.000 run item trên MySQL |
 | **Đa ngôn ngữ** | Tiếng Anh và tiếng Việt cho giao diện, thông báo lỗi nghiệp vụ và báo cáo nhập dữ liệu |
 | **Khả năng chạy trên nhiều CSDL** | Đã chạy trên SQLite và MySQL 8.4 |
-| **Khả năng mở rộng** | Thay nhà cung cấp AI bằng `IStepSuggestionProvider`; thay nguồn danh sách người dùng bằng `TCM_USER_DIRECTORY`; bật tắt phần automation ở giao diện bằng `TCM_FEATURES` |
+| **Khả năng mở rộng** | Thay nhà cung cấp AI bằng `IStepSuggestionProvider`; thay nguồn danh sách người dùng bằng `TCM_USER_DIRECTORY` |
 | **Đóng gói** | `build/build.ps1` restore, build, test, pack `.nupkg` và `.snupkg` (Windows PowerShell 5.1 và PowerShell 7, .NET SDK 10) |
 
 ---
@@ -793,10 +752,9 @@ Tên sign-off; phạm vi (plan hoặc milestone); tên và ngưỡng của Quali
 1. Host dùng ABP từ 10.6.1 trở lên.
 2. Tham chiếu 6 dự án (hoặc gói) và thêm từng module vào `[DependsOn]` đúng tầng.
 3. Nhúng model vào DbContext của host (`[ReplaceDbContext]`, đủ `DbSet`, `builder.ConfigureTestCaseManagement()`), tạo migration, chạy migrator. Vai trò admin của template được cấp quyền của module khi seed.
-4. Cần các `DbSet`: `Project`, `TestSuite`, `TestCase`, `SharedStepGroup`, `TestPlan`, `TestRun`, `Requirement`, `QualityGate`, `SignOffReport`, `ApiKey`, `AutomationPublication`, `Attachment` cùng các bảng con của module.
-5. Nếu có pipeline: `AddTestCaseManagementApiKeyAuthentication()`.
-6. Cấu hình provider BlobStoring cho file đính kèm.
-7. Thêm `vi` vào `AbpLocalizationOptions.Languages` nếu cần tiếng Việt.
+4. Cần các `DbSet`: `Project`, `TestSuite`, `TestCase`, `SharedStepGroup`, `TestPlan`, `TestRun`, `Requirement`, `QualityGate`, `SignOffReport`, `Attachment` cùng các bảng con của module.
+5. Cấu hình provider BlobStoring cho file đính kèm.
+6. Thêm `vi` vào `AbpLocalizationOptions.Languages` nếu cần tiếng Việt.
 
 ### 10.2. Phía Angular
 1. Sao chép `angular/projects/test-case-management/` vào ứng dụng, thêm `paths` trong `tsconfig.json`.
@@ -830,10 +788,10 @@ Chưa thử trên ứng dụng thật của công ty, chưa thử với nhiều 
 - **Quyền chưa theo dự án:** ai đọc được test case thì đọc được ở mọi dự án. Mã test case và requirement duy nhất toàn thư viện; nhóm bước dùng chung và Quality Gate dùng chung.
 - **Không có xóa Test Run**, chỉ hoàn tất; nhóm run theo plan hiển thị tối đa 100 run mỗi nhóm (có thông báo và chế độ danh sách để lọc).
 - Chữ ký nghiệm thu là băng SHA-256, không phải chữ ký số.
-- Khóa xử lý song song nằm trong tiến trình; chưa giới hạn tần suất endpoint nhận kết quả; bản ghi idempotency không được dọn; khóa idempotency tính theo tenant.
+- Khóa xử lý song song (nghiệm thu, gate mặc định) nằm trong tiến trình.
 - Dashboard và flaky dùng giờ máy chủ và đọc dữ liệu phạm vi vào bộ nhớ.
-- Xóa test case không xóa file đính kèm; pipeline chưa đính kèm file được; file được giữ trong bộ nhớ khi lưu.
-- Tra cứu theo `AutomationId` chưa có chỉ mục riêng; mã test case so sánh theo quy tắc của cơ sở dữ liệu (phân biệt hoa thường trên SQLite và PostgreSQL).
+- Xóa test case không xóa file đính kèm; file được giữ trong bộ nhớ khi lưu.
+- Mã test case so sánh theo quy tắc của cơ sở dữ liệu (phân biệt hoa thường trên SQLite và PostgreSQL).
 - Cảnh báo bảo mật NU1903 của AutoMapper 14 đi kèm ABP 10.6.1 (bản AutoMapper mới hơn không tương thích nhị phân với ABP 10.6.1).
 - Giao diện giữ bảng màu sáng riêng, không theo chế độ tối của host.
 
@@ -841,7 +799,6 @@ Chưa thử trên ứng dụng thật của công ty, chưa thử với nhiều 
 
 | Hạng mục | Tình trạng hiện tại |
 | :--- | :--- |
-| Tích hợp Jira (tạo bug từ lần chạy Fail, nhận webhook khi Resolved, tự chuyển item sang chờ retest) | Người dùng nhập mã và URL lỗi thủ công |
 | Thông báo (trong ứng dụng, email, webhook ra ngoài), cấu hình thông báo | Chưa có |
 | Cảnh báo "requirement đổi thì các test liên quan cần đối soát" | Người dùng tự đối soát qua RTM |
 | Thực thể Milestone riêng | `MilestoneId` là tham chiếu tự do dùng làm phạm vi cho gate và sign-off |
@@ -854,14 +811,12 @@ Chưa thử trên ứng dụng thật của công ty, chưa thử với nhiều 
 | Cập nhật dashboard realtime (SignalR) | Tải lại để cập nhật |
 | Báo cáo xu hướng qua nhiều Sprint, báo cáo khối lượng theo tester | Chưa có |
 | AI sinh trọn bộ test case, phát hiện test trùng bằng vector embedding, đề xuất test ưu tiên chạy | Chỉ có gợi ý bước |
-| Nhận kết quả JUnit XML trực tiếp | Nhận JSON |
 | Giao diện MVC / Razor, Blazor; gói npm cho thư viện Angular | Chỉ có Angular, chia sẻ dạng thư mục mã nguồn |
 
 ### 12.3. Đề xuất lộ trình
 
 | Ưu tiên | Hạng mục | Lý do |
 | :---: | :--- | :--- |
-| Cao | Tích hợp Jira (cần xác định Jira Cloud hay Server, mức độ tích hợp) | Công ty đang dùng Jira; giảm nhập tay |
 | Cao | Quyền theo dự án; mã test case tự tăng theo khóa dự án | Tách hẳn dữ liệu và trách nhiệm giữa các dự án |
 | Cao | Chạy lại toàn bộ test trên MySQL và thử trên ứng dụng thật | Giảm rủi ro khi đưa vào sử dụng |
 | Trung bình | Thông báo; luồng requirement đổi; xuất PDF biên bản; nhân bản test case; so sánh phiên bản | Tiện cho quy trình hằng ngày |
@@ -890,10 +845,7 @@ Chưa thử trên ứng dụng thật của công ty, chưa thử với nhiều 
 | Quality Gate | Cổng chất lượng | Bộ ngưỡng phải đạt trước khi nghiệm thu |
 | Sign-off | Nghiệm thu | Bản chốt số liệu và chữ ký của nhiều người duyệt |
 | Flaky | Test chập chờn | Test có kết quả đổi qua lại không ổn định |
-| Automation ID | Mã ánh xạ tự động | Chuỗi liên kết test case với script tự động |
 | Priority / Severity | Ưu tiên / Mức nghiêm trọng | Priority của test case; Severity của test case và của lỗi |
-| Idempotency Key | Khóa chống ghi trùng | Gửi lại cùng khóa thì không ghi hai lần |
-| API key | Khóa API | Chứng thực cho pipeline, chỉ có quyền nạp kết quả |
 | Aggregate Root | Gốc tổng hợp (DDD) | Entity chính quản lý tính nhất quán của nhóm entity liên quan |
 | Reusable Module | Module tái sử dụng | Module ABP cắm vào nhiều ứng dụng không cần sửa mã nguồn |
 
@@ -907,7 +859,7 @@ Mọi route bắt đầu bằng `api/test-case-management/`. Hầu hết các en
 | :--- | :--- |
 | `projects` | Liệt kê (có thể kèm dự án đã lưu trữ), xem, tạo, sửa, lưu trữ, khôi phục, xóa khi trống |
 | `suites` | Cây suite, tạo, sửa, di chuyển, xóa |
-| `test-cases` | Danh sách (lọc theo từ khóa, suite, trạng thái, ưu tiên, severity, loại, tầng, cách chạy, tag, có `AutomationId`), chi tiết, tạo, sửa, sắp xếp bước, đổi trạng thái, phiên bản, lỗi liên quan |
+| `test-cases` | Danh sách (lọc theo từ khóa, suite, trạng thái, ưu tiên, severity, loại, tầng, cách chạy, tag), chi tiết, tạo, sửa, sắp xếp bước, đổi trạng thái, phiên bản, lỗi liên quan |
 | `test-cases/{id}/tags`, `test-cases/tags` | Thay tag của test case; liệt kê tag đang dùng kèm số lượng |
 | `test-cases/export`, `test-cases/import` | Xuất và nhập test case |
 | `test-cases/{id}/shared-steps` | Chèn nhóm bước, làm mới, gỡ liên kết |
@@ -921,8 +873,6 @@ Mọi route bắt đầu bằng `api/test-case-management/`. Hầu hết các en
 | `sign-off` | Bắt đầu nghiệm thu, ký, xem báo cáo |
 | `dashboard`, `flaky-tests` | Chỉ số; chấm điểm flaky và `apply` để đánh cờ |
 | `attachments` | Tải lên (multipart), liệt kê, tải xuống, xóa |
-| `api-keys` | Liệt kê, tạo, thu hồi |
-| `automation/results` | Pipeline nạp kết quả |
 | `step-suggestions` | Trạng thái cấu hình AI; gợi ý bước |
 
 ---
@@ -935,13 +885,12 @@ Tiền tố `TestCaseManagement:`. Thông báo hiển thị theo ngôn ngữ c�
 | :--- | :--- |
 | Dự án | `ProjectNotFound`, `ProjectArchived`, `InvalidProjectKey`, `DuplicateProjectKey`, `ProjectNotEmpty`, `DifferentProject` |
 | Suite | `SuiteNotFound`, `SuiteNotEmpty`, `CircularSuiteDependency` |
-| Test case | `DuplicateTestCaseCode`, `InvalidTestCaseStatusTransition`, `TestCaseHasNoSteps`, `TestCaseNotApproved`, `InvalidStepOrder`, `InvalidTag`, `TooManyTags`, `DuplicateAutomationId` |
+| Test case | `DuplicateTestCaseCode`, `InvalidTestCaseStatusTransition`, `TestCaseHasNoSteps`, `TestCaseNotApproved`, `InvalidStepOrder`, `InvalidTag`, `TooManyTags` |
 | Nhóm bước dùng chung | `DuplicateSharedStepGroupName`, `SharedStepGroupHasNoSteps`, `SharedStepGroupTooLarge`, `SharedStepGroupInUse`, `SharedStepsNotLinked`, `SharedStepGroupAlreadyUsed` |
 | Plan và run | `TestPlanNotFound`, `InvalidTestPlanStatusTransition`, `InvalidTestPlanDates`, `TestPlanHasRuns`, `TestPlanArchived`, `TestRunAlreadyCompleted`, `TestCaseAlreadyInRun`, `TestRunItemNotFound`, `DuplicateTestRunItem`, `InvalidExecutionStatus` |
 | Lỗi (defect) | `DefectRequiresFailedExecution`, `DuplicateDefectLink`, `InvalidDefectUrl` |
 | Requirement | `DuplicateRequirementCode` |
 | Chất lượng và nghiệm thu | `QualityGateNotPassed`, `DuplicateQualityGateName`, `InvalidSignOffScope`, `SignOffScopeEmpty`, `SignOffRequiresUser`, `SignOffNotPending`, `DuplicateSignOffApproval` |
-| Automation | `AutomationTooManyResults`, `IdempotencyKeyReused`, `AutomationPublishInProgress`, `InvalidApiKeyExpiry`, `InvalidAutomationRun`, `OperationInProgress` |
 | AI | `StepSuggestionNotConfigured`, `StepSuggestionFailed`, `StepSuggestionNoUsableSteps` |
 | Đính kèm | `AttachmentEmpty`, `AttachmentTooLarge`, `AttachmentTypeNotAllowed`, `AttachmentTooMany`, `AttachmentOwnerNotFound`, `AttachmentFileMissing` |
 | Xuất dữ liệu | `ExportTooLarge` |
