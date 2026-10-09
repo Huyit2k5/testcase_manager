@@ -30,6 +30,7 @@ public class SignOffAppService : TestCaseManagementAppService, ISignOffAppServic
     public virtual async Task<PagedResultDto<SignOffReportDto>> GetListAsync(GetSignOffListInput input)
     {
         var query = (await _reportRepository.WithDetailsAsync())
+            .WhereIf(input.ProjectId.HasValue, x => x.ProjectId == input.ProjectId)
             .WhereIf(input.TestPlanId.HasValue, x => x.TestPlanId == input.TestPlanId)
             .WhereIf(input.MilestoneId.HasValue, x => x.MilestoneId == input.MilestoneId)
             .WhereIf(input.Status.HasValue, x => x.Status == input.Status);
@@ -48,7 +49,7 @@ public class SignOffAppService : TestCaseManagementAppService, ISignOffAppServic
         await LockUntilTheRequestEndsAsync($"signoff-start:{input.TestPlanId}:{input.MilestoneId}");
 
         var report = await _signOffManager.StartAsync(
-            new QualityGateScope(input.TestPlanId, input.MilestoneId),
+            new QualityGateScope(input.TestPlanId, input.MilestoneId, input.ProjectId),
             input.QualityGateId,
             input.Title,
             input.ApproverRole,

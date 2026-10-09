@@ -1,4 +1,5 @@
 using Acme.TestCaseManagement.Enums;
+using Acme.TestCaseManagement.Projects;
 using Acme.TestCaseManagement.Repositories;
 using Acme.TestCaseManagement.Suites;
 using Volo.Abp;
@@ -21,12 +22,15 @@ public class TestCaseManager : DomainService
     private readonly ITestCaseRepository _testCaseRepository;
     private readonly IRepository<TestCaseVersion, Guid> _versionRepository;
     private readonly IRepository<TestSuite, Guid> _suiteRepository;
+    private readonly ProjectManager _projectManager;
 
     public TestCaseManager(
         ITestCaseRepository testCaseRepository,
         IRepository<TestCaseVersion, Guid> versionRepository,
-        IRepository<TestSuite, Guid> suiteRepository)
+        IRepository<TestSuite, Guid> suiteRepository,
+        ProjectManager projectManager)
     {
+        _projectManager = projectManager;
         _testCaseRepository = testCaseRepository;
         _versionRepository = versionRepository;
         _suiteRepository = suiteRepository;
@@ -36,6 +40,7 @@ public class TestCaseManager : DomainService
     public virtual async Task<TestCase> CreateAsync(Guid suiteId, string code, string title)
     {
         await EnsureSuiteExistsAsync(suiteId);
+        await _projectManager.EnsureSuiteIsOpenAsync(suiteId);
         await EnsureCodeIsUniqueAsync(code, exceptTestCaseId: null);
 
         return new TestCase(GuidGenerator.Create(), CurrentTenant.Id, suiteId, code, title);
@@ -61,6 +66,8 @@ public class TestCaseManager : DomainService
         }
 
         await EnsureSuiteExistsAsync(suiteId);
+        // A test case stays in its project: it is linked to requirements and runs of that project.
+        await _projectManager.EnsureSameProjectAsync("A test case and its new suite", await _projectManager.GetProjectOfSuiteAsync(testCase.SuiteId), await _projectManager.GetProjectOfSuiteAsync(suiteId));
         testCase.SetSuite(suiteId);
     }
 
@@ -88,6 +95,22 @@ public class TestCaseManager : DomainService
         return target == TestCaseStatus.Approved
             ? await PublishNewVersionAsync(testCase, changeSummary)
             : null;
+    }
+
+    /// <summary>
+    /// Called after the content of a test case changed. An approved test case goes back to Under review, so the change is looked at
+    /// before it counts: no version is published until it is approved again, and runs that already use the last version are not affected.
+    /// Returns true when the status changed.
+    /// </summary>
+    public virtual bool SendBackForReviewIfApproved(TestCase testCase)
+    {
+        if (testCase.Status != TestCaseStatus.Approved)
+        {
+            return false;
+        }
+
+        testCase.SetStatus(TestCaseStatus.UnderReview);
+        return true;
     }
 
     public virtual async Task<TestCaseVersion> ApproveAsync(TestCase testCase, string? changeSummary)

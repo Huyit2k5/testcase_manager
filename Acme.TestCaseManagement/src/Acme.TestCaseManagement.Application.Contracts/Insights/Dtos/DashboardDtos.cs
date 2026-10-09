@@ -4,6 +4,9 @@ namespace Acme.TestCaseManagement.Insights.Dtos;
 
 public class GetDashboardInput
 {
+    /// <summary>Only what belongs to this project. Leave it out to see every project.</summary>
+    public Guid? ProjectId { get; set; }
+
     /// <summary>Limits the figures to the runs of one plan. Empty: every run.</summary>
     public Guid? TestPlanId { get; set; }
 

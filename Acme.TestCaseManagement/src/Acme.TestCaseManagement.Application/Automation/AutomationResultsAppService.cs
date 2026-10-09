@@ -4,6 +4,7 @@ using System.Text.Json;
 using Acme.TestCaseManagement.Automation.Dtos;
 using Acme.TestCaseManagement.Enums;
 using Acme.TestCaseManagement.Permissions;
+using Acme.TestCaseManagement.Projects;
 using Acme.TestCaseManagement.Quality;
 using Acme.TestCaseManagement.Repositories;
 using Acme.TestCaseManagement.Runs;
@@ -34,6 +35,7 @@ public class AutomationResultsAppService : TestCaseManagementAppService, IAutoma
     private readonly DefectLinkManager _defectManager;
     private readonly TestCaseManagementAutomationOptions _options;
     private readonly IAbpDistributedLock _distributedLock;
+    private readonly ProjectManager _projectManager;
 
     public AutomationResultsAppService(
         ITestCaseRepository testCaseRepository,
@@ -43,8 +45,10 @@ public class AutomationResultsAppService : TestCaseManagementAppService, IAutoma
         TestRunManager runManager,
         DefectLinkManager defectManager,
         IOptions<TestCaseManagementAutomationOptions> options,
-        IAbpDistributedLock distributedLock)
+        IAbpDistributedLock distributedLock,
+        ProjectManager projectManager)
     {
+        _projectManager = projectManager;
         _testCaseRepository = testCaseRepository;
         _runRepository = runRepository;
         _versionRepository = versionRepository;
@@ -127,7 +131,15 @@ public class AutomationResultsAppService : TestCaseManagementAppService, IAutoma
         var runCreated = false;
         if (run == null && recordable.Count > 0)
         {
-            run = await _runManager.CreateRunAsync(input.Run!.Title, input.Run.Environment, input.Run.TestPlanId);
+            // A run without a plan is in the project of the test cases it records (the first one decides; a test case of another project is refused).
+            Guid? projectId = null;
+            if (input.Run!.TestPlanId == null)
+            {
+                var of = await _projectManager.GetProjectOfSuiteAsync(recordable[0].TestCase!.SuiteId);
+                projectId = of == Guid.Empty ? null : of;
+            }
+
+            run = await _runManager.CreateRunAsync(input.Run!.Title, input.Run.Environment, input.Run.TestPlanId, projectId: projectId);
             runCreated = true;
         }
 

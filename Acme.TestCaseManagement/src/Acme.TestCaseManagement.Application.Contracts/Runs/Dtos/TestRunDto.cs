@@ -5,6 +5,8 @@ namespace Acme.TestCaseManagement.Runs.Dtos;
 
 public class TestRunDto : AuditedEntityDto<Guid>
 {
+    public Guid ProjectId { get; set; }
+
     public Guid? TestPlanId { get; set; }
 
     public string Title { get; set; } = string.Empty;

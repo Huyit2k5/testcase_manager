@@ -2,6 +2,7 @@ using Acme.TestCaseManagement.Attachments;
 using Acme.TestCaseManagement.SharedSteps;
 using Acme.TestCaseManagement.Automation;
 using Acme.TestCaseManagement.Plans;
+using Acme.TestCaseManagement.Projects;
 using Acme.TestCaseManagement.Quality;
 using Acme.TestCaseManagement.Requirements;
 using Acme.TestCaseManagement.Runs;
@@ -16,6 +17,8 @@ namespace Acme.TestCaseManagement.EntityFrameworkCore;
 [ConnectionStringName(TestCaseManagementDbProperties.ConnectionStringName)]
 public interface ITestCaseManagementDbContext : IEfCoreDbContext
 {
+    DbSet<Project> Projects { get; }
+
     // Master library (design time)
     DbSet<TestSuite> TestSuites { get; }
 

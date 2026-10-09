@@ -90,9 +90,9 @@ public class TestCaseController : TestCaseManagementController, ITestCaseAppServ
 
     /// <inheritdoc />
     [HttpGet("tags")]
-    public virtual Task<List<TagSummaryDto>> GetTagsAsync()
+    public virtual Task<List<TagSummaryDto>> GetTagsAsync([FromQuery] Guid? projectId = null)
     {
-        return _testCaseAppService.GetTagsAsync();
+        return _testCaseAppService.GetTagsAsync(projectId);
     }
 
     /// <inheritdoc />

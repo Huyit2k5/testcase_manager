@@ -35,7 +35,7 @@ public class DashboardAppService : TestCaseManagementAppService, IDashboardAppSe
 
         // Attempts are read far enough back for both the velocity chart and the flakiness window.
         var since = today.AddDays(-Math.Max(input.Days, _options.LookbackDays));
-        var data = await _insights.GetScopeDataAsync(input.TestPlanId, since);
+        var data = await _insights.GetScopeDataAsync(input.TestPlanId, since, input.ProjectId);
 
         var progress = DashboardCalculator.Progress(data.Items);
         var velocity = DashboardCalculator.Velocity(data.Attempts, data.Items, today, input.Days);

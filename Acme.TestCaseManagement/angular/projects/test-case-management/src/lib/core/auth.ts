@@ -5,6 +5,7 @@ export interface TcmUser { userId: string; userName: string; roles: string[] }
 /** The permission names of the module, as ABP defines them (TestCaseManagementPermissions). */
 export const Permissions = {
   TestCases: { Default: 'TestCaseManagement.TestCases', Create: 'TestCaseManagement.TestCases.Create', Update: 'TestCaseManagement.TestCases.Update', Delete: 'TestCaseManagement.TestCases.Delete', Approve: 'TestCaseManagement.TestCases.Approve', SuggestSteps: 'TestCaseManagement.TestCases.SuggestSteps' },
+  Projects: { Default: 'TestCaseManagement.Projects', Manage: 'TestCaseManagement.Projects.Manage' },
   TestSuites: { Default: 'TestCaseManagement.TestSuites', Manage: 'TestCaseManagement.TestSuites.Manage' },
   TestPlans: { Default: 'TestCaseManagement.TestPlans', Manage: 'TestCaseManagement.TestPlans.Manage' },
   TestRuns: { Default: 'TestCaseManagement.TestRuns', Execute: 'TestCaseManagement.TestRuns.Execute' },

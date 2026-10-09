@@ -27,6 +27,13 @@ public class OpenApiContract_Tests
     /// </summary>
     private static readonly string[] ExpectedOperations =
     {
+        "Project_GetList GET /projects",
+        "Project_Get GET /projects/{id}",
+        "Project_Create POST /projects",
+        "Project_Update PUT /projects/{id}",
+        "Project_Archive POST /projects/{id}/archive",
+        "Project_Restore POST /projects/{id}/restore",
+        "Project_Delete DELETE /projects/{id}",
         "TestSuite_GetTree GET /suites/tree",
         "TestSuite_Get GET /suites/{id}",
         "TestSuite_Create POST /suites",
@@ -203,7 +210,7 @@ public class OpenApiContract_Tests
 
             // POST and PUT take a JSON body (the commands without a payload excepted), the imports a multipart upload; GET and DELETE never do.
             var takesBody = operation["requestBody"] is not null;
-            takesBody.ShouldBe(method is "POST" or "PUT" && id is not ("TestRun_Complete" or "ApiKey_Revoke"), $"{where}: request body");
+            takesBody.ShouldBe(method is "POST" or "PUT" && id is not ("TestRun_Complete" or "ApiKey_Revoke" or "Project_Archive" or "Project_Restore"), $"{where}: request body");
             if (takesBody)
             {
                 var bodyType = id is "TestCaseTransfer_Import" or "TestResultTransfer_Import" or "Attachment_Upload" ? "multipart/form-data" : "application/json";
@@ -236,7 +243,7 @@ public class OpenApiContract_Tests
         }
 
         QueryParameters(document, "TestCaseTransfer_Export").ShouldBe(
-            new[] { "Format", "Filter", "SuiteId", "IncludeDescendantSuites", "Status", "Priority", "Severity", "ExecutionType", "Kind", "Layer", "Tags", "HasAutomationId" },
+            new[] { "Format", "ProjectId", "Filter", "SuiteId", "IncludeDescendantSuites", "Status", "Priority", "Severity", "ExecutionType", "Kind", "Layer", "Tags", "HasAutomationId" },
             ignoreOrder: true);
         QueryParameters(document, "TestResultTransfer_Export").ShouldBe(new[] { "format" });
     }
@@ -290,17 +297,17 @@ public class OpenApiContract_Tests
         QueryParameters(document, "TestCase_GetList").ShouldBe(
             new[]
             {
-                "Filter", "SuiteId", "IncludeDescendantSuites", "Status", "Priority", "Severity", "ExecutionType", "Kind", "Layer", "Tags", "HasAutomationId",
+                "ProjectId", "Filter", "SuiteId", "IncludeDescendantSuites", "Status", "Priority", "Severity", "ExecutionType", "Kind", "Layer", "Tags", "HasAutomationId",
                 "Sorting", "SkipCount", "MaxResultCount",
             },
             ignoreOrder: true);
 
         QueryParameters(document, "Rtm_GetMatrix").ShouldBe(
-            new[] { "MilestoneId", "Filter", "TestPlanId", "Environment", "Status", "SkipCount", "MaxResultCount" },
+            new[] { "ProjectId", "MilestoneId", "Filter", "TestPlanId", "Environment", "Status", "SkipCount", "MaxResultCount" },
             ignoreOrder: true);
 
         QueryParameters(document, "TestRun_GetList").ShouldBe(
-            new[] { "Filter", "TestPlanId", "Status", "Environment", "Sorting", "SkipCount", "MaxResultCount" },
+            new[] { "ProjectId", "Filter", "TestPlanId", "Status", "Environment", "Sorting", "SkipCount", "MaxResultCount" },
             ignoreOrder: true);
     }
 
@@ -369,7 +376,7 @@ public class OpenApiContract_Tests
         var document = await GetDocumentAsync();
         var operations = Operations(document).ToDictionary(operation => (string)operation.Operation["operationId"]!, operation => operation.Operation);
 
-        ((string?)operations["TestSuite_GetTree"]["summary"]).ShouldBe("Returns the whole library as a forest of root suites, each with nested children.");
+        ((string?)operations["TestSuite_GetTree"]["summary"]).ShouldBe("Returns the library as a forest of root suites, each with nested children. With a project, only the suites of that project.");
         ((string?)operations["TestCase_Create"]["summary"]).ShouldBe("Creates a Draft test case.");
         ((string?)operations["SignOff_SignOff"]["summary"]).ShouldNotBeNull().ShouldContain("quality gate is evaluated first");
         ((string?)operations["QualityGate_Evaluate"]["summary"]).ShouldNotBeNull().ShouldContain("without creating anything");

@@ -9,7 +9,13 @@ export interface PagedResult<T> { items: T[]; totalCount: number }
 export interface PagedRequest { skipCount?: number; maxResultCount?: number; sorting?: string }
 
 // ---- Suites
-export interface TestSuite { id: string; parentId: string | null; name: string; description: string | null; order: number }
+export interface Project {
+  id: string; key: string; name: string; description: string | null; isArchived: boolean;
+  suiteCount: number; testCaseCount: number; planCount: number; requirementCount: number; runCount: number;
+}
+export interface SaveProject { name: string; description?: string | null }
+
+export interface TestSuite { projectId: string; id: string; parentId: string | null; name: string; description: string | null; order: number }
 export interface TestSuiteTree {
   id: string; parentId: string | null; name: string; description: string | null; order: number;
   testCaseCount: number; children: TestSuiteTree[];
@@ -49,14 +55,14 @@ export interface TestCaseDefect {
 }
 
 export interface TestCaseListRequest extends PagedRequest {
-  filter?: string; suiteId?: string | null; includeDescendantSuites?: boolean;
+  projectId?: string | null; filter?: string; suiteId?: string | null; includeDescendantSuites?: boolean;
   status?: TestCaseStatus | null; priority?: PriorityLevel | null; severity?: SeverityLevel | null;
   tags?: string[]; hasAutomationId?: boolean | null;
 }
 
 /** The filters of an export: those of the test case list, without paging. */
 export interface TestCaseExportRequest {
-  format: TransferFormat; filter?: string; suiteId?: string | null; includeDescendantSuites?: boolean;
+  format: TransferFormat; projectId?: string | null; filter?: string; suiteId?: string | null; includeDescendantSuites?: boolean;
   status?: TestCaseStatus | null; priority?: PriorityLevel | null; tags?: string[]; hasAutomationId?: boolean | null;
 }
 
@@ -68,10 +74,10 @@ export interface ImportReport {
 
 // ---- Plans
 export interface TestPlan {
-  id: string; name: string; description: string | null; milestoneId: string | null;
+  projectId: string; id: string; name: string; description: string | null; milestoneId: string | null;
   startDate: string | null; endDate: string | null; status: PlanStatus;
 }
-export interface SavePlan { name: string; description?: string | null; milestoneId?: string | null; startDate?: string | null; endDate?: string | null }
+export interface SavePlan { projectId?: string | null; name: string; description?: string | null; milestoneId?: string | null; startDate?: string | null; endDate?: string | null }
 
 // ---- Runs
 export interface DefectLink {
@@ -90,24 +96,24 @@ export interface TestRunSummary {
   untested: number; completionPercentage: number; firstTimePassRate: number | null;
 }
 export interface TestRun {
-  id: string; testPlanId: string | null; title: string; environment: string; assignedToUserId: string | null;
+  projectId: string; id: string; testPlanId: string | null; title: string; environment: string; assignedToUserId: string | null;
   status: RunStatus; items: TestRunItem[]; summary: TestRunSummary;
 }
 export interface TestExecution {
   id: string; testRunItemId: string; attemptNumber: number; status: TestResultStatus; actualResult: string | null;
   durationSeconds: number; defectLinks: DefectLink[]; creationTime: string; creatorId: string | null;
 }
-export interface CreateRun { testPlanId?: string | null; title: string; environment: string; testCaseIds: string[] }
+export interface CreateRun { projectId?: string | null; testPlanId?: string | null; title: string; environment: string; testCaseIds: string[] }
 export interface ExecuteItem { status: TestResultStatus; actualResult?: string | null; durationSeconds: number; defects: AddDefect[] }
-export interface TestRunListRequest extends PagedRequest { filter?: string; testPlanId?: string | null; status?: RunStatus | null }
+export interface TestRunListRequest extends PagedRequest { projectId?: string | null; filter?: string; testPlanId?: string | null; status?: RunStatus | null }
 
 // ---- Requirements and RTM
 export interface Requirement {
-  id: string; code: string; title: string; description: string | null; acceptanceCriteria: string | null;
+  projectId: string; id: string; code: string; title: string; description: string | null; acceptanceCriteria: string | null;
   priority: PriorityLevel; milestoneId: string | null;
 }
 export interface SaveRequirement {
-  code: string; title: string; description?: string | null; acceptanceCriteria?: string | null;
+  projectId?: string | null; code: string; title: string; description?: string | null; acceptanceCriteria?: string | null;
   priority: PriorityLevel; milestoneId?: string | null;
 }
 export interface RtmSummary {
@@ -128,7 +134,7 @@ export interface RtmRow {
   status: RequirementCoverageStatus; testCases: RtmTestCase[]; blockingDefects: RtmDefect[];
 }
 export interface RtmMatrix { summary: RtmSummary; requirements: RtmRow[]; totalCount: number }
-export interface RtmRequest { milestoneId?: string | null; filter?: string; testPlanId?: string | null; environment?: string; status?: RequirementCoverageStatus | null; maxResultCount?: number }
+export interface RtmRequest { projectId?: string | null; milestoneId?: string | null; filter?: string; testPlanId?: string | null; environment?: string; status?: RequirementCoverageStatus | null; maxResultCount?: number }
 
 // ---- Quality gates and sign-off
 export interface QualityGate {
@@ -151,14 +157,14 @@ export interface QualityGateEvaluation {
   scope: { testPlanId: string | null; milestoneId: string | null; plans: { id: string; name: string }[] };
   metrics: QualityMetrics; criteria: GateCriterion[]; evaluatedTime: string;
 }
-export interface EvaluateInput { testPlanId?: string | null; milestoneId?: string | null; qualityGateId?: string | null }
+export interface EvaluateInput { projectId?: string | null; testPlanId?: string | null; milestoneId?: string | null; qualityGateId?: string | null }
 
 export interface SignOffApproval {
   id: string; approverUserId: string; approverName: string; approverRole: string | null; comment: string | null;
   approvedTime: string; signature: string;
 }
 export interface SignOffReport {
-  id: string; testPlanId: string | null; milestoneId: string | null; title: string; qualityGateId: string | null;
+  projectId: string; id: string; testPlanId: string | null; milestoneId: string | null; title: string; qualityGateId: string | null;
   qualityGateName: string; minPassRate: number; requiredApprovals: number; status: SignOffStatus;
   approvedTime: string | null; snapshotHash: string; integrityVerified: boolean;
   summary: QualityGateEvaluation | null; approvals: SignOffApproval[]; creationTime: string;
@@ -263,7 +269,7 @@ export interface SaveSharedStepGroup { name: string; description?: string | null
 export interface SharedStepUsage {
   testCaseId: string; code: string; title: string; status: number; linkedRevision: number; linkedStepCount: number; isOutdated: boolean;
 }
-export interface UpdateSharedStepUsersResult { updated: number; codes: string[]; newVersions: number }
+export interface UpdateSharedStepUsersResult { updated: number; codes: string[]; sentToReview: number }
 
 // ---- Step suggestions (AI) ---------------------------------------------------------------------------------------------
 

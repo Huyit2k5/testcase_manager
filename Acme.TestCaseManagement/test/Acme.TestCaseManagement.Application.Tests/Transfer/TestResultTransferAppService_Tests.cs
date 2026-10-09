@@ -247,6 +247,7 @@ public class TestResultTransferAppService_Tests : TestCaseManagementApplicationT
             Title = "Second title",
             Steps = current.Steps.Select(s => new TestStepDto { Id = s.Id, Action = s.Action, ExpectedResult = s.ExpectedResult }).ToList(),
         });
+        await _testCases.ChangeStatusAsync(testCaseId, new ChangeTestCaseStatusDto { TargetStatus = TestCaseStatus.Approved });
 
         // A run that holds two versions of one test case exists in data made before a test case could be scheduled only once in a run
         // (the manager refuses it now), so it is built here directly, as the import must still read such a run.

@@ -43,9 +43,10 @@ Module được viết theo kiến trúc phân lớp của ABP, **không phụ t
 ## Tính năng
 
 ### Thư viện test
+- **Dự án**: lớp trên cùng (ví dụ `EINV`, `HRM`). Bộ test, test case, plan, yêu cầu và run thuộc một dự án và không lẫn sang dự án khác; chọn dự án ở đầu mỗi trang. Dữ liệu tạo khi chưa có dự án nằm trong dự án mặc định.
 - **Bộ test dạng cây** (lồng nhiều cấp, chống vòng lặp), **test case** với các bước, kết quả mong đợi và dữ liệu thử.
 - **Quy trình duyệt**: Draft → Under review → Approved → Deprecated.
-- **Phiên bản bất biến**: mỗi lần sửa tạo một bản mới; kế hoạch và đợt chạy luôn gắn với đúng bản đã chọn.
+- **Phiên bản bất biến**: mỗi lần duyệt tạo một bản; sửa test case đã duyệt thì nó quay về Under review và chỉ có bản mới khi được duyệt lại. Kế hoạch và đợt chạy luôn gắn với đúng bản đã chọn.
 - **Bước dùng chung**: viết một lần ("Đăng nhập", "Ký số và phát hành") rồi dùng lại ở nhiều test case; sửa một chỗ thì cập nhật hàng loạt.
 - **Tag**, tìm kiếm toàn văn, lọc nhiều chiều; **nhập/xuất Excel và CSV** có kiểm tra trước (dry run), nhập tất cả hoặc không gì cả.
 - **Gợi ý bước bằng AI** từ một đoạn yêu cầu (người dùng xem và chọn trước khi thêm), dùng được với mọi dịch vụ tương thích OpenAI.
@@ -178,8 +179,8 @@ Các bước chi tiết nằm trong [`Acme.TestCaseManagement/README.md`](Acme.T
 
 | | |
 |---|---|
-| Backend (xUnit, Shouldly) | **211** Domain, **375** Application, **82** HTTP API, đều đạt trên SQLite; toàn bộ cũng đạt trên **MySQL 8.4** |
-| Giao diện (Vitest) | **164** test, build production đạt |
+| Backend (xUnit, Shouldly) | **213** Domain, **393** Application, **82** HTTP API, đều đạt trên SQLite. Bộ test từng đạt trên **MySQL 8.4**; đợt thêm Dự án chưa chạy lại trên MySQL |
+| Giao diện (Vitest) | **183** test, build production đạt |
 | Trình duyệt thật (Playwright) | Kịch bản 47 bước trên ứng dụng độc lập và kịch bản trên ứng dụng ABP mẫu (kho test, quyền, API key, AI) |
 | Quy mô dữ liệu đã đo | 10.000 test case và 100.000 mục chạy: các danh sách đáp ứng dưới 1 giây; Dashboard khoảng 6 giây |
 | Rà soát mã | Đã rà toàn bộ module bằng nhiều người đọc độc lập; các lỗi nghiêm trọng đã sửa kèm test |
@@ -189,7 +190,7 @@ Các bước chi tiết nằm trong [`Acme.TestCaseManagement/README.md`](Acme.T
 Module đã đủ chức năng để thử trong một ứng dụng ABP thật. Những điều **chưa được kiểm chứng hoặc còn hạn chế**:
 
 - Mới thử trong ứng dụng ABP mẫu; chưa thử trong ứng dụng thật của một doanh nghiệp (phiên bản Angular và ABP có thể khác, mới thử với Angular 22).
-- Chưa có khái niệm **"Dự án"**: mọi dữ liệu trong một tenant dùng chung một kho. Có thể tách tạm bằng bộ test cấp cao nhất, tiền tố mã và plan riêng.
+- **Dự án** chưa có phân quyền riêng: ai xem được test case thì xem được ở mọi dự án. Mã test case, mã yêu cầu, bước dùng chung và cổng chất lượng vẫn dùng chung cho mọi dự án (nên đặt tiền tố mã theo dự án).
 - Dashboard, danh sách test chập chờn và cổng chất lượng đọc toàn bộ mục chạy của phạm vi: với hàng trăm nghìn mục sẽ chậm.
 - Khóa chống đồng thời hoạt động trong một tiến trình; chạy nhiều máy chủ cần đăng ký thêm cơ chế khóa phân tán của ABP.
 - Chưa tích hợp trực tiếp Jira/GitHub (hiện chỉ lưu khóa lỗi); tính năng AI mới thử với một dịch vụ tương thích OpenAI.
@@ -199,7 +200,7 @@ Module đã đủ chức năng để thử trong một ứng dụng ABP thật. 
 
 - Thử trong môi trường thật của doanh nghiệp và sửa theo phản hồi.
 - Tích hợp Jira (tạo lỗi từ test fail, đồng bộ trạng thái).
-- Khái niệm **Dự án** (bộ chọn dự án, lọc ở mọi báo cáo, phân quyền theo dự án).
+- Phân quyền theo dự án, mã test case duy nhất theo từng dự án, và khóa dự án khớp với Jira.
 - Tối ưu Dashboard bằng truy vấn tổng hợp trong cơ sở dữ liệu cho dữ liệu rất lớn.
 - Đóng gói giao diện thành gói npm.
 

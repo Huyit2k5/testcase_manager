@@ -1,4 +1,5 @@
 using Acme.TestCaseManagement.Plans;
+using Acme.TestCaseManagement.Projects;
 using Acme.TestCaseManagement.Plans.Dtos;
 using Acme.TestCaseManagement.Quality;
 using Acme.TestCaseManagement.QualityGates.Dtos;
@@ -20,6 +21,14 @@ public class TestCaseManagementApplicationAutoMapperProfile : Profile
     public TestCaseManagementApplicationAutoMapperProfile()
     {
         CreateMap<TestSuite, TestSuiteDto>();
+
+        // The counts are filled in by the application service, which counts what is in each project.
+        CreateMap<Project, ProjectDto>()
+            .ForMember(d => d.SuiteCount, o => o.Ignore())
+            .ForMember(d => d.TestCaseCount, o => o.Ignore())
+            .ForMember(d => d.PlanCount, o => o.Ignore())
+            .ForMember(d => d.RequirementCount, o => o.Ignore())
+            .ForMember(d => d.RunCount, o => o.Ignore());
 
         // The name of the group and whether the copy is behind are filled in by the application service, which looks the groups up.
         CreateMap<TestStep, TestStepDto>()

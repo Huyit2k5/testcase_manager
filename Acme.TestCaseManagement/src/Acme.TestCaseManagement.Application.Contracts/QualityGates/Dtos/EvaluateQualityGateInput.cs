@@ -2,6 +2,9 @@ namespace Acme.TestCaseManagement.QualityGates.Dtos;
 
 public class EvaluateQualityGateInput
 {
+    /// <summary>Keeps a milestone to the plans of this project.</summary>
+    public Guid? ProjectId { get; set; }
+
     /// <summary>Evaluate one test plan. Give either this or <see cref="MilestoneId"/>, not both.</summary>
     public Guid? TestPlanId { get; set; }
 

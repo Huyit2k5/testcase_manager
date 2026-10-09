@@ -13,12 +13,12 @@ public interface ITestCaseAppService : IApplicationService
     /// <summary>Creates a Draft test case.</summary>
     Task<TestCaseDto> CreateAsync(CreateUpdateTestCaseDto input);
 
-    /// <summary>Updates a test case. When it is Approved, a new version snapshot is published automatically.</summary>
+    /// <summary>Updates a test case. When it is Approved it goes back to Under review, and the new version is published when it is approved again.</summary>
     Task<TestCaseDto> UpdateAsync(Guid id, CreateUpdateTestCaseDto input);
 
     Task DeleteAsync(Guid id);
 
-    /// <summary>Reorders the steps. When the test case is Approved, a new version snapshot is published.</summary>
+    /// <summary>Reorders the steps. When the test case is Approved it goes back to Under review, as for any other edit.</summary>
     Task<TestCaseDto> ReorderStepsAsync(Guid id, ReorderTestStepsDto input);
 
     /// <summary>
@@ -41,8 +41,8 @@ public interface ITestCaseAppService : IApplicationService
     /// </summary>
     Task<TestCaseDto> DetachSharedStepsAsync(Guid id, Guid groupId);
 
-    /// <summary>Every tag in use with the number of test cases that have it, the most used first; for a filter or a suggestion.</summary>
-    Task<List<TagSummaryDto>> GetTagsAsync();
+    /// <summary>Every tag in use with the number of test cases that have it, the most used first; for a filter or a suggestion. With a project, only the tags of its test cases.</summary>
+    Task<List<TagSummaryDto>> GetTagsAsync(Guid? projectId = null);
 
     /// <summary>
     /// Moves the test case through its lifecycle (Draft, UnderReview, Approved, Deprecated).

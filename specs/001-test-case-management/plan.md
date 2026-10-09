@@ -1155,6 +1155,42 @@ The part of the module that serves pipelines is not needed yet, so its screens a
 - The team guide lost its developer part (the pipeline exercise and its nine pictures) and the roles table its API-key row.
 - Tests: the menu and the route guard in both states; the filter and the field in both states.
 
+### 4.23. Phase 24: a change to an approved test case is reviewed again
+
+Before, saving an approved test case published a new version at once and left it Approved, so what the runs used could change with nobody looking at it.
+
+- `TestCaseManager.SendBackForReviewIfApproved` moves an Approved test case to Under review. The update, the reorder of steps, the insert and the refresh of shared steps, the bulk update of the users of a shared-step group and the update by import all call
+  it; none of them publishes a version any more. The version is published by the approval (`ChangeStatusAsync`), as it always was for a first approval.
+- Meanwhile the runs that exist keep their item on the last approved version. A new run cannot take the test case, because it takes only Approved ones (an existing rule); the version that is current is the last approved one, `CurrentVersion` does not move.
+- The note of the change (`ChangeSummary`) is optional and is given **when it is approved again**: the detail drawer asks for it in a dialog that may be left empty (`askText` with `optional`). The `ChangeSummary` of the update and of the
+  other edits is no longer used (kept in the DTOs so a client that sends it still works). The form says that saving sends the test case back to review; the drawer shows a banner with the version the runs keep using.
+- Decided with the team: the note is not required, and the approver may be the author (an approval by the person who edited is allowed; the team is small).
+- `UpdateSharedStepUsersResultDto.NewVersions` became `SentToReview`.
+- Tests: the manager (only an approved test case moves, nothing is published, the next approval is version 2), the application and HTTP tests for the edit, import, shared steps, tags and runs, and the drawer (banner, optional note, no question the first time).
+
+### 4.24. Phase 25: projects
+
+Everything lived in one library, so two or three products shared the suite tree, the plans, the requirements and the dashboard. The market tools all have a project as their top level (TestRail, TestLink, Xray and Zephyr through the Jira project, qTest,
+Azure Test Plans through the team project, Kiwi TCMS through the product), so the module has one too. Permissions per project were left out on purpose (a small team; the permission system of the host stays the only one).
+
+- **Entity**: `Project` (key of 2 to 10 capitals or digits starting with a letter, kept in capitals and never changed, a name, a description, `IsArchived`), table `TcmProjects`. The key is meant to match a Jira project key when Jira is integrated.
+- **What carries a `ProjectId`**: `TestSuite` (a suite below another has its parent's), `TestPlan`, `Requirement`, `TestRun` and `SignOffReport`. A test case is in the project of its suite (no column: a filter by project is a filter by the suites of the project). It is a plain
+  reference with an index and **no foreign key**, so the entities keep their constructors (the Domain tests build them directly) and an old row with `Guid.Empty` is valid until it is assigned.
+- **Compatible by default**: every create call may leave the project out, and the **default project** (key `DEFAULT`) is made the first time it is needed. Every list takes an optional `ProjectId`; leaving it out answers for every project, as before. So a client that does not know about projects keeps working.
+- **Data made before projects**: `ProjectAppService.GetListAsync` on a library with no project makes the default project and gives it all the rows that have none (`ProjectManager.AssignUnassignedToDefaultAsync`, behind a lock, once). A host adds the migration (new table, five new columns, indexes);
+  the sample application of the sandbox did it and its 13 suites, 37 test cases, 2 plans, 12 requirements and 5 runs came to the default project.
+- **No mixing** (`ProjectManager.EnsureSameProjectAsync`, error `DifferentProject`): a suite under a parent of another project, moving a suite or a test case into another project, a test case in a run of another project, a requirement linked to a test case of another project, a run
+  named for another project than its plan. A run without a plan is in the project of its first test case. Nothing is added to an archived project (`ProjectArchived`); an archived project is still read. A project with no suites, plans, requirements or runs can be deleted; otherwise it is archived.
+- **Lists that follow the project**: suite tree, test cases (and the tags), plans, runs, requirements, traceability matrix, dashboard, flaky tests (and applying the flags), the evaluation of a milestone by the quality gate, the sign-off reports, and the export of test cases. The import puts its suites in the project it is
+  given and looks for them there; the first suite of each project is number 0 (the order is per project). **Left shared on purpose**: shared-step groups, the codes of test cases and of requirements (still unique in the whole library, so use a prefix such as `EINV-`), the quality gates.
+- **Permissions**: reading projects needs only to be signed in; `TestCaseManagement.Projects.Manage` creates, renames, archives, restores and deletes.
+- **Angular**: `ProjectContext` holds the project in use (kept in `localStorage`); the services of the module read it, so a page does not pass it around and a body or a query carries it only when there is one. The shell shows a bar with a selector and, with the permission, a link to the page `projects`; it builds the
+  page again when the project changes (a new `router-outlet` shows the route that is active) and not before the list of projects is known.
+- A host that embeds the model in its own `DbContext` adds `DbSet<Project> Projects` (the sandbox did, and made the migration `AddProjects`).
+- Tests: the application service (keys, default project, backfill, counts, archive, delete, nesting, moves, lists, runs, requirements, dashboard, import and export, tags), the quality gate and sign-off by project, the contract of the API, the services, the bar and the page of the UI;
+  checked on the sample application of the sandbox with two projects, and the browser script of the standalone application (without its Automation and AI steps).
+- Not done: permissions per project, a test case code that is unique per project, shared-step groups per project, Jira (see the key above), counts in the bar.
+
 ## 5. Security, RBAC & Permissions
 
 Defined in `TestCaseManagementPermissions`:

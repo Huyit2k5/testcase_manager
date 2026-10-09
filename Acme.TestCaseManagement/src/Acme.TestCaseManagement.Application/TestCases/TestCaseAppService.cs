@@ -61,7 +61,7 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
         var filter = new TestCaseFilter
         {
             SearchText = input.Filter,
-            SuiteIds = await ResolveSuiteIdsAsync(input.SuiteId, input.IncludeDescendantSuites),
+            SuiteIds = await ResolveSuiteIdsAsync(input.SuiteId, input.IncludeDescendantSuites, input.ProjectId),
             Status = input.Status,
             Priority = input.Priority,
             Severity = input.Severity,
@@ -113,13 +113,7 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
 
         ApplyContent(testCase, input);
 
-        // Approval needs a step (TestCaseManager); an edit of an approved test case must not take that back and publish an empty version.
-        if (testCase.Status == TestCaseStatus.Approved && testCase.Steps.Count == 0)
-        {
-            throw new BusinessException(TestCaseManagementErrorCodes.TestCaseHasNoSteps).WithData("Code", testCase.Code);
-        }
-
-        await PublishVersionIfApprovedAsync(testCase, input.ChangeSummary);
+        _testCaseManager.SendBackForReviewIfApproved(testCase);
         await _testCaseRepository.UpdateAsync(testCase, autoSave: true);
 
         return await MapAsync(testCase);
@@ -139,7 +133,7 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
 
         testCase.ReorderSteps(input.StepIds);
 
-        await PublishVersionIfApprovedAsync(testCase, input.ChangeSummary);
+        _testCaseManager.SendBackForReviewIfApproved(testCase);
         await _testCaseRepository.UpdateAsync(testCase, autoSave: true);
 
         return await MapAsync(testCase);
@@ -153,7 +147,7 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
 
         testCase.InsertSharedSteps(group, input.Position);
 
-        await PublishVersionIfApprovedAsync(testCase, input.ChangeSummary);
+        _testCaseManager.SendBackForReviewIfApproved(testCase);
         await _testCaseRepository.UpdateAsync(testCase, autoSave: true);
 
         return await MapAsync(testCase);
@@ -167,8 +161,7 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
 
         testCase.RefreshSharedSteps(group);
 
-        await PublishVersionIfApprovedAsync(
-            testCase, string.IsNullOrWhiteSpace(input.ChangeSummary) ? L["TestCaseManagement:SharedStepsUpdatedSummary", group.Name, group.Revision].Value : input.ChangeSummary);
+        _testCaseManager.SendBackForReviewIfApproved(testCase);
         await _testCaseRepository.UpdateAsync(testCase, autoSave: true);
 
         return await MapAsync(testCase);
@@ -198,9 +191,10 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
         return await MapAsync(testCase);
     }
 
-    public virtual async Task<List<TagSummaryDto>> GetTagsAsync()
+    public virtual async Task<List<TagSummaryDto>> GetTagsAsync(Guid? projectId = null)
     {
-        return (await _testCaseRepository.GetTagSummariesAsync())
+        var suiteIds = projectId.HasValue ? (await _suiteRepository.GetListAsync(s => s.ProjectId == projectId)).Select(s => s.Id).ToList() : null;
+        return (await _testCaseRepository.GetTagSummariesAsync(suiteIds))
             .Select(t => new TagSummaryDto { Name = t.Name, Count = t.Count })
             .ToList();
     }
@@ -316,20 +310,14 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
                 .ToList());
     }
 
-    /// <summary>An approved test case that is modified gets a new immutable version so that runs can keep using the old one.</summary>
-    protected virtual async Task PublishVersionIfApprovedAsync(TestCase testCase, string? changeSummary)
-    {
-        if (testCase.Status == TestCaseStatus.Approved)
-        {
-            await _testCaseManager.PublishNewVersionAsync(testCase, changeSummary);
-        }
-    }
-
-    protected virtual async Task<IReadOnlyCollection<Guid>?> ResolveSuiteIdsAsync(Guid? suiteId, bool includeDescendants)
+    protected virtual async Task<IReadOnlyCollection<Guid>?> ResolveSuiteIdsAsync(Guid? suiteId, bool includeDescendants, Guid? projectId = null)
     {
         if (!suiteId.HasValue)
         {
-            return null;
+            // Without a suite, a project means every suite of that project (none: no test case).
+            return projectId.HasValue
+                ? (await _suiteRepository.GetListAsync(s => s.ProjectId == projectId)).Select(s => s.Id).ToList()
+                : null;
         }
 
         if (!includeDescendants)

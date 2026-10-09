@@ -26,8 +26,8 @@ public class Controller_Conventions_Tests
             .Where(type => type.IsInterface && type != typeof(IApplicationService) && typeof(IApplicationService).IsAssignableFrom(type))
             .ToList();
 
-        Controllers.Count.ShouldBe(17);
-        services.Count.ShouldBe(17);
+        Controllers.Count.ShouldBe(18);
+        services.Count.ShouldBe(18);
 
         foreach (var service in services)
         {

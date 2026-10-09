@@ -5,6 +5,9 @@ namespace Acme.TestCaseManagement.Requirements.Dtos;
 
 public class CreateUpdateRequirementDto
 {
+    /// <summary>The project of a new requirement (leave it out for the default project). Ignored when it is updated: a requirement stays in its project.</summary>
+    public Guid? ProjectId { get; set; }
+
     /// <summary>Unique within the tenant (ignoring case), e.g. "REQ-AUTH-01".</summary>
     [Required]
     [StringLength(RequirementConsts.MaxCodeLength)]

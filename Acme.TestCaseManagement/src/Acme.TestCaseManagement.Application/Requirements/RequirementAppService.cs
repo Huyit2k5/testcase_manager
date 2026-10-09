@@ -29,6 +29,7 @@ public class RequirementAppService : TestCaseManagementAppService, IRequirementA
     public virtual async Task<PagedResultDto<RequirementDto>> GetListAsync(GetRequirementListInput input)
     {
         var query = (await _requirementRepository.GetQueryableAsync())
+            .WhereIf(input.ProjectId.HasValue, x => x.ProjectId == input.ProjectId)
             .WhereIf(input.MilestoneId.HasValue, x => x.MilestoneId == input.MilestoneId);
 
         if (!string.IsNullOrWhiteSpace(input.Filter))
@@ -48,7 +49,7 @@ public class RequirementAppService : TestCaseManagementAppService, IRequirementA
     [Authorize(TestCaseManagementPermissions.Requirements.Manage)]
     public virtual async Task<RequirementDto> CreateAsync(CreateUpdateRequirementDto input)
     {
-        var requirement = await _requirementManager.CreateAsync(input.Code, input.Title);
+        var requirement = await _requirementManager.CreateAsync(input.Code, input.Title, input.ProjectId);
         requirement.SetDetails(input.Description, input.AcceptanceCriteria, input.Priority, input.MilestoneId);
 
         await _requirementRepository.InsertAsync(requirement, autoSave: true);

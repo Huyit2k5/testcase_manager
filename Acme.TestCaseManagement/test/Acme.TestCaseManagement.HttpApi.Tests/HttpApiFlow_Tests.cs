@@ -10,6 +10,7 @@ using Acme.TestCaseManagement.SharedSteps.Dtos;
 using Acme.TestCaseManagement.Insights.Dtos;
 using Acme.TestCaseManagement.Enums;
 using Acme.TestCaseManagement.Plans.Dtos;
+using Acme.TestCaseManagement.Projects;
 using Acme.TestCaseManagement.QualityGates.Dtos;
 using Acme.TestCaseManagement.Requirements.Dtos;
 using Acme.TestCaseManagement.Rtm.Dtos;
@@ -51,6 +52,17 @@ public class HttpApiFlow_Tests
         var productOwnerId = productOwner.UserId;
         var milestone = Guid.NewGuid();
 
+        // ---- Projects ----------------------------------------------------------------------------------------
+        var project = await qaLead.PostAsync<ProjectDto>($"{Root}/projects", new CreateProjectDto { Key = "web", Name = "Web shop" });
+        project.Key.ShouldBe("WEB");
+        (await qaLead.GetAsync<List<ProjectDto>>($"{Root}/projects")).Select(p => p.Key).ShouldContain("WEB");
+        (await qaLead.PutAsync<ProjectDto>($"{Root}/projects/{project.Id}", new UpdateProjectDto { Name = "Web shop 2" })).Name.ShouldBe("Web shop 2");
+        (await qaLead.GetAsync<ProjectDto>($"{Root}/projects/{project.Id}")).Name.ShouldBe("Web shop 2");
+        (await qaLead.PostAsync<ProjectDto>($"{Root}/projects/{project.Id}/archive")).IsArchived.ShouldBeTrue();
+        (await qaLead.GetAsync<List<ProjectDto>>($"{Root}/projects")).Select(p => p.Key).ShouldNotContain("WEB");
+        (await qaLead.PostAsync<ProjectDto>($"{Root}/projects/{project.Id}/restore")).IsArchived.ShouldBeFalse();
+        await qaLead.SendAsync(HttpMethod.Delete, $"{Root}/projects/{project.Id}");   // nothing is in it yet
+
         // ---- Library: suites ---------------------------------------------------------------------------------
         var suite = await qaLead.PostAsync<TestSuiteDto>($"{Root}/suites", new CreateTestSuiteDto { Name = "Checkout" });
         var archive = await qaLead.PostAsync<TestSuiteDto>($"{Root}/suites", new CreateTestSuiteDto { Name = "Archive", Description = "Old flows" });
@@ -88,12 +100,15 @@ public class HttpApiFlow_Tests
         var voucher = await qaLead.GetAsync<PagedResultDto<TestCaseDto>>($"{Root}/test-cases?Filter=voucher&SkipCount=0&MaxResultCount=10");
         voucher.Items.Select(testCase => testCase.Code).ShouldBe(new[] { "PAY-003" });
 
-        // Editing an approved test case publishes version 2; the old snapshot stays readable.
+        // Editing an approved test case sends it back to review; approving it again publishes version 2, and the old snapshot stays readable.
         var detail = await qaLead.GetAsync<TestCaseDto>($"{Root}/test-cases/{caseA.Id}");
         var edit = NewTestCase(suite.Id, "PAY-001", "Pay with a valid card (3-D Secure)", PriorityLevel.Urgent);
         edit.Steps = detail.Steps;
-        edit.ChangeSummary = "Added 3-D Secure";
         var edited = await qaLead.PutAsync<TestCaseDto>($"{Root}/test-cases/{caseA.Id}", edit);
+        edited.Status.ShouldBe(TestCaseStatus.UnderReview);
+        edited.CurrentVersion.ShouldBe(1);
+        edited = await qaLead.PostAsync<TestCaseDto>(
+            $"{Root}/test-cases/{caseA.Id}/status", new ChangeTestCaseStatusDto { TargetStatus = TestCaseStatus.Approved, ChangeSummary = "Added 3-D Secure" });
         edited.CurrentVersion.ShouldBe(2);
         (await qaLead.GetAsync<List<TestCaseVersionDto>>($"{Root}/test-cases/{caseA.Id}/versions"))
             .Select(version => version.VersionNumber).ShouldBe(new[] { 1, 2 }, ignoreOrder: true);
@@ -103,6 +118,8 @@ public class HttpApiFlow_Tests
             $"{Root}/test-cases/{caseC.Id}/steps/order",
             new ReorderTestStepsDto { StepIds = caseC.Steps.Select(step => step.Id!.Value).Reverse().ToList() });
         reordered.Steps.Select(step => step.Action).ShouldBe(caseC.Steps.Select(step => step.Action).Reverse());
+        reordered.Status.ShouldBe(TestCaseStatus.UnderReview);
+        await qaLead.PostAsync<TestCaseDto>($"{Root}/test-cases/{caseC.Id}/status", new ChangeTestCaseStatusDto { TargetStatus = TestCaseStatus.Approved });
 
         // ---- Execution: plan, run, attempts ------------------------------------------------------------------
         var plan = await qaLead.PostAsync<TestPlanDto>($"{Root}/plans", NewPlan("Sprint 1", milestone));

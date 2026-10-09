@@ -19,6 +19,9 @@ public class TestPlan : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public virtual Guid? TenantId { get; protected set; }
 
+    /// <summary>The project it belongs to. Guid.Empty only for data made before projects existed, until it is given to the default project.</summary>
+    public virtual Guid ProjectId { get; protected set; }
+
     public virtual string Name { get; protected set; }
 
     public virtual string? Description { get; protected set; }
@@ -55,6 +58,12 @@ public class TestPlan : FullAuditedAggregateRoot<Guid>, IMultiTenant
         ValidateDates(startDate, endDate);
         StartDate = startDate;
         EndDate = endDate;
+    }
+
+    /// <summary>Used when it is created (and to give old data its project); the managers keep it consistent, so it is not changed afterwards.</summary>
+    public virtual void SetProject(Guid projectId)
+    {
+        ProjectId = projectId;
     }
 
     public virtual void SetName(string name)

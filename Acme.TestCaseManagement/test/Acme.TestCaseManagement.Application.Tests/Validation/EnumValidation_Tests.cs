@@ -123,23 +123,18 @@ public class EnumValidation_Tests : TestCaseManagementApplicationTestBase
     }
 
     [Fact]
-    public async Task An_Approved_Test_Case_Cannot_Be_Edited_Down_To_No_Steps_But_A_Draft_Can()
+    public async Task An_Approved_Test_Case_Edited_Down_To_No_Steps_Goes_To_Review_And_Cannot_Be_Approved_Again()
     {
         var (suiteId, approved) = await ApprovedCaseAsync("TC-STEPS");
         var edit = new CreateUpdateTestCaseDto { SuiteId = suiteId, Code = approved.Code, Title = approved.Title };
 
-        var refused = await Should.ThrowAsync<BusinessException>(() => _testCases.UpdateAsync(approved.Id, edit));
+        var edited = await _testCases.UpdateAsync(approved.Id, edit);
 
-        refused.Code.ShouldBe(TestCaseManagementErrorCodes.TestCaseHasNoSteps);
-        var unchanged = await _testCases.GetAsync(approved.Id);
-        unchanged.CurrentVersion.ShouldBe(1);
-        unchanged.Status.ShouldBe(TestCaseStatus.Approved);
-        unchanged.Steps.Count.ShouldBe(1);
+        // The edit is saved but waits for review; nothing is published, and approval needs a step.
+        edited.Status.ShouldBe(TestCaseStatus.UnderReview);
+        edited.Steps.ShouldBeEmpty();
+        edited.CurrentVersion.ShouldBe(1);
         (await _testCases.GetVersionsAsync(approved.Id)).Count.ShouldBe(1);
-
-        // Back to draft, the steps may be taken out (it cannot be approved again without one).
-        await _testCases.ChangeStatusAsync(approved.Id, new ChangeTestCaseStatusDto { TargetStatus = TestCaseStatus.Draft });
-        (await _testCases.UpdateAsync(approved.Id, edit)).Steps.ShouldBeEmpty();
         (await Should.ThrowAsync<BusinessException>(
                 () => _testCases.ChangeStatusAsync(approved.Id, new ChangeTestCaseStatusDto { TargetStatus = TestCaseStatus.Approved })))
             .Code.ShouldBe(TestCaseManagementErrorCodes.TestCaseHasNoSteps);

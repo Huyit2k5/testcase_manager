@@ -87,7 +87,7 @@ public class TestCaseAppService_Tests : TestCaseManagementApplicationTestBase
     }
 
     [Fact]
-    public async Task Updating_An_Approved_Test_Case_Should_Publish_A_New_Version_And_Keep_The_Old_One()
+    public async Task Updating_An_Approved_Test_Case_Should_Send_It_To_Review_And_Publish_The_New_Version_Only_When_Approved()
     {
         var suite = await CreateSuiteAsync("S");
         var created = await _testCases.CreateAsync(NewTestCase(suite.Id));
@@ -95,12 +95,15 @@ public class TestCaseAppService_Tests : TestCaseManagementApplicationTestBase
 
         var update = NewTestCase(suite.Id, steps: 0);
         update.Title = "Renamed";
-        update.ChangeSummary = "Reduced to one step";
         update.Steps.Add(new TestStepDto { Action = "Only step", ExpectedResult = "Only result" });
         var updated = await _testCases.UpdateAsync(created.Id, update);
 
-        updated.Status.ShouldBe(TestCaseStatus.Approved);
-        updated.CurrentVersion.ShouldBe(2);
+        updated.Status.ShouldBe(TestCaseStatus.UnderReview);
+        updated.CurrentVersion.ShouldBe(1);
+        (await _testCases.GetVersionsAsync(created.Id)).Count.ShouldBe(1);
+
+        var approved = await _testCases.ChangeStatusAsync(created.Id, new ChangeTestCaseStatusDto { TargetStatus = TestCaseStatus.Approved, ChangeSummary = "Reduced to one step" });
+        approved.CurrentVersion.ShouldBe(2);
 
         var versions = await _testCases.GetVersionsAsync(created.Id);
         versions.Select(v => v.VersionNumber).ShouldBe(new[] { 2, 1 });

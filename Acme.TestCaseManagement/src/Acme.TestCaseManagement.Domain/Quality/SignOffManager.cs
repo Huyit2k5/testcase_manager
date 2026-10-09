@@ -46,6 +46,12 @@ public class SignOffManager : DomainService
         var report = new SignOffReport(
             GuidGenerator.Create(), CurrentTenant.Id, scope, BuildTitle(title, evaluation), evaluation.Gate, json);
 
+        if (report.ProjectId == Guid.Empty)
+        {
+            // A plan (or the plans of a milestone in one project) fixes the project of the report.
+            report.SetProject((await _gateManager.ResolvePlansAsync(scope)).First().ProjectId);
+        }
+
         report.AddApproval(GuidGenerator.Create(), userId, userName, approverRole, comment, now);
         return report;
     }
@@ -71,7 +77,8 @@ public class SignOffManager : DomainService
     protected virtual async Task SupersedePendingAsync(QualityGateScope scope)
     {
         var pending = await _reportRepository.GetListAsync(x =>
-            x.Status == SignOffStatus.Pending && x.TestPlanId == scope.TestPlanId && x.MilestoneId == scope.MilestoneId);
+            x.Status == SignOffStatus.Pending && x.TestPlanId == scope.TestPlanId && x.MilestoneId == scope.MilestoneId
+            && (scope.ProjectId == null || x.ProjectId == scope.ProjectId));
 
         foreach (var report in pending)
         {

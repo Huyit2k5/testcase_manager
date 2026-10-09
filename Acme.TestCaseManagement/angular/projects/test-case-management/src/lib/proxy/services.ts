@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { apiRoot } from '../core/host';
+import { ProjectContext } from '../core/project-context';
 import { Observable, map } from 'rxjs';
 import {
   StepSuggestionResult, StepSuggestionStatus, SuggestStepsInput, AddDefect, ApiKey, Attachment, SaveSharedStepGroup, SharedStepGroup, SharedStepGroupSummary, SharedStepUsage, TagSummary, UpdateSharedStepUsersResult, ApiKeyCreated, ApplyFlakyFlagsResult, CreateRun, Dashboard, FlakyTestList, DefectLink, EvaluateInput, ExecuteItem, PagedResult, QualityGate, QualityGateEvaluation,
@@ -24,14 +25,22 @@ function query(values: object | undefined): HttpParams {
   return params;
 }
 
+/** The body of a request with the project the user is in, when there is one (a body without a project is for the default project). */
+function inProject<T extends object>(input: T, projectId: string | null): T & { projectId?: string } {
+  return projectId ? { projectId, ...input } : input;
+}
+
 @Injectable({ providedIn: 'root' })
 export class TestSuiteService {
   private readonly http = inject(HttpClient);
   private readonly root = apiRoot();
+  private readonly project = inject(ProjectContext);
 
-  tree(): Observable<TestSuiteTree[]> { return this.http.get<TestSuiteTree[]>(`${this.root}/suites/tree`); }
+  /** The suites of the project the user is in. */
+  tree(): Observable<TestSuiteTree[]> { return this.http.get<TestSuiteTree[]>(`${this.root}/suites/tree`, { params: query({ projectId: this.project.currentId() }) }); }
+  /** A suite below another is in its parent's project; a root suite goes to the project the user is in. */
   create(input: { name: string; description?: string | null; parentId?: string | null }): Observable<TestSuite> {
-    return this.http.post<TestSuite>(`${this.root}/suites`, input);
+    return this.http.post<TestSuite>(`${this.root}/suites`, input.parentId ? input : inProject(input, this.project.currentId()));
   }
   update(id: string, input: { name: string; description?: string | null }): Observable<TestSuite> {
     return this.http.put<TestSuite>(`${this.root}/suites/${id}`, input);
@@ -43,9 +52,10 @@ export class TestSuiteService {
 export class TestCaseService {
   private readonly http = inject(HttpClient);
   private readonly root = apiRoot();
+  private readonly project = inject(ProjectContext);
 
   list(request: TestCaseListRequest): Observable<PagedResult<TestCase>> {
-    return this.http.get<PagedResult<TestCase>>(`${this.root}/test-cases`, { params: query(request) });
+    return this.http.get<PagedResult<TestCase>>(`${this.root}/test-cases`, { params: query({ projectId: this.project.currentId(), ...request }) });
   }
   get(id: string): Observable<TestCase> { return this.http.get<TestCase>(`${this.root}/test-cases/${id}`); }
   create(input: SaveTestCase): Observable<TestCase> { return this.http.post<TestCase>(`${this.root}/test-cases`, input); }
@@ -64,7 +74,7 @@ export class TestCaseService {
     return this.http.delete<TestCase>(`${this.root}/test-cases/${id}/shared-steps/${groupId}`);
   }
   setTags(id: string, tags: string[]): Observable<TestCase> { return this.http.put<TestCase>(`${this.root}/test-cases/${id}/tags`, { tags }); }
-  tags(): Observable<TagSummary[]> { return this.http.get<TagSummary[]>(`${this.root}/test-cases/tags`); }
+  tags(): Observable<TagSummary[]> { return this.http.get<TagSummary[]>(`${this.root}/test-cases/tags`, { params: query({ projectId: this.project.currentId() }) }); }
   versions(id: string): Observable<TestCaseVersion[]> { return this.http.get<TestCaseVersion[]>(`${this.root}/test-cases/${id}/versions`); }
   defects(id: string): Observable<TestCaseDefect[]> { return this.http.get<TestCaseDefect[]>(`${this.root}/test-cases/${id}/defects`); }
 }
@@ -73,11 +83,12 @@ export class TestCaseService {
 export class TestPlanService {
   private readonly http = inject(HttpClient);
   private readonly root = apiRoot();
+  private readonly project = inject(ProjectContext);
 
   list(request: { filter?: string; status?: PlanStatus | null; maxResultCount?: number } = {}): Observable<PagedResult<TestPlan>> {
-    return this.http.get<PagedResult<TestPlan>>(`${this.root}/plans`, { params: query({ maxResultCount: 100, ...request }) });
+    return this.http.get<PagedResult<TestPlan>>(`${this.root}/plans`, { params: query({ maxResultCount: 100, projectId: this.project.currentId(), ...request }) });
   }
-  create(input: SavePlan): Observable<TestPlan> { return this.http.post<TestPlan>(`${this.root}/plans`, input); }
+  create(input: SavePlan): Observable<TestPlan> { return this.http.post<TestPlan>(`${this.root}/plans`, inProject(input, this.project.currentId())); }
   update(id: string, input: SavePlan): Observable<TestPlan> { return this.http.put<TestPlan>(`${this.root}/plans/${id}`, input); }
   delete(id: string): Observable<void> { return this.http.delete<void>(`${this.root}/plans/${id}`); }
   changeStatus(id: string, targetStatus: PlanStatus): Observable<TestPlan> {
@@ -89,12 +100,13 @@ export class TestPlanService {
 export class TestRunService {
   private readonly http = inject(HttpClient);
   private readonly root = apiRoot();
+  private readonly project = inject(ProjectContext);
 
   list(request: TestRunListRequest = {}): Observable<PagedResult<TestRun>> {
-    return this.http.get<PagedResult<TestRun>>(`${this.root}/runs`, { params: query({ maxResultCount: 100, ...request }) });
+    return this.http.get<PagedResult<TestRun>>(`${this.root}/runs`, { params: query({ maxResultCount: 100, projectId: this.project.currentId(), ...request }) });
   }
   get(id: string): Observable<TestRun> { return this.http.get<TestRun>(`${this.root}/runs/${id}`); }
-  create(input: CreateRun): Observable<TestRun> { return this.http.post<TestRun>(`${this.root}/runs`, input); }
+  create(input: CreateRun): Observable<TestRun> { return this.http.post<TestRun>(`${this.root}/runs`, inProject(input, this.project.currentId())); }
   addItems(id: string, testCaseIds: string[], assignedUserId: string | null = null): Observable<TestRun> {
     return this.http.post<TestRun>(`${this.root}/runs/${id}/items`, { testCaseIds, assignedUserId });
   }
@@ -125,11 +137,13 @@ export class TestRunService {
 export class RequirementService {
   private readonly http = inject(HttpClient);
   private readonly root = apiRoot();
+  private readonly project = inject(ProjectContext);
 
   list(request: { filter?: string; maxResultCount?: number } = {}): Observable<PagedResult<Requirement>> {
-    return this.http.get<PagedResult<Requirement>>(`${this.root}/requirements`, { params: query({ maxResultCount: 200, ...request }) });
+    return this.http.get<PagedResult<Requirement>>(`${this.root}/requirements`, { params: query({ maxResultCount: 200, projectId: this.project.currentId(), ...request }) });
   }
-  create(input: SaveRequirement): Observable<Requirement> { return this.http.post<Requirement>(`${this.root}/requirements`, input); }
+  /** A new requirement goes to the project the user is in; an update keeps the project it has. */
+  create(input: SaveRequirement): Observable<Requirement> { return this.http.post<Requirement>(`${this.root}/requirements`, inProject(input, this.project.currentId())); }
   update(id: string, input: SaveRequirement): Observable<Requirement> { return this.http.put<Requirement>(`${this.root}/requirements/${id}`, input); }
   delete(id: string): Observable<void> { return this.http.delete<void>(`${this.root}/requirements/${id}`); }
   link(id: string, testCaseIds: string[]): Observable<void> {
@@ -144,9 +158,10 @@ export class RequirementService {
 export class RtmService {
   private readonly http = inject(HttpClient);
   private readonly root = apiRoot();
+  private readonly project = inject(ProjectContext);
 
   matrix(request: RtmRequest = {}): Observable<RtmMatrix> {
-    return this.http.get<RtmMatrix>(`${this.root}/rtm`, { params: query({ maxResultCount: 500, ...request }) });
+    return this.http.get<RtmMatrix>(`${this.root}/rtm`, { params: query({ maxResultCount: 500, projectId: this.project.currentId(), ...request }) });
   }
 }
 
@@ -154,13 +169,14 @@ export class RtmService {
 export class QualityGateService {
   private readonly http = inject(HttpClient);
   private readonly root = apiRoot();
+  private readonly project = inject(ProjectContext);
 
   list(): Observable<QualityGate[]> { return this.http.get<QualityGate[]>(`${this.root}/quality-gates`); }
   create(input: SaveQualityGate): Observable<QualityGate> { return this.http.post<QualityGate>(`${this.root}/quality-gates`, input); }
   update(id: string, input: SaveQualityGate): Observable<QualityGate> { return this.http.put<QualityGate>(`${this.root}/quality-gates/${id}`, input); }
   delete(id: string): Observable<void> { return this.http.delete<void>(`${this.root}/quality-gates/${id}`); }
   evaluate(input: EvaluateInput): Observable<QualityGateEvaluation> {
-    return this.http.post<QualityGateEvaluation>(`${this.root}/quality-gates/evaluate`, input);
+    return this.http.post<QualityGateEvaluation>(`${this.root}/quality-gates/evaluate`, inProject(input, this.project.currentId()));
   }
 }
 
@@ -168,11 +184,12 @@ export class QualityGateService {
 export class SignOffService {
   private readonly http = inject(HttpClient);
   private readonly root = apiRoot();
+  private readonly project = inject(ProjectContext);
 
   list(request: { testPlanId?: string | null; status?: SignOffStatus | null } = {}): Observable<PagedResult<SignOffReport>> {
-    return this.http.get<PagedResult<SignOffReport>>(`${this.root}/sign-off`, { params: query({ maxResultCount: 100, ...request }) });
+    return this.http.get<PagedResult<SignOffReport>>(`${this.root}/sign-off`, { params: query({ maxResultCount: 100, projectId: this.project.currentId(), ...request }) });
   }
-  start(input: StartSignOff): Observable<SignOffReport> { return this.http.post<SignOffReport>(`${this.root}/sign-off`, input); }
+  start(input: StartSignOff): Observable<SignOffReport> { return this.http.post<SignOffReport>(`${this.root}/sign-off`, inProject(input, this.project.currentId())); }
   approve(id: string, approverRole: string | null, comment: string | null): Observable<SignOffReport> {
     return this.http.post<SignOffReport>(`${this.root}/sign-off/${id}/approvals`, { approverRole, comment });
   }
@@ -194,9 +211,10 @@ export class ApiKeyService {
 export class DashboardService {
   private readonly http = inject(HttpClient);
   private readonly root = apiRoot();
+  private readonly project = inject(ProjectContext);
 
   get(request: { testPlanId?: string | null; days: number }): Observable<Dashboard> {
-    return this.http.get<Dashboard>(`${this.root}/dashboard`, { params: query({ TestPlanId: request.testPlanId, Days: request.days }) });
+    return this.http.get<Dashboard>(`${this.root}/dashboard`, { params: query({ ProjectId: this.project.currentId(), TestPlanId: request.testPlanId, Days: request.days }) });
   }
 }
 
@@ -204,14 +222,15 @@ export class DashboardService {
 export class FlakyTestService {
   private readonly http = inject(HttpClient);
   private readonly root = apiRoot();
+  private readonly project = inject(ProjectContext);
 
   list(request: { minimumLevel?: number; filter?: string; maxResultCount?: number }): Observable<FlakyTestList> {
     return this.http.get<FlakyTestList>(`${this.root}/flaky-tests`, {
-      params: query({ MinimumLevel: request.minimumLevel, Filter: request.filter, MaxResultCount: request.maxResultCount }),
+      params: query({ ProjectId: this.project.currentId(), MinimumLevel: request.minimumLevel, Filter: request.filter, MaxResultCount: request.maxResultCount }),
     });
   }
   apply(clearRecovered: boolean): Observable<ApplyFlakyFlagsResult> {
-    return this.http.post<ApplyFlakyFlagsResult>(`${this.root}/flaky-tests/apply`, { clearRecovered });
+    return this.http.post<ApplyFlakyFlagsResult>(`${this.root}/flaky-tests/apply`, inProject({ clearRecovered }, this.project.currentId()));
   }
 }
 

@@ -1,5 +1,18 @@
 namespace Acme.TestCaseManagement;
 
+public static class ProjectConsts
+{
+    /// <summary>The key is a short code in capitals and digits ("EINV", "HRM2"), like a Jira project key.</summary>
+    public const int MinKeyLength = 2;
+    public const int MaxKeyLength = 10;
+    public const int MaxNameLength = 128;
+    public const int MaxDescriptionLength = 2000;
+
+    /// <summary>The key of the project that holds what was there before projects existed, and what is created without naming one.</summary>
+    public const string DefaultKey = "DEFAULT";
+    public const string DefaultName = "Default project";
+}
+
 public static class TestSuiteConsts
 {
     public const int MaxNameLength = 128;

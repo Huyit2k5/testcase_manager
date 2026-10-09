@@ -5,6 +5,9 @@ namespace Acme.TestCaseManagement.Insights.Dtos;
 
 public class GetFlakyTestsInput
 {
+    /// <summary>Only what belongs to this project. Leave it out to see every project.</summary>
+    public Guid? ProjectId { get; set; }
+
     /// <summary>Tests below this level are left out. Default Watch; Insufficient lists everything that has attempts.</summary>
     public FlakinessLevel MinimumLevel { get; set; } = FlakinessLevel.Watch;
 
@@ -79,6 +82,9 @@ public class FlakyTestListDto
 
 public class ApplyFlakyFlagsInput
 {
+    /// <summary>Only the test cases of this project. Leave it out for every project.</summary>
+    public Guid? ProjectId { get; set; }
+
     /// <summary>Also remove the flag from flagged test cases that now score Stable.</summary>
     public bool ClearRecovered { get; set; }
 }

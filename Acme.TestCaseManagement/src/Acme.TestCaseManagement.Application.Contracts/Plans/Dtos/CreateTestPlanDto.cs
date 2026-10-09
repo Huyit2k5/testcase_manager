@@ -4,6 +4,9 @@ namespace Acme.TestCaseManagement.Plans.Dtos;
 
 public class CreateTestPlanDto
 {
+    /// <summary>The project it is created in. Leave it out for the default project.</summary>
+    public Guid? ProjectId { get; set; }
+
     [Required]
     [StringLength(TestPlanConsts.MaxNameLength)]
     public string Name { get; set; } = string.Empty;

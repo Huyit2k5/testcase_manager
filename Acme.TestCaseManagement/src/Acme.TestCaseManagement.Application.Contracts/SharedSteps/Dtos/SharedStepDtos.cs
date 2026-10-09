@@ -103,7 +103,7 @@ public class UpdateSharedStepUsersInput
     /// <summary>The test cases to bring up to date. Leave it out to update every test case that is behind.</summary>
     public List<Guid>? TestCaseIds { get; set; }
 
-    /// <summary>Recorded on the new version of each approved test case that is updated.</summary>
+    /// <summary>Not used any more: an approved test case goes back to review, and the note is given when it is approved again.</summary>
     [StringLength(TestCaseConsts.MaxChangeSummaryLength)]
     public string? ChangeSummary { get; set; }
 }
@@ -114,6 +114,6 @@ public class UpdateSharedStepUsersResultDto
 
     public List<string> Codes { get; set; } = new();
 
-    /// <summary>How many of them were approved and so got a new version.</summary>
-    public int NewVersions { get; set; }
+    /// <summary>How many of them were approved and so went back to Under review.</summary>
+    public int SentToReview { get; set; }
 }

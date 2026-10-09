@@ -68,7 +68,9 @@ public class Scale_Tests : TestCaseManagementApplicationTestBase
         await WithUnitOfWorkAsync(async () =>
         {
             var db = await GetRequiredService<IDbContextProvider<ITestCaseManagementDbContext>>().GetDbContextAsync();
-            db.TestSuites.Add(new TestSuite(suiteId, null, "Scale", null, 1));
+            var scaleSuite = new TestSuite(suiteId, null, "Scale", null, 1);
+            scaleSuite.SetProject(plan.ProjectId);
+            db.TestSuites.Add(scaleSuite);
             await db.SaveChangesAsync();
         });
 
@@ -102,6 +104,7 @@ public class Scale_Tests : TestCaseManagementApplicationTestBase
             {
                 var db = await GetRequiredService<IDbContextProvider<ITestCaseManagementDbContext>>().GetDbContextAsync();
                 var run = new TestRun(Guid.NewGuid(), null, $"Scale run {r}", r % 2 == 0 ? "Staging" : "Production", plan.Id);
+                run.SetProject(plan.ProjectId);
                 var start = random.Next(versionIds.Count - itemsPerRun + 1);
                 var items = new List<TestRunItem>();
                 for (var i = 0; i < itemsPerRun; i++)

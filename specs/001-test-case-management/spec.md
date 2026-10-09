@@ -134,7 +134,7 @@ So that buggy releases are blocked from deploying to Production without document
 | **FR-001** | Test Suite | Hierarchical tree management (CRUD, drag-and-drop reordering, circular dependency prevention). | UC-01 |
 | **FR-002** | Test Case | Master test case authoring (Code, Title, Precondition, Postcondition, Priority, Severity, Kind, Layer). | UC-02 |
 | **FR-003** | Test Step | Ordered step management with discrete Action and Expected Outcome fields. | UC-03 |
-| **FR-004** | Versioning | Automatic creation of immutable `TestCaseVersion` upon approval or modification. | UC-04 |
+| **FR-004** | Versioning | Automatic creation of immutable `TestCaseVersion` upon approval. A modification of an approved test case sends it back to Under review, and the next version is published when it is approved again. | UC-04 |
 | **FR-005** | Reusable Steps | Shared step libraries that can be embedded into multiple test cases by reference. | UC-05 |
 | **FR-006** | Test Plan | Milestone and Sprint test planning, defining scope, dates, and target environments. | UC-06 |
 | **FR-007** | Test Run | Creation of execution runs bound to specific environments (Staging, Prod, Mobile OS). | UC-07 |
@@ -158,6 +158,7 @@ So that buggy releases are blocked from deploying to Production without document
 | **FR-025** | Dashboard Metrics | Real-time calculation of Pass Rate, Execution Velocity, Burn-down, and Defect Density. | UC-25 |
 | **FR-026** | Bulk Execution | Batch update capabilities for marking multiple test items in automated or regression runs. | UC-26 |
 | **FR-027** | AI Assistance | Integration hook for AI-powered test step generation from requirements text. | UC-27 |
+| **FR-028** | Projects | A project is the top level of the library: suites (so test cases), plans, requirements and runs belong to one project and are not mixed with those of another. Lists, dashboard and quality views follow the project in use; things made without naming a project go to a default project; nothing is added to an archived project. | UC-28 |
 
 ---
 

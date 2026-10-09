@@ -1,6 +1,7 @@
 using Acme.TestCaseManagement.Enums;
 using Acme.TestCaseManagement.Permissions;
 using Acme.TestCaseManagement.Plans;
+using Acme.TestCaseManagement.Projects;
 using Acme.TestCaseManagement.Quality;
 using Acme.TestCaseManagement.Repositories;
 using Acme.TestCaseManagement.Runs.Dtos;
@@ -23,6 +24,7 @@ public class TestRunAppService : TestCaseManagementAppService, ITestRunAppServic
     private readonly ITestCaseRepository _testCaseRepository;
     private readonly TestRunManager _runManager;
     private readonly DefectLinkManager _defectManager;
+    private readonly ProjectManager _projectManager;
 
     public TestRunAppService(
         IRepository<TestRun, Guid> runRepository,
@@ -31,8 +33,10 @@ public class TestRunAppService : TestCaseManagementAppService, ITestRunAppServic
         IRepository<DefectLink, Guid> defectRepository,
         ITestCaseRepository testCaseRepository,
         TestRunManager runManager,
-        DefectLinkManager defectManager)
+        DefectLinkManager defectManager,
+        ProjectManager projectManager)
     {
+        _projectManager = projectManager;
         _runRepository = runRepository;
         _executionRepository = executionRepository;
         _versionRepository = versionRepository;
@@ -50,6 +54,7 @@ public class TestRunAppService : TestCaseManagementAppService, ITestRunAppServic
     public virtual async Task<PagedResultDto<TestRunDto>> GetListAsync(GetTestRunListInput input)
     {
         var query = (await _runRepository.GetQueryableAsync())
+            .WhereIf(input.ProjectId.HasValue, x => x.ProjectId == input.ProjectId)
             .WhereIf(input.TestPlanId.HasValue, x => x.TestPlanId == input.TestPlanId)
             .WhereIf(input.Status.HasValue, x => x.Status == input.Status);
 
@@ -75,7 +80,16 @@ public class TestRunAppService : TestCaseManagementAppService, ITestRunAppServic
     [Authorize(TestCaseManagementPermissions.TestPlans.Manage)]
     public virtual async Task<TestRunDto> CreateAsync(CreateTestRunDto input)
     {
-        var run = await _runManager.CreateRunAsync(input.Title, input.Environment, input.TestPlanId, input.AssignedToUserId);
+        // A run without a plan or a project of its own is in the project of its test cases (the first one decides).
+        var projectId = input.ProjectId;
+        if (projectId == null && input.TestPlanId == null && input.TestCaseIds.Count > 0)
+        {
+            var first = await _testCaseRepository.GetAsync(input.TestCaseIds[0], includeDetails: false);
+            var of = await _projectManager.GetProjectOfSuiteAsync(first.SuiteId);
+            projectId = of == Guid.Empty ? null : of;
+        }
+
+        var run = await _runManager.CreateRunAsync(input.Title, input.Environment, input.TestPlanId, input.AssignedToUserId, projectId);
 
         foreach (var testCaseId in input.TestCaseIds.Distinct())
         {

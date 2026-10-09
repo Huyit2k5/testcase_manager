@@ -28,6 +28,10 @@ import { ConfirmService } from '../../core/confirm';
         <span class="muted">{{ 'detail.version' | t: { n: testCase().currentVersion } }}</span>
       </div>
 
+      @if (waitingForReview()) {
+        <p class="alert warn" data-test="review-banner">{{ 'detail.waitingReview' | t: { n: testCase().currentVersion } }}</p>
+      }
+
       <div class="field">
         <label>{{ 'tags.title' | t }}</label>
         <app-tag-input [tags]="tags()" (tagsChange)="tags.set($event)" (edited)="saveTags($event)" [suggestions]="suggestions()" [readonly]="!auth.can(perm.TestCases.Update)" />
@@ -262,8 +266,25 @@ export class TestCaseDetailComponent {
     });
   }
 
+  /** An edit of an approved test case is waiting for its review: the runs use the last approved version meanwhile. */
+  protected waitingForReview(): boolean {
+    return this.testCase().status === TestCaseStatus.UnderReview && this.testCase().currentVersion > 0;
+  }
+
   protected changeStatus(target: TestCaseStatus): void {
-    this.service.changeStatus(this.testCase().id, target).subscribe(() => {
+    // Approving a test case that was approved before makes its next version, so the person may say what changed (optional).
+    if (target === TestCaseStatus.Approved && this.testCase().currentVersion > 0) {
+      this.confirmer.askText({
+        title: this.i18n.t('detail.approveAgainTitle'), message: this.i18n.t('detail.changeNote'), placeholder: this.i18n.t('detail.changeNoteHint'),
+        confirmText: this.i18n.t('detail.approve'), optional: true,
+      }).subscribe(note => { if (note !== null) { this.moveTo(target, note || null); } });
+      return;
+    }
+    this.moveTo(target, null);
+  }
+
+  private moveTo(target: TestCaseStatus, changeSummary: string | null): void {
+    this.service.changeStatus(this.testCase().id, target, changeSummary).subscribe(() => {
       this.toast.success(this.i18n.t('detail.statusNow', { status: this.label(TestCaseStatus, target) }));
       this.changed.emit();
     });

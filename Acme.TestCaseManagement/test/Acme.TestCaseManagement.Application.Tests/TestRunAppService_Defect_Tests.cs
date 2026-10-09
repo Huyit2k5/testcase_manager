@@ -143,6 +143,7 @@ public class TestRunAppService_Defect_Tests : TestCaseManagementApplicationTestB
             Title = testCase.Title,
             Steps = { new TestStepDto { Action = "Changed", ExpectedResult = "Changed" } },
         });
+        await _testCases.ChangeStatusAsync(testCase.Id, new ChangeTestCaseStatusDto { TargetStatus = TestCaseStatus.Approved });
 
         var (runB, itemB) = await CreateRunAsync(testCase.Id, "Sprint 24 regression");
         var first = await ExecuteAsync(runB.Id, itemB.Id, TestResultStatus.Failed);

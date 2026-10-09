@@ -7,6 +7,9 @@ namespace Acme.TestCaseManagement.SignOff.Dtos;
 
 public class StartSignOffDto
 {
+    /// <summary>Keeps a milestone sign-off to the plans of this project. A plan sign-off is in the plan's project.</summary>
+    public Guid? ProjectId { get; set; }
+
     /// <summary>Sign off one test plan. Give either this or <see cref="MilestoneId"/>, not both.</summary>
     public Guid? TestPlanId { get; set; }
 
@@ -40,6 +43,9 @@ public class ApproveSignOffDto
 
 public class GetSignOffListInput : PagedAndSortedResultRequestDto
 {
+    /// <summary>Only what belongs to this project. Leave it out to see every project.</summary>
+    public Guid? ProjectId { get; set; }
+
     public Guid? TestPlanId { get; set; }
 
     public Guid? MilestoneId { get; set; }
@@ -67,6 +73,8 @@ public class SignOffApprovalDto
 
 public class SignOffReportDto : CreationAuditedEntityDto<Guid>
 {
+    public Guid ProjectId { get; set; }
+
     /// <summary>Set for a plan sign-off.</summary>
     public Guid? TestPlanId { get; set; }
 

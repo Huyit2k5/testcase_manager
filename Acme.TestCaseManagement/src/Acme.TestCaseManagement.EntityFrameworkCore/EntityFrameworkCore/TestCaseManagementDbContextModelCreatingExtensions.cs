@@ -2,6 +2,7 @@ using Acme.TestCaseManagement.Attachments;
 using Acme.TestCaseManagement.SharedSteps;
 using Acme.TestCaseManagement.Automation;
 using Acme.TestCaseManagement.Plans;
+using Acme.TestCaseManagement.Projects;
 using Acme.TestCaseManagement.Quality;
 using Acme.TestCaseManagement.Requirements;
 using Acme.TestCaseManagement.Runs;
@@ -29,6 +30,19 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
     {
         Check.NotNull(builder, nameof(builder));
 
+        builder.Entity<Project>(b =>
+        {
+            b.ToTable(TableName("Projects"), TestCaseManagementDbProperties.DbSchema);
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Key).IsRequired().HasMaxLength(ProjectConsts.MaxKeyLength);
+            b.Property(x => x.Name).IsRequired().HasMaxLength(ProjectConsts.MaxNameLength);
+            b.Property(x => x.Description).HasMaxLength(ProjectConsts.MaxDescriptionLength);
+
+            // Not unique: a soft-deleted project keeps its key. ProjectManager enforces uniqueness.
+            b.HasIndex(x => new { x.TenantId, x.Key });
+        });
+
         builder.Entity<TestSuite>(b =>
         {
             b.ToTable(TableName("Suites"), TestCaseManagementDbProperties.DbSchema);
@@ -41,6 +55,8 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
             b.HasOne<TestSuite>().WithMany().HasForeignKey(x => x.ParentId).OnDelete(DeleteBehavior.Restrict);
 
             b.HasIndex(x => new { x.TenantId, x.ParentId, x.Order });
+            // The project is a plain reference (no foreign key): a project is archived, and deleted only when it is empty.
+            b.HasIndex(x => x.ProjectId);
         });
 
         builder.Entity<TestCase>(b =>
@@ -205,6 +221,7 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
             // Not unique: soft-deleted requirements keep their code. RequirementManager enforces uniqueness.
             b.HasIndex(x => new { x.TenantId, x.Code });
             b.HasIndex(x => x.MilestoneId);
+            b.HasIndex(x => x.ProjectId);
         });
 
         builder.Entity<RequirementTestCase>(b =>
@@ -276,6 +293,7 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
 
             b.HasIndex(x => new { x.TenantId, x.TestPlanId, x.Status });
             b.HasIndex(x => new { x.TenantId, x.MilestoneId, x.Status });
+            b.HasIndex(x => x.ProjectId);
         });
 
         builder.Entity<SignOffApproval>(b =>
@@ -305,6 +323,7 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
 
             b.HasIndex(x => new { x.TenantId, x.Status });
             b.HasIndex(x => x.MilestoneId);
+            b.HasIndex(x => x.ProjectId);
         });
 
         builder.Entity<TestRun>(b =>
@@ -322,6 +341,7 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
             b.HasMany(x => x.Items).WithOne().HasForeignKey(x => x.TestRunId).IsRequired().OnDelete(DeleteBehavior.Cascade);
 
             b.HasIndex(x => x.TestPlanId);
+            b.HasIndex(x => x.ProjectId);
             b.HasIndex(x => new { x.TenantId, x.Status });
         });
 

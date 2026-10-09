@@ -4,6 +4,8 @@ namespace Acme.TestCaseManagement.Suites.Dtos;
 
 public class TestSuiteDto : AuditedEntityDto<Guid>
 {
+    public Guid ProjectId { get; set; }
+
     public Guid? ParentId { get; set; }
 
     public string Name { get; set; } = string.Empty;

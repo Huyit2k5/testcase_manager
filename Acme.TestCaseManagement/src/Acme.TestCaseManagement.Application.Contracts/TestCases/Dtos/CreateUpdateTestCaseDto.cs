@@ -48,7 +48,7 @@ public class CreateUpdateTestCaseDto
     /// <summary>The complete ordered step list. On update, steps that are omitted are removed.</summary>
     public List<TestStepDto> Steps { get; set; } = new();
 
-    /// <summary>Recorded on the new <c>TestCaseVersion</c> when an approved test case is modified.</summary>
+    /// <summary>Not used any more: editing an approved test case sends it back to review, and the note is given when it is approved again.</summary>
     [StringLength(TestCaseConsts.MaxChangeSummaryLength)]
     public string? ChangeSummary { get; set; }
 }

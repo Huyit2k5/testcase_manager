@@ -5,6 +5,8 @@ namespace Acme.TestCaseManagement.Requirements.Dtos;
 
 public class RequirementDto : AuditedEntityDto<Guid>
 {
+    public Guid ProjectId { get; set; }
+
     public string Code { get; set; } = string.Empty;
 
     public string Title { get; set; } = string.Empty;

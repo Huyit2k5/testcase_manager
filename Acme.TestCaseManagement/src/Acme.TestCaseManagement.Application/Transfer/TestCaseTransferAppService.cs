@@ -7,6 +7,7 @@ using Acme.TestCaseManagement.TestCases;
 using Acme.TestCaseManagement.TestCases.Dtos;
 using Acme.TestCaseManagement.Transfer.Dtos;
 using Acme.TestCaseManagement.Transfer.Tabular;
+using Acme.TestCaseManagement.Projects;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using Volo.Abp;
@@ -23,14 +24,17 @@ public class TestCaseTransferAppService : TestCaseManagementAppService, ITestCas
     private readonly ITestCaseAppService _testCaseService;
     private readonly ITestSuiteAppService _suiteService;
     private readonly TestCaseManagementTransferOptions _options;
+    private readonly ProjectManager _projectManager;
 
     public TestCaseTransferAppService(
         ITestCaseRepository testCaseRepository,
         IRepository<TestSuite, Guid> suiteRepository,
         ITestCaseAppService testCaseService,
         ITestSuiteAppService suiteService,
-        IOptions<TestCaseManagementTransferOptions> options)
+        IOptions<TestCaseManagementTransferOptions> options,
+        ProjectManager projectManager)
     {
+        _projectManager = projectManager;
         _testCaseRepository = testCaseRepository;
         _suiteRepository = suiteRepository;
         _testCaseService = testCaseService;
@@ -40,14 +44,16 @@ public class TestCaseTransferAppService : TestCaseManagementAppService, ITestCas
 
     public virtual async Task<IRemoteStreamContent> ExportAsync(ExportTestCasesInput input)
     {
-        var tree = new SuiteTree(await _suiteRepository.GetListAsync());
+        var projectId = input.ProjectId;
+        var suites = await _suiteRepository.GetListAsync(x => projectId == null || x.ProjectId == projectId);
+        var tree = new SuiteTree(suites);
 
         var filter = new TestCaseFilter
         {
             SearchText = input.Filter,
             SuiteIds = input.SuiteId.HasValue
                 ? (input.IncludeDescendantSuites ? tree.SelfAndDescendantIds(input.SuiteId.Value) : new HashSet<Guid> { input.SuiteId.Value })
-                : null,
+                : (projectId.HasValue ? suites.Select(s => s.Id).ToHashSet() : null),
             Status = input.Status,
             Priority = input.Priority,
             Severity = input.Severity,
@@ -100,7 +106,8 @@ public class TestCaseTransferAppService : TestCaseManagementAppService, ITestCas
         report.FileErrors.AddRange(sheet.FileErrors);
         report.IgnoredColumns.AddRange(sheet.IgnoredColumns);
 
-        var tree = new SuiteTree(await _suiteRepository.GetListAsync());
+        var project = await _projectManager.ResolveForNewAsync(input.ProjectId);
+        var tree = new SuiteTree(await _suiteRepository.GetListAsync(x => x.ProjectId == project.Id));
         if (input.DefaultSuiteId.HasValue && !tree.Contains(input.DefaultSuiteId.Value))
         {
             report.FileErrors.Add(messages.Get("Import:DefaultSuiteNotFound"));
@@ -145,7 +152,7 @@ public class TestCaseTransferAppService : TestCaseManagementAppService, ITestCas
         // Pass 2: write everything. This runs in one unit of work, so an unexpected failure leaves nothing behind.
         foreach (var suite in tree.Planned)
         {
-            var created = await _suiteService.CreateAsync(new CreateTestSuiteDto { Name = suite.Name, ParentId = suite.Parent?.Id });
+            var created = await _suiteService.CreateAsync(new CreateTestSuiteDto { Name = suite.Name, ParentId = suite.Parent?.Id, ProjectId = project.Id });
             suite.Id = created.Id;
         }
 

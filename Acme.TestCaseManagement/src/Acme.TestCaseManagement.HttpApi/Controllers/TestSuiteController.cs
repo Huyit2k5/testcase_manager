@@ -26,9 +26,9 @@ public class TestSuiteController : TestCaseManagementController, ITestSuiteAppSe
 
     /// <inheritdoc />
     [HttpGet("tree")]
-    public virtual Task<List<TestSuiteTreeDto>> GetTreeAsync()
+    public virtual Task<List<TestSuiteTreeDto>> GetTreeAsync([FromQuery] Guid? projectId = null)
     {
-        return _suiteAppService.GetTreeAsync();
+        return _suiteAppService.GetTreeAsync(projectId);
     }
 
     /// <inheritdoc />

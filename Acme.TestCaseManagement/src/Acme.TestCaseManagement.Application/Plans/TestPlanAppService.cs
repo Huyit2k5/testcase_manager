@@ -1,5 +1,6 @@
 using Acme.TestCaseManagement.Permissions;
 using Acme.TestCaseManagement.Plans.Dtos;
+using Acme.TestCaseManagement.Projects;
 using Acme.TestCaseManagement.Runs;
 using Microsoft.AspNetCore.Authorization;
 using Volo.Abp;
@@ -13,11 +14,13 @@ public class TestPlanAppService : TestCaseManagementAppService, ITestPlanAppServ
 {
     private readonly IRepository<TestPlan, Guid> _planRepository;
     private readonly IRepository<TestRun, Guid> _runRepository;
+    private readonly ProjectManager _projectManager;
 
-    public TestPlanAppService(IRepository<TestPlan, Guid> planRepository, IRepository<TestRun, Guid> runRepository)
+    public TestPlanAppService(IRepository<TestPlan, Guid> planRepository, IRepository<TestRun, Guid> runRepository, ProjectManager projectManager)
     {
         _planRepository = planRepository;
         _runRepository = runRepository;
+        _projectManager = projectManager;
     }
 
     public virtual async Task<TestPlanDto> GetAsync(Guid id)
@@ -28,6 +31,7 @@ public class TestPlanAppService : TestCaseManagementAppService, ITestPlanAppServ
     public virtual async Task<PagedResultDto<TestPlanDto>> GetListAsync(GetTestPlanListInput input)
     {
         var query = (await _planRepository.GetQueryableAsync())
+            .WhereIf(input.ProjectId.HasValue, x => x.ProjectId == input.ProjectId)
             .WhereIf(input.Status.HasValue, x => x.Status == input.Status)
             .WhereIf(input.MilestoneId.HasValue, x => x.MilestoneId == input.MilestoneId);
 
@@ -55,6 +59,7 @@ public class TestPlanAppService : TestCaseManagementAppService, ITestPlanAppServ
             input.MilestoneId,
             input.StartDate,
             input.EndDate);
+        plan.SetProject((await _projectManager.ResolveForNewAsync(input.ProjectId)).Id);
 
         await _planRepository.InsertAsync(plan, autoSave: true);
 

@@ -123,10 +123,7 @@ import { TCM_FEATURES } from '../../core/host';
         </div>
 
         @if (existing() && existing()!.status === 2) {
-          <div class="field" style="margin-top:12px">
-            <label for="tc-summary">{{ 'form.changeSummary' | t }}</label>
-            <input id="tc-summary" name="changeSummary" [(ngModel)]="model.changeSummary" />
-          </div>
+          <p class="muted" style="margin-top:12px" data-test="review-hint">{{ 'form.reviewHint' | t }}</p>
         }
       </form>
       <ng-container slot="footer">

@@ -1,5 +1,6 @@
 using Acme.TestCaseManagement.Enums;
 using Acme.TestCaseManagement.Plans;
+using Acme.TestCaseManagement.Projects;
 using Acme.TestCaseManagement.Runs;
 using Acme.TestCaseManagement.TestCases;
 using Shouldly;
@@ -334,6 +335,32 @@ public class SignOffManager_Tests : QualityTestBase
             (await Should.ThrowAsync<BusinessException>(
                     () => _manager.StartAsync(new QualityGateScope(Guid.NewGuid(), Guid.NewGuid()), null, null, null, null)))
                 .Code.ShouldBe(TestCaseManagementErrorCodes.InvalidSignOffScope);
+        });
+    }
+    [Fact]
+    public async Task A_Milestone_That_Two_Projects_Use_Is_Judged_Per_Project_And_The_Report_Keeps_Its_Project()
+    {
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var milestone = Guid.NewGuid();
+            var projects = GetRequiredService<ProjectManager>();
+            var first = await projects.GetOrCreateDefaultAsync();
+            var other = await GetRequiredService<IRepository<Project, Guid>>().InsertAsync(await projects.CreateAsync("OTHR", "Other", null), autoSave: true);
+            var firstPlan = await PlanAsync("First plan", milestone);
+            var otherPlan = await PlanAsync("Other plan", milestone);
+            otherPlan.SetProject(other.Id);
+            await PlanRepository.UpdateAsync(otherPlan, autoSave: true);
+
+            (await _gateManager.ResolvePlansAsync(new QualityGateScope(null, milestone))).Select(p => p.Name).ShouldBe(new[] { "First plan", "Other plan" });
+            (await _gateManager.ResolvePlansAsync(new QualityGateScope(null, milestone, first.Id))).Select(p => p.Name).ShouldBe(new[] { "First plan" });
+            (await _gateManager.ResolvePlansAsync(new QualityGateScope(null, milestone, other.Id))).Select(p => p.Name).ShouldBe(new[] { "Other plan" });
+
+            // A sign-off of a plan is in the plan's project, even when the scope does not say.
+            var a = await ApprovedTestCaseAsync("TC-A");
+            await ExecuteAsync(await RunAsync(firstPlan, "Staging", a), 1, TestResultStatus.Passed);
+            using var _ = ChangeUser(_qaLead, "qa.lead");
+            var report = await StartAndSaveAsync(new QualityGateScope(firstPlan.Id, null));
+            report.ProjectId.ShouldBe(first.Id);
         });
     }
 }

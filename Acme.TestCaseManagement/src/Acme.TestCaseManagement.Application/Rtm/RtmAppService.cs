@@ -86,6 +86,7 @@ public class RtmAppService : TestCaseManagementAppService, IRtmAppService
     protected virtual async Task<List<Requirement>> LoadRequirementsAsync(GetRtmInput input)
     {
         var query = (await _requirementRepository.GetQueryableAsync())
+            .WhereIf(input.ProjectId.HasValue, x => x.ProjectId == input.ProjectId)
             .WhereIf(input.MilestoneId.HasValue, x => x.MilestoneId == input.MilestoneId);
 
         if (!string.IsNullOrWhiteSpace(input.Filter))

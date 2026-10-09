@@ -93,7 +93,7 @@ describe('SharedStepsComponent', () => {
     call('updateSelected');
     const request = http.expectOne(`${ROOT}/shared-step-groups/g1/update-test-cases`);
     expect(request.request.body).toEqual({ testCaseIds: ['a'] });
-    request.flush({ updated: 1, codes: ['TC-A'], newVersions: 0 });
+    request.flush({ updated: 1, codes: ['TC-A'], sentToReview: 0 });
     http.expectOne(r => r.method === 'GET' && r.url === `${ROOT}/shared-step-groups`).flush([]);
     expect(read<unknown>('usage')).toBeNull();
   });

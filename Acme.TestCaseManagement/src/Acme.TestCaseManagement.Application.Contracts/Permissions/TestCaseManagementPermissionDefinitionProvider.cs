@@ -19,6 +19,9 @@ public class TestCaseManagementPermissionDefinitionProvider : PermissionDefiniti
         testCases.AddChild(TestCaseManagementPermissions.TestCases.Approve, L("Permission:TestCases.Approve"));
         testCases.AddChild(TestCaseManagementPermissions.TestCases.SuggestSteps, L("Permission:TestCases.SuggestSteps"));
 
+        var projects = group.AddPermission(TestCaseManagementPermissions.Projects.Default, L("Permission:Projects"));
+        projects.AddChild(TestCaseManagementPermissions.Projects.Manage, L("Permission:Projects.Manage"));
+
         var suites = group.AddPermission(TestCaseManagementPermissions.TestSuites.Default, L("Permission:TestSuites"));
         suites.AddChild(TestCaseManagementPermissions.TestSuites.Manage, L("Permission:TestSuites.Manage"));
 

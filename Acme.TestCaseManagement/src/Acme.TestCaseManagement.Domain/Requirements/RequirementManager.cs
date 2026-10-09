@@ -1,3 +1,4 @@
+using Acme.TestCaseManagement.Projects;
 using Acme.TestCaseManagement.Repositories;
 using Volo.Abp;
 using Volo.Abp.Data;
@@ -12,13 +13,16 @@ public class RequirementManager : DomainService
     private readonly IRepository<RequirementTestCase> _linkRepository;
     private readonly ITestCaseRepository _testCaseRepository;
     private readonly IDataFilter _dataFilter;
+    private readonly ProjectManager _projectManager;
 
     public RequirementManager(
         IRepository<Requirement, Guid> requirementRepository,
         IRepository<RequirementTestCase> linkRepository,
         ITestCaseRepository testCaseRepository,
-        IDataFilter dataFilter)
+        IDataFilter dataFilter,
+        ProjectManager projectManager)
     {
+        _projectManager = projectManager;
         _requirementRepository = requirementRepository;
         _linkRepository = linkRepository;
         _testCaseRepository = testCaseRepository;
@@ -26,9 +30,11 @@ public class RequirementManager : DomainService
     }
 
     /// <summary>Builds a requirement after checking its code is free (ignoring case). The caller inserts it.</summary>
-    public virtual async Task<Requirement> CreateAsync(string code, string title)
+    public virtual async Task<Requirement> CreateAsync(string code, string title, Guid? projectId = null)
     {
+        var project = await _projectManager.ResolveForNewAsync(projectId);
         var requirement = new Requirement(GuidGenerator.Create(), CurrentTenant.Id, code, title);
+        requirement.SetProject(project.Id);
         await EnsureCodeIsUniqueAsync(requirement.Code, exceptRequirementId: null);
 
         return requirement;
@@ -49,7 +55,8 @@ public class RequirementManager : DomainService
     /// <summary>Links a test case. Returns false when the link already exists. A removed link is restored.</summary>
     public virtual async Task<bool> LinkTestCaseAsync(Requirement requirement, Guid testCaseId)
     {
-        await _testCaseRepository.GetAsync(testCaseId, includeDetails: false); // 404 when it does not exist
+        var testCase = await _testCaseRepository.GetAsync(testCaseId, includeDetails: false); // 404 when it does not exist
+        await _projectManager.EnsureSameProjectAsync("A requirement and a test case", requirement.ProjectId, await _projectManager.GetProjectOfSuiteAsync(testCase.SuiteId));
 
         RequirementTestCase? link;
         using (_dataFilter.Disable<ISoftDelete>())

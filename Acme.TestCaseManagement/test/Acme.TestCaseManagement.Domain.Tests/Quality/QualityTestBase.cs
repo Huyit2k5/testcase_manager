@@ -1,5 +1,6 @@
 using Acme.TestCaseManagement.Enums;
 using Acme.TestCaseManagement.Plans;
+using Acme.TestCaseManagement.Projects;
 using Acme.TestCaseManagement.Runs;
 using Acme.TestCaseManagement.Suites;
 using Acme.TestCaseManagement.TestCases;
@@ -38,8 +39,9 @@ public abstract class QualityTestBase : TestCaseManagementDomainTestBase
 
     protected async Task<TestPlan> PlanAsync(string name, Guid? milestoneId = null)
     {
-        return await PlanRepository.InsertAsync(
-            new TestPlan(Guid.NewGuid(), null, name, milestoneId: milestoneId), autoSave: true);
+        var plan = new TestPlan(Guid.NewGuid(), null, name, milestoneId: milestoneId);
+        plan.SetProject((await GetRequiredService<ProjectManager>().GetOrCreateDefaultAsync()).Id);
+        return await PlanRepository.InsertAsync(plan, autoSave: true);
     }
 
     protected async Task<TestRun> RunAsync(TestPlan? plan, string environment = "Staging", params TestCase[] testCases)

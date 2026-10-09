@@ -174,17 +174,20 @@ public class SharedStepGroupAppService_Tests : TestCaseManagementApplicationTest
     }
 
     [Fact]
-    public async Task Inserting_Into_An_Approved_Test_Case_Publishes_A_Version_That_Keeps_The_Copy_Even_After_The_Group_Changes()
+    public async Task Inserting_Into_An_Approved_Test_Case_Sends_It_To_Review_And_The_Version_Approved_Afterwards_Keeps_The_Copy()
     {
         var group = await GroupAsync("Log in");
         var testCase = await CaseAsync("TC-1");
         await ApproveAsync(testCase.Id);
 
-        var updated = await _testCases.InsertSharedStepsAsync(testCase.Id, new InsertSharedStepsDto { SharedStepGroupId = group.Id, ChangeSummary = "Added the login" });
-        updated.CurrentVersion.ShouldBe(2);
+        var updated = await _testCases.InsertSharedStepsAsync(testCase.Id, new InsertSharedStepsDto { SharedStepGroupId = group.Id });
+        updated.CurrentVersion.ShouldBe(1);
+        updated.Status.ShouldBe(TestCaseStatus.UnderReview);
+        await _testCases.ChangeStatusAsync(testCase.Id, new ChangeTestCaseStatusDto { TargetStatus = TestCaseStatus.Approved, ChangeSummary = "Added the login" });
 
         await ChangeGroupAsync(group, "Sign in with the code");
         await _testCases.RefreshSharedStepsAsync(testCase.Id, group.Id, new RefreshSharedStepsDto());
+        await _testCases.ChangeStatusAsync(testCase.Id, new ChangeTestCaseStatusDto { TargetStatus = TestCaseStatus.Approved, ChangeSummary = "Shared steps 'Log in' updated to revision 2." });
 
         var versions = await _testCases.GetVersionsAsync(testCase.Id);
         versions.Select(v => v.VersionNumber).ShouldBe(new[] { 3, 2, 1 });
@@ -272,7 +275,7 @@ public class SharedStepGroupAppService_Tests : TestCaseManagementApplicationTest
     // ---- bringing test cases up to date
 
     [Fact]
-    public async Task One_Action_Brings_Every_Test_Case_That_Is_Behind_Up_To_Date_And_Approved_Ones_Get_A_Version()
+    public async Task One_Action_Brings_Every_Test_Case_That_Is_Behind_Up_To_Date_And_Approved_Ones_Go_Back_To_Review()
     {
         var group = await GroupAsync("Log in");
         var draft = await CaseAsync("TC-DRAFT");
@@ -291,7 +294,7 @@ public class SharedStepGroupAppService_Tests : TestCaseManagementApplicationTest
 
         result.Codes.Order().ToArray().ShouldBe(new[] { "TC-APPROVED", "TC-DRAFT" });
         result.Updated.ShouldBe(2);
-        result.NewVersions.ShouldBe(1);
+        result.SentToReview.ShouldBe(1);
         foreach (var id in new[] { draft.Id, approved.Id })
         {
             var testCase = await _testCases.GetAsync(id);
@@ -299,7 +302,8 @@ public class SharedStepGroupAppService_Tests : TestCaseManagementApplicationTest
             testCase.Steps.Where(s => s.SharedStepGroupId == group.Id).ShouldAllBe(s => s.SharedStepRevision == 2 && !s.SharedStepOutdated);
         }
 
-        (await _testCases.GetAsync(approved.Id)).CurrentVersion.ShouldBe(2);
+        (await _testCases.GetAsync(approved.Id)).CurrentVersion.ShouldBe(1);
+        (await _testCases.GetAsync(approved.Id)).Status.ShouldBe(TestCaseStatus.UnderReview);
         (await _testCases.GetAsync(draft.Id)).CurrentVersion.ShouldBe(0);
         (await _groups.GetUsageAsync(changed.Id)).ShouldAllBe(u => !u.IsOutdated);
 

@@ -19,12 +19,13 @@ public class EfCoreInsightsRepository : IInsightsRepository, ITransientDependenc
     public virtual async Task<InsightsScopeData> GetScopeDataAsync(
         Guid? testPlanId,
         DateTime attemptsSince,
+        Guid? projectId = null,
         CancellationToken cancellationToken = default)
     {
         var dbContext = await _dbContextProvider.GetDbContextAsync();
         var data = new InsightsScopeData();
 
-        var runs = dbContext.TestRuns.Where(r => testPlanId == null || r.TestPlanId == testPlanId);
+        var runs = dbContext.TestRuns.Where(r => (testPlanId == null || r.TestPlanId == testPlanId) && (projectId == null || r.ProjectId == projectId));
         data.RunCount = await runs.CountAsync(cancellationToken);
 
         var items = await (

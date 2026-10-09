@@ -1,5 +1,6 @@
 using Acme.TestCaseManagement.Enums;
 using Acme.TestCaseManagement.Plans;
+using Acme.TestCaseManagement.Projects;
 using Acme.TestCaseManagement.Repositories;
 using Acme.TestCaseManagement.TestCases;
 using Volo.Abp;
@@ -16,6 +17,7 @@ public class TestRunManager : DomainService
     private readonly IRepository<TestExecution, Guid> _executionRepository;
     private readonly IRepository<TestCaseVersion, Guid> _versionRepository;
     private readonly ITestCaseRepository _testCaseRepository;
+    private readonly ProjectManager _projectManager;
 
     public TestRunManager(
         IRepository<TestPlan, Guid> planRepository,
@@ -23,8 +25,10 @@ public class TestRunManager : DomainService
         IRepository<TestRunItem, Guid> itemRepository,
         IRepository<TestExecution, Guid> executionRepository,
         IRepository<TestCaseVersion, Guid> versionRepository,
-        ITestCaseRepository testCaseRepository)
+        ITestCaseRepository testCaseRepository,
+        ProjectManager projectManager)
     {
+        _projectManager = projectManager;
         _planRepository = planRepository;
         _runRepository = runRepository;
         _itemRepository = itemRepository;
@@ -35,8 +39,9 @@ public class TestRunManager : DomainService
 
     /// <summary>Builds a new run after checking that the plan (when given) exists. The caller inserts it.</summary>
     public virtual async Task<TestRun> CreateRunAsync(
-        string title, string environment, Guid? testPlanId = null, Guid? assignedToUserId = null)
+        string title, string environment, Guid? testPlanId = null, Guid? assignedToUserId = null, Guid? projectId = null)
     {
+        Guid project;
         if (testPlanId.HasValue)
         {
             var plan = await _planRepository.FindAsync(testPlanId.Value)
@@ -47,9 +52,23 @@ public class TestRunManager : DomainService
             {
                 throw new BusinessException(TestCaseManagementErrorCodes.TestPlanArchived).WithData("Name", plan.Name);
             }
+
+            // A run of a plan is in the plan's project; naming another one is refused.
+            if (projectId.HasValue)
+            {
+                await _projectManager.EnsureSameProjectAsync("A run and its plan", projectId.Value, plan.ProjectId);
+            }
+
+            project = plan.ProjectId;
+        }
+        else
+        {
+            project = (await _projectManager.ResolveForNewAsync(projectId)).Id;
         }
 
-        return new TestRun(GuidGenerator.Create(), CurrentTenant.Id, title, environment, testPlanId, assignedToUserId);
+        var run = new TestRun(GuidGenerator.Create(), CurrentTenant.Id, title, environment, testPlanId, assignedToUserId);
+        run.SetProject(project);
+        return run;
     }
 
     /// <summary>
@@ -61,6 +80,7 @@ public class TestRunManager : DomainService
         run.EnsureNotCompleted();
 
         var testCase = await _testCaseRepository.GetAsync(testCaseId, includeDetails: false);
+        await _projectManager.EnsureSameProjectAsync("A run and a test case", run.ProjectId, await _projectManager.GetProjectOfSuiteAsync(testCase.SuiteId));
 
         var version = testCase.Status == TestCaseStatus.Approved && testCase.CurrentVersion > 0
             ? await _versionRepository.FindAsync(v => v.TestCaseId == testCaseId && v.VersionNumber == testCase.CurrentVersion)

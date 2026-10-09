@@ -18,6 +18,12 @@ public static class TestCaseManagementPermissions
         public const string SuggestSteps = Default + ".SuggestSteps";
     }
 
+    public static class Projects
+    {
+        public const string Default = GroupName + ".Projects";
+        public const string Manage = Default + ".Manage";
+    }
+
     public static class TestSuites
     {
         public const string Default = GroupName + ".TestSuites";

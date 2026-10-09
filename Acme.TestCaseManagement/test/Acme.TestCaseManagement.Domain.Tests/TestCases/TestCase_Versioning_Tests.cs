@@ -91,6 +91,28 @@ public class TestCase_Versioning_Tests : TestCaseManagementDomainTestBase
     }
 
     [Fact]
+    public async Task SendBackForReviewIfApproved_Should_Move_Only_An_Approved_Test_Case_And_Publish_Nothing()
+    {
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var testCase = await CreateTestCaseWithThreeStepsAsync();
+
+            _manager.SendBackForReviewIfApproved(testCase).ShouldBeFalse();
+            testCase.Status.ShouldBe(TestCaseStatus.Draft);
+
+            await _manager.ChangeStatusAsync(testCase, TestCaseStatus.Approved, "v1");
+            testCase.CurrentVersion.ShouldBe(1);
+
+            _manager.SendBackForReviewIfApproved(testCase).ShouldBeTrue();
+            testCase.Status.ShouldBe(TestCaseStatus.UnderReview);
+            testCase.CurrentVersion.ShouldBe(1);
+
+            _manager.SendBackForReviewIfApproved(testCase).ShouldBeFalse();
+            (await _manager.ChangeStatusAsync(testCase, TestCaseStatus.Approved, "v2"))!.VersionNumber.ShouldBe(2);
+        });
+    }
+
+    [Fact]
     public async Task PublishNewVersion_Should_Increment_And_Leave_Earlier_Snapshots_Untouched()
     {
         await WithUnitOfWorkAsync(async () =>

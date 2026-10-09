@@ -312,3 +312,22 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 
 - [x] T127 `TCM_FEATURES` (automation off by default): no sidebar entry or tab, the route redirects, no filter and no Automation ID field; one line to turn it on; code and server untouched.
 - [x] T128 Take the pipeline exercise and its pictures out of the team guide, and say in the READMEs that the part is off and how to turn it on.
+
+---
+
+## Phase 24: A change to an approved test case is reviewed again
+
+- [x] T129 `SendBackForReviewIfApproved` in `TestCaseManager`; every edit of an approved test case (update, reorder, insert and refresh of shared steps, bulk update, import) sends it to Under review and publishes nothing; the approval publishes the version (plan.md 4.23).
+- [x] T130 Drawer: a banner for an edit waiting for review, an optional note when approving again (`askText` `optional`), a hint in the form instead of the summary field; `shared.bulkDone` counts the test cases sent to review.
+- [x] T131 Update the tests that expected an immediate version (nine in the application suites, one in the HTTP flow), add the manager test and the drawer spec; redo pictures b6-04 to b6-08 of the guide; docs.
+
+---
+
+## Phase 25: Projects
+
+- [x] T132 `Project` (key, name, archive), `ProjectManager`, `ProjectId` on suites, plans, requirements, runs and sign-off reports; EF mapping; error codes and localization (plan.md 4.24).
+- [x] T133 The default project, the backfill of old data, no mixing of projects (suites, test cases, runs, requirements), archived projects take nothing, delete only when empty.
+- [x] T134 `ProjectAppService` and controller, the permission `Projects.Manage`, the `ProjectId` filter on every list, dashboard, flaky tests, quality gate, sign-off, tags, import and export; the documentation filter reads `Nullable{Guid}`.
+- [x] T135 Angular: `ProjectContext`, the bar in the shell with the page built again on a change, the page that manages projects, the services that send the project; tests.
+- [x] T136 Tests of the back end (17 for the projects, 2 in Domain), update of the ones that count controllers and operations; the sandbox: `DbSet`, migration, run on a copy with two projects; the browser script of the standalone application.
+- [x] T137 The documentation: READMEs, the guide (exercise 10 with 8 pictures), spec FR-028, plan 4.24.

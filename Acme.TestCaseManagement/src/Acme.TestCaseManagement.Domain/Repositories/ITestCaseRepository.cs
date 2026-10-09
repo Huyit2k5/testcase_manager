@@ -61,5 +61,6 @@ public interface ITestCaseRepository : IRepository<TestCase, Guid>
     Task<Dictionary<Guid, int>> GetSharedStepUsageCountsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>Every tag in use, with the number of test cases that have it, the most used first.</summary>
-    Task<List<TagSummary>> GetTagSummariesAsync(CancellationToken cancellationToken = default);
+    /// <summary>The tags in use and how many test cases have each; with <paramref name="suiteIds"/>, only the test cases of those suites.</summary>
+    Task<List<TagSummary>> GetTagSummariesAsync(IReadOnlyCollection<Guid>? suiteIds = null, CancellationToken cancellationToken = default);
 }

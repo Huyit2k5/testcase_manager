@@ -15,6 +15,9 @@ public class SignOffReport : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public virtual Guid? TenantId { get; protected set; }
 
     /// <summary>Set when the sign-off covers one test plan; null for a milestone sign-off.</summary>
+    /// <summary>The project it belongs to. Guid.Empty only for data made before projects existed, until it is given to the default project.</summary>
+    public virtual Guid ProjectId { get; protected set; }
+
     public virtual Guid? TestPlanId { get; protected set; }
 
     /// <summary>Set when the sign-off covers every plan of a milestone; null for a plan sign-off.</summary>
@@ -64,6 +67,7 @@ public class SignOffReport : FullAuditedAggregateRoot<Guid>, IMultiTenant
         : base(id)
     {
         TenantId = tenantId;
+        ProjectId = scope.ProjectId ?? Guid.Empty;
         TestPlanId = scope.TestPlanId;
         MilestoneId = scope.MilestoneId;
         Title = Check.NotNullOrWhiteSpace(title, nameof(title), SignOffConsts.MaxTitleLength);
@@ -77,9 +81,15 @@ public class SignOffReport : FullAuditedAggregateRoot<Guid>, IMultiTenant
         Approvals = new List<SignOffApproval>();
     }
 
+    /// <summary>Used when it is created (and to give old data its project); the managers keep it consistent, so it is not changed afterwards.</summary>
+    public virtual void SetProject(Guid projectId)
+    {
+        ProjectId = projectId;
+    }
+
     public virtual QualityGateScope ToScope()
     {
-        return new QualityGateScope(TestPlanId, MilestoneId);
+        return new QualityGateScope(TestPlanId, MilestoneId, ProjectId == Guid.Empty ? null : ProjectId);
     }
 
     /// <summary>The thresholds frozen in this report, used to re-check the gate before a later approval.</summary>

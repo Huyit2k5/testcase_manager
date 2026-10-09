@@ -81,6 +81,14 @@ public static class TestCaseManagementErrorCodes
     public const string AttachmentOwnerNotFound = "TestCaseManagement:AttachmentOwnerNotFound";
     public const string AttachmentFileMissing = "TestCaseManagement:AttachmentFileMissing";
 
+    // Projects
+    public const string ProjectNotFound = "TestCaseManagement:ProjectNotFound";
+    public const string ProjectArchived = "TestCaseManagement:ProjectArchived";
+    public const string InvalidProjectKey = "TestCaseManagement:InvalidProjectKey";
+    public const string DuplicateProjectKey = "TestCaseManagement:DuplicateProjectKey";
+    public const string ProjectNotEmpty = "TestCaseManagement:ProjectNotEmpty";
+    public const string DifferentProject = "TestCaseManagement:DifferentProject";
+
     // Import and export
     public const string ExportTooLarge = "TestCaseManagement:ExportTooLarge";
 }

@@ -28,7 +28,7 @@ public class FlakyTestAppService : TestCaseManagementAppService, IFlakyTestAppSe
 
     public virtual async Task<FlakyTestListDto> GetListAsync(GetFlakyTestsInput input)
     {
-        var scored = await ScoreAsync();
+        var scored = await ScoreAsync(input.ProjectId);
 
         var filter = input.Filter?.Trim();
         var matching = scored
@@ -63,7 +63,7 @@ public class FlakyTestAppService : TestCaseManagementAppService, IFlakyTestAppSe
     [Authorize(TestCaseManagementPermissions.TestCases.Update)]
     public virtual async Task<ApplyFlakyFlagsResultDto> ApplyAsync(ApplyFlakyFlagsInput input)
     {
-        var scored = await ScoreAsync();
+        var scored = await ScoreAsync(input.ProjectId);
         var result = new ApplyFlakyFlagsResultDto();
 
         foreach (var item in scored.OrderBy(s => s.TestCase.Code, StringComparer.OrdinalIgnoreCase))
@@ -88,10 +88,10 @@ public class FlakyTestAppService : TestCaseManagementAppService, IFlakyTestAppSe
     }
 
     /// <summary>The score of every test case that still exists and has attempts in the lookback window.</summary>
-    private async Task<List<(TestCase TestCase, FlakinessResult Result)>> ScoreAsync()
+    private async Task<List<(TestCase TestCase, FlakinessResult Result)>> ScoreAsync(Guid? projectId)
     {
         var since = Clock.Now.AddDays(-_options.LookbackDays);
-        var data = await _insights.GetScopeDataAsync(null, since);
+        var data = await _insights.GetScopeDataAsync(null, since, projectId);
         var results = FlakinessCalculator.CalculateAll(data.Attempts, _options.ToSettings());
 
         var ids = results.Select(r => r.TestCaseId).ToList();

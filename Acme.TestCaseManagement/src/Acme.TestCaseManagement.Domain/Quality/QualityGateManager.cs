@@ -7,7 +7,8 @@ using Volo.Abp.Domain.Services;
 namespace Acme.TestCaseManagement.Quality;
 
 /// <summary>What a gate evaluation or sign-off applies to: exactly one of a test plan or a milestone.</summary>
-public record QualityGateScope(Guid? TestPlanId, Guid? MilestoneId);
+/// <summary>The plan or the milestone that is judged. <paramref name="ProjectId"/> keeps a milestone to the plans of one project (a milestone id may be used by several).</summary>
+public record QualityGateScope(Guid? TestPlanId, Guid? MilestoneId, Guid? ProjectId = null);
 
 public class QualityGateManager : DomainService
 {
@@ -137,7 +138,8 @@ public class QualityGateManager : DomainService
         }
 
         var milestoneId = scope.MilestoneId!.Value;
-        var plans = await _planRepository.GetListAsync(x => x.MilestoneId == milestoneId);
+        var projectId = scope.ProjectId;
+        var plans = await _planRepository.GetListAsync(x => x.MilestoneId == milestoneId && (projectId == null || x.ProjectId == projectId));
         if (plans.Count == 0)
         {
             throw new BusinessException(TestCaseManagementErrorCodes.SignOffScopeEmpty)

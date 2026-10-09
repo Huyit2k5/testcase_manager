@@ -63,8 +63,21 @@ public class InterfaceDocumentationOperationFilter : IOperationFilter
         var parameters = method.GetParameters();
         var parameterList = parameters.Length == 0
             ? string.Empty
-            : "(" + string.Join(",", parameters.Select(p => p.ParameterType.FullName!.Replace('+', '.'))) + ")";
+            : "(" + string.Join(",", parameters.Select(p => TypeName(p.ParameterType))) + ")";
 
         return $"M:{method.DeclaringType!.FullName!.Replace('+', '.')}.{method.Name}{parameterList}";
+    }
+
+    /// <summary>A type as the documentation file writes it: a generic one as Name{Argument,...} (System.Nullable{System.Guid}), not Name`1[[...]].</summary>
+    private static string TypeName(Type type)
+    {
+        if (!type.IsGenericType)
+        {
+            return type.FullName!.Replace('+', '.');
+        }
+
+        var definition = type.GetGenericTypeDefinition().FullName!.Replace('+', '.');
+        var name = definition[..definition.IndexOf('`')];
+        return $"{name}{{{string.Join(",", type.GetGenericArguments().Select(TypeName))}}}";
     }
 }

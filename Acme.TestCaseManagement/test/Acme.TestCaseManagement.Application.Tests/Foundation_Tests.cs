@@ -40,7 +40,7 @@ public class Foundation_Tests : TestCaseManagementApplicationTestBase
             .Where(type => type is { IsClass: true, IsAbstract: false } && typeof(IApplicationService).IsAssignableFrom(type))
             .ToList();
 
-        services.Count.ShouldBe(17);
+        services.Count.ShouldBe(18);
 
         foreach (var service in services)
         {

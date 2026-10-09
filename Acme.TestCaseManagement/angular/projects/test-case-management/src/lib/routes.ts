@@ -32,6 +32,7 @@ export function createTestCaseManagementRoutes(options: TcmRouteOptions = {}): R
       children: [
         { path: '', pathMatch: 'full', redirectTo: 'repository' },
         { path: 'dashboard', canActivate, ...titleOf('title.dashboard'), loadComponent: () => import('./features/dashboard/dashboard').then(m => m.DashboardComponent) },
+        { path: 'projects', canActivate, ...titleOf('title.projects'), loadComponent: () => import('./features/projects/projects').then(m => m.ProjectsComponent) },
         { path: 'repository', canActivate, ...titleOf('title.repository'), loadComponent: () => import('./features/repository/repository').then(m => m.RepositoryComponent) },
         { path: 'shared-steps', canActivate, ...titleOf('title.sharedSteps'), loadComponent: () => import('./features/shared-steps/shared-steps').then(m => m.SharedStepsComponent) },
         { path: 'runs', canActivate, ...titleOf('title.runs'), loadComponent: () => import('./features/runs/runs').then(m => m.RunsComponent) },

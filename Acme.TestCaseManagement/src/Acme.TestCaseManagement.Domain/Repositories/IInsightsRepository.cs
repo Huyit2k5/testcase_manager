@@ -13,5 +13,6 @@ public interface IInsightsRepository
     Task<InsightsScopeData> GetScopeDataAsync(
         Guid? testPlanId,
         DateTime attemptsSince,
+        Guid? projectId = null,
         CancellationToken cancellationToken = default);
 }

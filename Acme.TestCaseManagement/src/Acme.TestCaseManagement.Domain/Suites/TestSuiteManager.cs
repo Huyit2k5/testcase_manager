@@ -1,3 +1,4 @@
+using Acme.TestCaseManagement.Projects;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
@@ -7,24 +8,44 @@ namespace Acme.TestCaseManagement.Suites;
 public class TestSuiteManager : DomainService
 {
     private readonly IRepository<TestSuite, Guid> _suiteRepository;
+    private readonly ProjectManager _projectManager;
 
-    public TestSuiteManager(IRepository<TestSuite, Guid> suiteRepository)
+    public TestSuiteManager(IRepository<TestSuite, Guid> suiteRepository, ProjectManager projectManager)
     {
         _suiteRepository = suiteRepository;
+        _projectManager = projectManager;
     }
 
     /// <summary>Builds a new suite appended after its siblings. The caller inserts it.</summary>
-    public virtual async Task<TestSuite> CreateAsync(string name, Guid? parentId, string? description = null)
+    /// <summary>
+    /// A suite below another one is in that suite's project. A root suite goes to <paramref name="projectId"/>, or to the default project when none is named.
+    /// Naming a project that is not the parent's is refused.
+    /// </summary>
+    public virtual async Task<TestSuite> CreateAsync(string name, Guid? parentId, string? description = null, Guid? projectId = null)
     {
+        Guid project;
         if (parentId.HasValue)
         {
-            await GetOrThrowAsync(parentId.Value);
+            var parent = await GetOrThrowAsync(parentId.Value);
+            await _projectManager.EnsureSuiteIsOpenAsync(parent.Id);
+            if (projectId.HasValue)
+            {
+                await _projectManager.EnsureSameProjectAsync("A suite and its parent", projectId.Value, parent.ProjectId);
+            }
+
+            project = parent.ProjectId;
+        }
+        else
+        {
+            project = (await _projectManager.ResolveForNewAsync(projectId)).Id;
         }
 
-        var siblings = await GetSiblingsAsync(parentId);
+        var siblings = await GetSiblingsAsync(parentId, project);
         var order = siblings.Count == 0 ? 0 : siblings.Max(x => x.Order) + 1;
 
-        return new TestSuite(GuidGenerator.Create(), CurrentTenant.Id, name, parentId, order, description);
+        var suite = new TestSuite(GuidGenerator.Create(), CurrentTenant.Id, name, parentId, order, description);
+        suite.SetProject(project);
+        return suite;
     }
 
     /// <summary>
@@ -61,12 +82,14 @@ public class TestSuiteManager : DomainService
         if (newParentId.HasValue)
         {
             await ValidateParentHierarchyAsync(suite.Id, newParentId.Value);
+            var newParent = await GetOrThrowAsync(newParentId.Value);
+            await _projectManager.EnsureSameProjectAsync("A suite and its new parent", suite.ProjectId, newParent.ProjectId);
         }
 
         var oldParentId = suite.ParentId;
         var changed = new List<TestSuite>();
 
-        var newSiblings = (await GetSiblingsAsync(newParentId)).Where(x => x.Id != suite.Id).ToList();
+        var newSiblings = (await GetSiblingsAsync(newParentId, suite.ProjectId)).Where(x => x.Id != suite.Id).ToList();
         var position = Math.Clamp(newOrder, 0, newSiblings.Count);
         newSiblings.Insert(position, suite);
         Renumber(newSiblings, changed);
@@ -79,7 +102,7 @@ public class TestSuiteManager : DomainService
 
         if (oldParentId != newParentId)
         {
-            var oldSiblings = (await GetSiblingsAsync(oldParentId)).Where(x => x.Id != suite.Id).ToList();
+            var oldSiblings = (await GetSiblingsAsync(oldParentId, suite.ProjectId)).Where(x => x.Id != suite.Id).ToList();
             Renumber(oldSiblings, changed);
         }
 
@@ -97,9 +120,10 @@ public class TestSuiteManager : DomainService
         return suite;
     }
 
-    protected virtual async Task<List<TestSuite>> GetSiblingsAsync(Guid? parentId)
+    /// <summary>The suites next to each other: the children of a parent, or the root suites of one project.</summary>
+    protected virtual async Task<List<TestSuite>> GetSiblingsAsync(Guid? parentId, Guid projectId)
     {
-        var siblings = await _suiteRepository.GetListAsync(x => x.ParentId == parentId);
+        var siblings = await _suiteRepository.GetListAsync(x => x.ParentId == parentId && (parentId != null || x.ProjectId == projectId));
         return siblings.OrderBy(x => x.Order).ThenBy(x => x.Name).ToList();
     }
 

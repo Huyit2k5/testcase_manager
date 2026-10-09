@@ -20,6 +20,8 @@ export interface PromptOptions {
   title?: string;
   confirmText?: string;
   placeholder?: string;
+  /** The answer may be empty: the button works without text, and gives an empty string (cancelling still gives null). */
+  optional?: boolean;
 }
 
 interface Pending {
@@ -46,9 +48,12 @@ export class ConfirmService {
     return this.open('confirm', options) as Observable<boolean>;
   }
 
-  /** Emits once: the text the user typed (not empty), or null when they cancelled or left it empty. */
+  /** Emits once: the text the user typed (not empty), or null when they cancelled or left it empty; with `optional`, empty text is '' and only cancelling is null. */
   askText(options: PromptOptions): Observable<string | null> {
-    if (this.mounted === 0) { return of(prompt(options.message)?.trim() || null); }
+    if (this.mounted === 0) {
+      const typed = prompt(options.message);
+      return of(typed === null ? null : (typed.trim() || (options.optional ? '' : null)));
+    }
     return this.open('prompt', options) as Observable<string | null>;
   }
 
@@ -107,7 +112,7 @@ export class ConfirmService {
           @if (q.kind === 'confirm') {
             <button type="button" class="btn" [class.primary]="!q.options.danger" [class.danger-solid]="q.options.danger" data-test="confirm-ok" (click)="service.settle(true)">{{ q.options.confirmText ?? ('confirm.ok' | t) }}</button>
           } @else {
-            <button type="submit" form="prompt-form" class="btn primary" [disabled]="!text.trim()" data-test="confirm-ok">{{ q.options.confirmText ?? ('confirm.ok' | t) }}</button>
+            <button type="submit" form="prompt-form" class="btn primary" [disabled]="!q.options.optional && !text.trim()" data-test="confirm-ok">{{ q.options.confirmText ?? ('confirm.ok' | t) }}</button>
           }
         </ng-container>
       </app-modal>
@@ -135,6 +140,6 @@ export class ConfirmHostComponent {
   protected submitText(): void {
     const value = this.text.trim();
     this.text = '';
-    this.service.settle(value || null);
+    this.service.settle(value || (this.service.pending()?.options.optional ? '' : null));
   }
 }

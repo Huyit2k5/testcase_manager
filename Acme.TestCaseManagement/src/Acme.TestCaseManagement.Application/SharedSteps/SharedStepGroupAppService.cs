@@ -129,10 +129,6 @@ public class SharedStepGroupAppService : TestCaseManagementAppService, ISharedSt
         var wanted = input.TestCaseIds?.ToHashSet();
         var result = new UpdateSharedStepUsersResultDto();
 
-        var summary = string.IsNullOrWhiteSpace(input.ChangeSummary)
-            ? L["TestCaseManagement:SharedStepsUpdatedSummary", group.Name, group.Revision].Value
-            : input.ChangeSummary.Trim();
-
         foreach (var testCase in await _testCases.GetListBySharedStepGroupAsync(id))
         {
             var behind = testCase.Steps.Where(s => s.SharedStepGroupId == id).Any(s => (s.SharedStepRevision ?? 0) < group.Revision);
@@ -143,11 +139,10 @@ public class SharedStepGroupAppService : TestCaseManagementAppService, ISharedSt
 
             testCase.RefreshSharedSteps(group);
 
-            // An approved test case is changed in content, so it gets a version, as for any other edit of its steps.
-            if (testCase.Status == TestCaseStatus.Approved)
+            // An approved test case is changed in content, so it goes back to review, as for any other edit of its steps.
+            if (_testCaseManager.SendBackForReviewIfApproved(testCase))
             {
-                await _testCaseManager.PublishNewVersionAsync(testCase, summary);
-                result.NewVersions++;
+                result.SentToReview++;
             }
 
             await _testCases.UpdateAsync(testCase);

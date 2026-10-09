@@ -7,8 +7,9 @@ particular host application: users, tenants and auditing come from ABP abstracti
 ## What it provides
 
 - **Test library** – nested suites, test cases with ordered steps, an approval status workflow, and immutable
-  `TestCaseVersion` snapshots: every edit of a test case creates a new version, and plans and runs stay bound to
-  the version they were created with.
+  `TestCaseVersion` snapshots: a version is published when a test case is approved, an edit of an approved test case sends it back to Under review (the version
+  already approved stays in use), and plans and runs stay bound to the version they were created with.
+- **Projects** – the top level: suites (and so test cases), plans, requirements and runs belong to one project (`EINV`, `HRM`) and are not mixed; the pages follow the project that is chosen at the top. What is made without a project goes to a default project, so a client that does not know about projects keeps working.
 - **Execution** – test plans, test runs with run items, and append-only executions with multiple attempts per
   item (the latest attempt is the current status; history is never rewritten). Defects from an issue tracker are
   linked to a failed execution with a severity and a resolved flag.
@@ -65,7 +66,7 @@ ways to own the schema.
 [ReplaceDbContext(typeof(ITestCaseManagementDbContext))]
 public class MyHostDbContext : AbpDbContext<MyHostDbContext>, ITestCaseManagementDbContext
 {
-    // one DbSet per member of ITestCaseManagementDbContext (TestSuites, TestCases, ...)
+    // one DbSet per member of ITestCaseManagementDbContext (Projects, TestSuites, TestCases, ...)
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -154,7 +155,8 @@ All routes start with `api/test-case-management/`.
 
 | Route | Purpose |
 |---|---|
-| `suites` | suite tree, create, update, move, delete |
+| `projects` | list (archived ones on request), get, create, update, archive, restore, delete (only while empty) |
+| `suites` | suite tree (`projectId` limits it to one project), create, update, move, delete |
 | `test-cases` | test cases, step ordering, status changes, versions, linked defects; `GET` filters by text, suite, status, priority, severity, kind, layer, execution type, `Tags` (all of them) and `HasAutomationId` |
 | `test-cases/{id}/tags`, `test-cases/tags` | replace the tags of a test case (no new version), and list the tags in use with their counts |
 | `test-cases/export`, `test-cases/import` | Excel or CSV export (with the list filters) and import of test cases |
@@ -182,6 +184,7 @@ Group `TestCaseManagement`. Each `...Default` permission allows reading; the chi
 | Permission | Children |
 |---|---|
 | `TestCaseManagement.TestCases` | `Create`, `Update`, `Delete`, `Approve`, `SuggestSteps` (ask the AI model for steps) |
+| `TestCaseManagement.Projects` | `Manage` (create, rename, archive and delete projects; everyone signed in can read them) |
 | `TestCaseManagement.TestSuites` | `Manage` |
 | `TestCaseManagement.TestPlans` | `Manage` (also required to create, populate, assign and complete runs) |
 | `TestCaseManagement.TestRuns` | `Execute` (record executions, manage defect links) |
@@ -192,12 +195,22 @@ Group `TestCaseManagement`. Each `...Default` permission allows reading; the chi
 | `TestCaseManagement.ApiKeys` | `Manage` (create and revoke keys) |
 | `TestCaseManagement.AutomationResults` | `Publish` (the only permission an API key has) |
 
+## Projects
+
+A project has a key of 2 to 10 capital letters or digits (`EINV`, `HRM`) that does not change, a name, and a description. It holds suites (so test cases), plans, requirements, runs and sign-off reports. Lists, the dashboard, the traceability matrix, the flaky list, the evaluation of a milestone by a quality
+gate and the export take an optional `ProjectId`; leaving it out answers for every project. A create call may leave the project out too: it goes to the default project (key `DEFAULT`), which is made when it is first needed.
+
+- **No mixing.** A suite below another is in its parent's project; a suite or a test case cannot be moved into another project; a test case cannot be put in a run of another project, nor linked to a requirement of another project. A run of a plan is in the plan's project.
+- **Archive.** Nothing can be added to an archived project; it is still read. A project is deleted only while it has no suites, plans, requirements or runs.
+- **Old data.** The first call of `GET projects` on a library that has no project makes the default project and gives it everything that was made before (once). The host adds the migration for the new table and columns.
+- **Shared on purpose.** Shared-step groups, the codes of test cases and of requirements (unique in the whole library: use a prefix such as `EINV-`), the quality gates and the permissions are not per project.
+
 ## Shared steps
 
 A group of steps ("Log in as a customer") is written once in the library and copied into many test cases. The test case keeps **its own copy**, with a
 link to the group and the revision copied, so changing a group never changes an approved test case, a version or a run by itself: the test cases that
 copied an older revision show as behind, and `POST shared-step-groups/{id}/update-test-cases` (or the refresh of one test case) brings them up to date, with
-a new version for the approved ones. Editing a copied step inside a test case, or detaching, makes it the test case's own. A group in use cannot be deleted.
+the approved ones going back to review. Editing a copied step inside a test case, or detaching, makes it the test case's own. A group in use cannot be deleted.
 A host that embeds the model in its own DbContext also needs `DbSet<SharedStepGroup>`. The reasoning is in `specs/001-test-case-management/plan.md`, section 4.13.
 
 ## Tags
@@ -367,6 +380,7 @@ symbol packages. Requires the .NET SDK 10 (see `global.json`).
   reaches host applications through ABP itself.
 - Sign-off approvals carry a SHA-256 integrity digest that detects tampering; they are not asymmetric digital
   signatures and do not give non-repudiation.
+- A project has no permissions of its own: whoever may read test cases reads them in every project. Codes of test cases and requirements are unique in the whole library, and shared-step groups and gates are shared between projects.
 - The module contains no EF Core migrations. Its UI is Angular only, shared as a source folder (not an npm package), tried with an ABP host on
   Angular 22.0 and the LeptonX Lite side menu; it keeps its own light palette instead of following the host's theme.
 - Deleting a test case does not delete its attachments; a pipeline cannot attach files yet; files are held in memory while stored (25 MB limit).

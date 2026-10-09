@@ -5,6 +5,9 @@ namespace Acme.TestCaseManagement.Rtm.Dtos;
 
 public class GetRtmInput
 {
+    /// <summary>Only what belongs to this project. Leave it out to see every project.</summary>
+    public Guid? ProjectId { get; set; }
+
     /// <summary>Only requirements of this milestone.</summary>
     public Guid? MilestoneId { get; set; }
 

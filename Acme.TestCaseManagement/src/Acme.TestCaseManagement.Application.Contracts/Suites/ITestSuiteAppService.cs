@@ -7,8 +7,8 @@ public interface ITestSuiteAppService : IApplicationService
 {
     Task<TestSuiteDto> GetAsync(Guid id);
 
-    /// <summary>Returns the whole library as a forest of root suites, each with nested children.</summary>
-    Task<List<TestSuiteTreeDto>> GetTreeAsync();
+    /// <summary>Returns the library as a forest of root suites, each with nested children. With a project, only the suites of that project.</summary>
+    Task<List<TestSuiteTreeDto>> GetTreeAsync(Guid? projectId = null);
 
     Task<TestSuiteDto> CreateAsync(CreateTestSuiteDto input);
 

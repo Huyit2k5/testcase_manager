@@ -4,6 +4,9 @@ namespace Acme.TestCaseManagement.Runs.Dtos;
 
 public class CreateTestRunDto
 {
+    /// <summary>The project of a run without a plan (leave it out for the default project). A run of a plan is in the plan's project.</summary>
+    public Guid? ProjectId { get; set; }
+
     public Guid? TestPlanId { get; set; }
 
     [Required]

@@ -169,7 +169,7 @@ public class TestRunAppService_Tests : TestCaseManagementApplicationTestBase
             TestCaseIds = { testCase.Id },
         });
 
-        // Library edit after the run started publishes v2 (the test case is Approved).
+        // A library edit after the run started, and a new approval, make v2.
         await _testCases.UpdateAsync(testCase.Id, new CreateUpdateTestCaseDto
         {
             SuiteId = testCase.SuiteId,
@@ -178,6 +178,7 @@ public class TestRunAppService_Tests : TestCaseManagementApplicationTestBase
             ChangeSummary = "edit",
             Steps = { new TestStepDto { Action = "New", ExpectedResult = "New" } },
         });
+        await _testCases.ChangeStatusAsync(testCase.Id, new ChangeTestCaseStatusDto { TargetStatus = TestCaseStatus.Approved });
 
         var reloaded = await _runs.GetAsync(run.Id);
         var item = reloaded.Items.Single();
@@ -228,7 +229,7 @@ public class TestRunAppService_Tests : TestCaseManagementApplicationTestBase
         (await Should.ThrowAsync<BusinessException>(() => _runs.AddItemsAsync(run.Id, new AddTestRunItemsDto { TestCaseIds = { testCase.Id } })))
             .Code.ShouldBe(TestCaseManagementErrorCodes.TestCaseAlreadyInRun);
 
-        // An edit of an approved test case publishes version 2: the run's check is per test case, not per version.
+        // An edit and a new approval make version 2: the run's check is per test case, not per version.
         await _testCases.UpdateAsync(testCase.Id, new CreateUpdateTestCaseDto
         {
             SuiteId = testCase.SuiteId,
@@ -236,6 +237,8 @@ public class TestRunAppService_Tests : TestCaseManagementApplicationTestBase
             Title = testCase.Title + " (edited)",
             Steps = { new TestStepDto { Action = "Do it", ExpectedResult = "Done" } },
         });
+        (await _testCases.GetAsync(testCase.Id)).CurrentVersion.ShouldBe(1);
+        await _testCases.ChangeStatusAsync(testCase.Id, new ChangeTestCaseStatusDto { TargetStatus = TestCaseStatus.Approved });
         (await _testCases.GetAsync(testCase.Id)).CurrentVersion.ShouldBe(2);
 
         var refused = await Should.ThrowAsync<BusinessException>(

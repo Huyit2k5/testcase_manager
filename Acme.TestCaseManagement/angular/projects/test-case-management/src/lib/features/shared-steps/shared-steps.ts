@@ -113,7 +113,7 @@ export class SharedStepsComponent implements OnInit {
     const dialog = this.usage();
     if (!dialog || dialog.selected.size === 0) { return; }
     this.service.updateTestCases(dialog.group.id, [...dialog.selected]).subscribe(result => {
-      this.toast.success(this.i18n.t('shared.bulkDone', { count: result.updated, versions: result.newVersions }));
+      this.toast.success(this.i18n.t('shared.bulkDone', { count: result.updated, versions: result.sentToReview }));
       this.usage.set(null);
       this.reload();
     });

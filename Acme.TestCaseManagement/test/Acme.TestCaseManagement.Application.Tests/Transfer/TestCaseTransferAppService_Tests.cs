@@ -488,7 +488,7 @@ public class TestCaseTransferAppService_Tests : TestCaseManagementApplicationTes
     }
 
     [Fact]
-    public async Task Updating_An_Approved_Test_Case_Publishes_A_New_Version_With_A_Change_Summary_Naming_The_File()
+    public async Task Updating_An_Approved_Test_Case_By_Import_Sends_It_To_Review_And_Nothing_Is_Published_Until_It_Is_Approved()
     {
         var suite = await _suites.CreateAsync(new CreateTestSuiteDto { Name = "S" });
         var approved = await CreateCaseAsync(suite.Id, "TC-1", steps: 1, approve: true);
@@ -498,6 +498,12 @@ public class TestCaseTransferAppService_Tests : TestCaseManagementApplicationTes
         input.File = new RemoteStreamContent(new MemoryStream(Encoding.UTF8.GetBytes(Header + "S,TC-1,Better title,,Action 1 of TC-1,Expected 1,data\n")), "release-2.csv");
         await _transfer.ImportAsync(input);
 
+        var imported = await _testCases.GetAsync(approved.Id);
+        imported.Status.ShouldBe(TestCaseStatus.UnderReview);
+        imported.Title.ShouldBe("Better title");
+        (await _testCases.GetVersionsAsync(approved.Id)).Select(v => v.VersionNumber).ShouldBe(new[] { 1 });
+
+        await _testCases.ChangeStatusAsync(approved.Id, new ChangeTestCaseStatusDto { TargetStatus = TestCaseStatus.Approved, ChangeSummary = "Imported from release-2.csv" });
         var versions = await _testCases.GetVersionsAsync(approved.Id);
         versions.Select(v => v.VersionNumber).ShouldBe(new[] { 2, 1 });
         versions[0].ChangeSummary.ShouldBe("Imported from release-2.csv");

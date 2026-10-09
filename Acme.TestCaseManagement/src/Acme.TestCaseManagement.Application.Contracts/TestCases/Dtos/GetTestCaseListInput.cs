@@ -5,6 +5,9 @@ namespace Acme.TestCaseManagement.TestCases.Dtos;
 
 public class GetTestCaseListInput : PagedAndSortedResultRequestDto
 {
+    /// <summary>Only the test cases of this project. Ignored when <see cref="SuiteId"/> is given (a suite is in one project).</summary>
+    public Guid? ProjectId { get; set; }
+
     /// <summary>Matches Code, Title or Description.</summary>
     public string? Filter { get; set; }
 

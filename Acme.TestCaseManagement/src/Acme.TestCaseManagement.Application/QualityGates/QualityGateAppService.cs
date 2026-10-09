@@ -73,7 +73,7 @@ public class QualityGateAppService : TestCaseManagementAppService, IQualityGateA
     public virtual async Task<QualityGateEvaluationDto> EvaluateAsync(EvaluateQualityGateInput input)
     {
         var evaluation = await _gateManager.EvaluateAsync(
-            new QualityGateScope(input.TestPlanId, input.MilestoneId), input.QualityGateId);
+            new QualityGateScope(input.TestPlanId, input.MilestoneId, input.ProjectId), input.QualityGateId);
 
         return QualityGateDtoFactory.ToDto(evaluation, CriterionLabel);
     }

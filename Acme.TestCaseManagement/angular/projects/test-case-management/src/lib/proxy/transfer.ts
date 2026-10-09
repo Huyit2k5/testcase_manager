@@ -1,6 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { apiRoot } from '../core/host';
+import { ProjectContext } from '../core/project-context';
 import { Observable, map } from 'rxjs';
 import { ImportReport, TestCaseExportRequest } from './dtos';
 import { ImportConflictMode, TransferFormat } from './enums';
@@ -25,9 +26,12 @@ export function fileNameOf(header: string | null): string | null {
 export class TransferService {
   private readonly http = inject(HttpClient);
   private readonly root = apiRoot();
+  private readonly project = inject(ProjectContext);
 
   exportTestCases(request: TestCaseExportRequest): Observable<DownloadedFile> {
     let params = new HttpParams().set('Format', String(request.format));
+    const project = request.projectId ?? this.project.currentId();
+    if (project) { params = params.set('ProjectId', project); }
     if (request.filter) { params = params.set('Filter', request.filter); }
     if (request.suiteId) { params = params.set('SuiteId', request.suiteId); }
     if (request.includeDescendantSuites !== undefined) { params = params.set('IncludeDescendantSuites', String(request.includeDescendantSuites)); }
@@ -48,6 +52,8 @@ export class TransferService {
     const form = new FormData();
     form.append('File', file, file.name);
     if (options.defaultSuiteId) { form.append('DefaultSuiteId', options.defaultSuiteId); }
+    const project = this.project.currentId();
+    if (project) { form.append('ProjectId', project); }
     form.append('OnExisting', String(options.onExisting));
     form.append('DryRun', String(options.dryRun));
     return this.http.post<ImportReport>(`${this.root}/test-cases/import`, form);

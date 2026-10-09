@@ -11,6 +11,9 @@ public class Requirement : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public virtual Guid? TenantId { get; protected set; }
 
     /// <summary>Unique within a tenant, e.g. <c>REQ-AUTH-01</c>.</summary>
+    /// <summary>The project it belongs to. Guid.Empty only for data made before projects existed, until it is given to the default project.</summary>
+    public virtual Guid ProjectId { get; protected set; }
+
     public virtual string Code { get; protected set; }
 
     public virtual string Title { get; protected set; }
@@ -37,6 +40,12 @@ public class Requirement : FullAuditedAggregateRoot<Guid>, IMultiTenant
         Priority = PriorityLevel.Medium;
         Code = NormalizeCode(code);
         Title = NormalizeTitle(title);
+    }
+
+    /// <summary>Used when it is created (and to give old data its project); the managers keep it consistent, so it is not changed afterwards.</summary>
+    public virtual void SetProject(Guid projectId)
+    {
+        ProjectId = projectId;
     }
 
     public virtual void SetCode(string code)

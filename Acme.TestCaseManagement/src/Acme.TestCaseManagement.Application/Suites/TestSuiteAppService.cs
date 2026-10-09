@@ -29,9 +29,9 @@ public class TestSuiteAppService : TestCaseManagementAppService, ITestSuiteAppSe
         return ObjectMapper.Map<TestSuite, TestSuiteDto>(await _suiteRepository.GetAsync(id));
     }
 
-    public virtual async Task<List<TestSuiteTreeDto>> GetTreeAsync()
+    public virtual async Task<List<TestSuiteTreeDto>> GetTreeAsync(Guid? projectId = null)
     {
-        var suites = await _suiteRepository.GetListAsync();
+        var suites = await _suiteRepository.GetListAsync(x => projectId == null || x.ProjectId == projectId);
 
         var testCaseQuery = await _testCaseRepository.GetQueryableAsync();
         var counts = (await AsyncExecuter.ToListAsync(
@@ -70,7 +70,7 @@ public class TestSuiteAppService : TestCaseManagementAppService, ITestSuiteAppSe
     [Authorize(TestCaseManagementPermissions.TestSuites.Manage)]
     public virtual async Task<TestSuiteDto> CreateAsync(CreateTestSuiteDto input)
     {
-        var suite = await _suiteManager.CreateAsync(input.Name, input.ParentId, input.Description);
+        var suite = await _suiteManager.CreateAsync(input.Name, input.ParentId, input.Description, input.ProjectId);
         await _suiteRepository.InsertAsync(suite, autoSave: true);
 
         return ObjectMapper.Map<TestSuite, TestSuiteDto>(suite);

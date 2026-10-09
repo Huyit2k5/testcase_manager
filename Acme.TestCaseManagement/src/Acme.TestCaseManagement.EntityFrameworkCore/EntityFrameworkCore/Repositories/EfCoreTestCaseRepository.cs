@@ -114,7 +114,6 @@ public class EfCoreTestCaseRepository
     {
         var dbContext = await GetDbContextAsync();
         var testCases = await GetQueryableAsync();
-
         var rows = await (
             from step in dbContext.Set<TestStep>()
             join testCase in testCases on step.TestCaseId equals testCase.Id
@@ -126,11 +125,16 @@ public class EfCoreTestCaseRepository
         return rows.GroupBy(r => r.GroupId).ToDictionary(g => g.Key, g => g.Count());
     }
 
-    public virtual async Task<List<TagSummary>> GetTagSummariesAsync(CancellationToken cancellationToken = default)
+    public virtual async Task<List<TagSummary>> GetTagSummariesAsync(IReadOnlyCollection<Guid>? suiteIds = null, CancellationToken cancellationToken = default)
     {
         // Joined with the (not deleted) test cases, so the tags of a deleted test case are not counted.
         var dbContext = await GetDbContextAsync();
         var testCases = await GetQueryableAsync();
+        if (suiteIds != null)
+        {
+            var ids = suiteIds.ToList();
+            testCases = testCases.Where(t => ids.Contains(t.SuiteId));
+        }
 
         var rows = await (
             from tag in dbContext.Set<TestCaseTag>()

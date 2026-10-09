@@ -90,10 +90,13 @@ public class TestCaseTags_Tests : TestCaseManagementApplicationTestBase
         tagged.CurrentVersion.ShouldBe(1, "labels are not content");
         (await _testCases.GetVersionsAsync(created.Id)).Count.ShouldBe(1);
 
-        // Editing the content of an approved test case still publishes a version, as before.
+        // Editing the content of an approved test case sends it back to review; the version comes when it is approved again.
         var edit = await NewAsync("TC-1", null);
         edit.Title = "New title";
-        (await _testCases.UpdateAsync(created.Id, edit)).CurrentVersion.ShouldBe(2);
+        var edited = await _testCases.UpdateAsync(created.Id, edit);
+        edited.Status.ShouldBe(TestCaseStatus.UnderReview);
+        edited.CurrentVersion.ShouldBe(1);
+        (await _testCases.ChangeStatusAsync(created.Id, new ChangeTestCaseStatusDto { TargetStatus = TestCaseStatus.Approved })).CurrentVersion.ShouldBe(2);
         (await _testCases.GetAsync(created.Id)).Tags.ShouldBe(new[] { "regression", "Smoke" });
     }
 

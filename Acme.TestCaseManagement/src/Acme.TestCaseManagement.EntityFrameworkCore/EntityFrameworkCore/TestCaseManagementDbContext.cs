@@ -2,6 +2,7 @@ using Acme.TestCaseManagement.Attachments;
 using Acme.TestCaseManagement.SharedSteps;
 using Acme.TestCaseManagement.Automation;
 using Acme.TestCaseManagement.Plans;
+using Acme.TestCaseManagement.Projects;
 using Acme.TestCaseManagement.Quality;
 using Acme.TestCaseManagement.Requirements;
 using Acme.TestCaseManagement.Runs;
@@ -16,6 +17,8 @@ namespace Acme.TestCaseManagement.EntityFrameworkCore;
 [ConnectionStringName(TestCaseManagementDbProperties.ConnectionStringName)]
 public class TestCaseManagementDbContext : AbpDbContext<TestCaseManagementDbContext>, ITestCaseManagementDbContext
 {
+    public DbSet<Project> Projects { get; set; } = null!;
+
     public DbSet<TestSuite> TestSuites { get; set; } = null!;
 
     public DbSet<TestCase> TestCases { get; set; } = null!;

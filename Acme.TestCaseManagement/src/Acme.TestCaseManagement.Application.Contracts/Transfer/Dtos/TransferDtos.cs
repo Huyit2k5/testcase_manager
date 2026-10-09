@@ -7,6 +7,9 @@ namespace Acme.TestCaseManagement.Transfer.Dtos;
 /// <summary>Which test cases to export. The filters are those of the test case list, without paging.</summary>
 public class ExportTestCasesInput
 {
+    /// <summary>Only what belongs to this project. Leave it out to see every project.</summary>
+    public Guid? ProjectId { get; set; }
+
     public TransferFormat Format { get; set; } = TransferFormat.Xlsx;
 
     /// <summary>Matches Code, Title or Description.</summary>
@@ -39,6 +42,9 @@ public class ExportTestCasesInput
 /// <summary>A file of test cases to import (multipart form).</summary>
 public class ImportTestCasesInput
 {
+    /// <summary>The project the test cases are imported into; suites are looked for and created there. Leave it out for the default project.</summary>
+    public Guid? ProjectId { get; set; }
+
     /// <summary>An Excel (.xlsx) or CSV file; the format is detected from the content.</summary>
     [Required]
     public IRemoteStreamContent File { get; set; } = default!;
