@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/images/logo.svg" alt="Logo Test Case Management" width="120" height="120">
+
 # Test Case Management
 
 **Module quản lý kiểm thử có thể tái sử dụng cho ABP Framework**
@@ -10,7 +12,7 @@ Từ yêu cầu → test case → đợt kiểm thử → kết quả → cổng
 ![ABP 10.6](https://img.shields.io/badge/ABP_Framework-10.6-0A8CD8)
 ![Angular 22](https://img.shields.io/badge/Angular-22-DD0031?logo=angular&logoColor=white)
 ![Database](https://img.shields.io/badge/CSDL-SQLite_%7C_MySQL_8.4-4479A1)
-![Tests](https://img.shields.io/badge/tests-668_backend_%2B_164_Angular-2EA44F)
+![Tests](https://img.shields.io/badge/tests-688_backend_%2B_184_Angular-2EA44F)
 
 </div>
 
