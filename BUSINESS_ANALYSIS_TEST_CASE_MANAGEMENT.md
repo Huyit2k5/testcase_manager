@@ -8,6 +8,14 @@
 | Đối tượng đọc | Trưởng nhóm / quản lý kỹ thuật, QA Lead, lập trình viên tích hợp |
 | Tài liệu liên quan | `specs/001-test-case-management/{spec,plan,tasks}.md`, `Acme.TestCaseManagement/README.md`, `docs/HUONG_DAN_SU_DUNG.md` |
 | Ghi chú | Tài liệu mô tả **hệ thống như đã xây dựng**. Những gì nằm ngoài phạm vi hiện tại được nêu riêng ở mục 12 |
+| Tác giả | (điền tên người chịu trách nhiệm tài liệu) |
+
+**Lịch sử phiên bản tài liệu**
+
+| Phiên bản | Ngày | Nội dung |
+| :--- | :--- | :--- |
+| 1.0 | 2026-10-12 | Bản đầu đủ nghiệp vụ và sơ đồ, đối chiếu với code |
+| 1.1 | 2026-10-12 | Sau review: phiên bản test case chụp thêm Priority, Severity, Kind, Layer, ExecutionType; Quality Gate đọc priority từ phiên bản đã chạy; test case chờ duyệt lại vẫn đưa vào run được; bổ sung quy tắc Superseded, mã băm, phạm vi nghiệm thu, flaky, mục 13 chuyển đổi và triển khai |
 
 ---
 
@@ -24,6 +32,7 @@
 10. Tích hợp vào ứng dụng ABP của công ty
 11. Kiểm thử và chất lượng
 12. Giới hạn, ngoài phạm vi và hướng phát triển
+13. Chuyển đổi dữ liệu và triển khai (đề xuất)
 - Phụ lục A: Thuật ngữ · Phụ lục B: Danh sách API · Phụ lục C: Mã lỗi nghiệp vụ
 
 ---
@@ -276,10 +285,10 @@ Người dùng được lưu dưới dạng `Guid` (id) và audit của ABP; mod
 | **TestSuite** | `ProjectId`, `ParentId?`, `Name`, `Description`, `Order` | Cây không giới hạn cấp |
 | **TestCase** | `SuiteId`, `Code`, `Title`, `Description`, `Preconditions`, `Postconditions`, `Priority`, `Severity`, `Status`, `ExecutionType`, `Kind`, `Layer`, `IsFlaky`, `CurrentVersion`, `Steps`, `Tags` | Thuộc dự án thông qua suite; `Code` duy nhất toàn thư viện |
 | **TestStep** | thứ tự, hành động, dữ liệu test, kết quả mong đợi, liên kết nhóm bước chung | |
-| **TestCaseVersion** | `TestCaseId`, `VersionNumber`, `Title`, `Preconditions`, `Postconditions`, `StepsJson`, `ChangeSummary?` | Bản chụp bất biến lúc duyệt |
+| **TestCaseVersion** | `TestCaseId`, `VersionNumber`, `Title`, `Preconditions`, `Postconditions`, `StepsJson`, `ChangeSummary?`, `Priority?`, `Severity?`, `Kind?`, `Layer?`, `ExecutionType?` | Bản chụp bất biến lúc duyệt, gồm cả phân loại của test case. Năm trường phân loại để trống ở phiên bản tạo trước khi có snapshot này; khi đó hệ thống lấy giá trị hiện tại của test case |
 | **SharedStepGroup / SharedStep** | tên, các bước, số hiệu chỉnh sửa (revision) | Test case giữ **bản sao riêng** kèm liên kết |
 | **TestPlan** | `ProjectId`, `Name`, `Description`, `MilestoneId?`, `StartDate`, `EndDate`, `Status` | |
-| **TestRun** | `ProjectId`, `TestPlanId?`, `Title`, `Environment`, `AssignedToUserId?`, `Status` | Có thể đứng ngoài plan |
+| **TestRun** | `ProjectId`, `TestPlanId?`, `Title`, `Environment`, `AssignedToUserId?`, `Status` | Có thể đứng ngoài plan. `AssignedToUserId` là người phụ trách chung của run (tùy chọn, đặt qua API); người thực hiện từng test được gán ở `TestRunItem.AssignedUserId` và giao diện chỉ gán theo từng item |
 | **TestRunItem** | `TestRunId`, `TestCaseVersionId`, `Sequence`, `AssignedUserId?`, `CurrentStatus` | Bắt buộc gắn phiên bản |
 | **TestExecution** | `TestRunItemId`, `AttemptNumber`, `Status`, `ActualResult`, `DurationSeconds` | Chỉ thêm, không sửa |
 | **DefectLink** | `TestExecutionId`, `ExternalSystem`, `IssueKey`, `IssueUrl?`, `Severity`, `IsResolved`, `ResolvedTime?` | Chỉ gắn vào attempt Failed |
@@ -365,10 +374,10 @@ sequenceDiagram
 
 **Mô tả:**
 1. **Soạn mới:** trạng thái Draft. Cần ít nhất 1 bước trước khi gửi duyệt hoặc duyệt.
-2. **Duyệt:** người có quyền `Approve`; hệ thống sinh `TestCaseVersion` bất biến chứa tiêu đề, tiền / hậu điều kiện và toàn bộ bước (`StepsJson`). Người duyệt được phép là tác giả.
+2. **Duyệt:** người có quyền `Approve`; hệ thống sinh `TestCaseVersion` bất biến chứa tiêu đề, tiền / hậu điều kiện, toàn bộ bước (`StepsJson`) **và phân loại của test case lúc duyệt** (ưu tiên, severity, loại, tầng, cách chạy). Người duyệt được phép là tác giả.
 3. **Sửa test case đã duyệt:** nội dung mới nằm ở bản nháp, test case **quay về UnderReview**; phiên bản đã duyệt trước đó vẫn là bản đang dùng nên plan và run cũ không bị đổi. Phiên bản mới chỉ sinh khi duyệt lại. Quy tắc này áp dụng cho sửa thông tin, sắp xếp lại bước, chèn hoặc làm mới nhóm bước dùng chung, cập nhật hàng loạt từ nhóm bước, và nhập ở chế độ cập nhật. Ghi chú thay đổi **không bắt buộc**.
-4. **Thêm vào run:** chỉ test case Approved; run item gắn với phiên bản đã duyệt tại thời điểm thêm.
-5. **Xóa:** xóa mềm, các phiên bản còn nên run cũ vẫn đọc được.
+4. **Thêm vào run:** test case phải có **phiên bản đã duyệt đang được dùng**: trạng thái Approved, hoặc UnderReview nhưng đã từng được duyệt (đang chờ duyệt lại sau khi sửa). Test case chưa từng duyệt, đã đưa về Draft hoặc đã Deprecated thì không vào được. Run item luôn gắn với phiên bản đã duyệt hiện hành, không phải nội dung đang chờ duyệt. Màn chọn test case cho run hiển thị các test case chờ duyệt lại kèm nhãn "chờ duyệt lại, chạy bản vN".
+5. **Xóa hoặc ngừng dùng test case đang nằm trong run:** run đã tạo vẫn chạy tiếp với phiên bản đã gắn (xóa là xóa mềm, các phiên bản còn lại). Hệ thống không có thao tác nâng một run item lên phiên bản mới; muốn chạy bản mới thì thêm test case vào một run mới.
 6. **Tag** là nhãn, không thuộc phiên bản: đổi tag không sinh phiên bản (tối đa 20 tag, mỗi tag tối đa 50 ký tự, không chứa dấu phẩy hay chấm phẩy, không phân biệt hoa thường).
 7. **Cờ Flaky** do hệ thống đánh (xem 8.1).
 
@@ -432,7 +441,7 @@ sequenceDiagram
 - Mỗi run item có **1..N lần chạy** (`TestExecution`). Lần chạy cũ giữ nguyên; trạng thái hiện tại của item là kết quả lần chạy mới nhất. Retest chính là ghi thêm một attempt.
 - Mỗi attempt lưu kết quả thực tế, thời lượng, người chạy và thời điểm (audit ABP), đính kèm và liên kết lỗi.
 - **Chạy hàng loạt** (batch) cho run hồi quy lớn.
-- **Run** chuyển Planned → InProgress khi có kết quả đầu tiên → Completed. Run đã hoàn tất bị **khóa**: không ghi kết quả, không thêm hay bớt item.
+- **Run** chuyển Planned → InProgress khi có kết quả đầu tiên → Completed. Run đã hoàn tất bị **khóa**: không ghi kết quả, không thêm item. (Hệ thống không có thao tác bớt item khỏi một run, kể cả khi run chưa hoàn tất.)
 - **Plan** có ngày bắt đầu và kết thúc (kiểm tra hợp lệ), có thể gắn milestone; plan còn run thì không xóa được; plan lưu trữ không thêm run.
 - **Gán người test** theo từng item; host cung cấp danh sách người dùng qua `TCM_USER_DIRECTORY` (mặc định dùng tra cứu người dùng của ABP).
 - **Giao diện danh sách run:** mặc định nhóm theo plan (mở / đóng từng nhóm, nhóm "Runs without a plan" cho run không thuộc plan, hiển thị số run, trạng thái, ngày), có chế độ danh sách phẳng với lọc theo từ khóa, plan, trạng thái, môi trường và phân trang. Mỗi run hiện tiến độ, số đạt, số không đạt.
@@ -507,7 +516,7 @@ sequenceDiagram
 | # | Tiêu chí | Điều kiện đạt |
 | :--- | :--- | :--- |
 | 1 | Tỷ lệ đạt (pass rate) | Passed ÷ (tổng item − Skipped) ≥ `MinPassRate` (mặc định 95), so sánh tỷ lệ chính xác |
-| 2 | P1 đã chạy hết | Mọi item của test case ưu tiên `Urgent` đều có kết quả Passed hoặc Failed |
+| 2 | P1 đã chạy hết | Mọi item có ưu tiên `Urgent` (gọi là P1) tại phiên bản đã chạy đều có kết quả Passed hoặc Failed |
 | 3 | Không còn lỗi Critical mở | Số issue Critical chưa xử lý = 0 |
 | 4 | Không còn lỗi High mở | Số issue High chưa xử lý = 0 |
 
@@ -516,7 +525,10 @@ sequenceDiagram
 - **Không có cơ chế bỏ qua (override):** gate không đạt thì không nghiệm thu được.
 - Sign-off gắn với **plan hoặc milestone**, trong phạm vi một dự án; chụp lại số liệu (`SummaryStatsJson`), tên và ngưỡng của gate lúc chốt, và `SnapshotHash` SHA-256; trạng thái Pending, Approved, Superseded.
 - Mỗi người duyệt chỉ ký một lần; người ký phải là người dùng có id; hoàn tất khi đủ số người duyệt khác nhau.
-- Băng SHA-256 phát hiện số liệu bị sửa; **không phải chữ ký số bất đối xứng**.
+- **Mã băm SHA-256** được tính trên chuỗi JSON của số liệu đã chốt (`SummaryStatsJson`) và lưu **cùng chỗ** với dữ liệu. Nó giúp phát hiện số liệu bị sai lệch vô ý hoặc sửa lẫn lộn, nhưng người có quyền ghi trực tiếp vào cơ sở dữ liệu có thể tính lại mã băm sau khi sửa. Nó **không phải chữ ký số** và không chống chối bỏ. Nếu cần chống sửa có chủ ý, hướng nâng cấp là dùng HMAC với khóa giữ ngoài cơ sở dữ liệu.
+- **Superseded:** khi bắt đầu một nghiệm thu mới cho cùng phạm vi (cùng plan hoặc milestone, cùng dự án), mọi nghiệm thu còn Pending của phạm vi đó tự chuyển sang Superseded. Nghiệm thu đã Approved không bị đổi.
+- **Người ký:** hệ thống kiểm số người duyệt khác nhau (`RequiredApprovals`) và quyền `SignOff.Approve`; **không kiểm theo vai trò** (ví dụ cần đúng một QA Lead và một Product Owner). Ai được cấp quyền này do cấu hình vai trò của host quyết định.
+- **Điều kiện phạm vi:** hệ thống không bắt buộc mọi run trong plan hoặc milestone phải Completed trước khi nghiệm thu; số liệu được tính trên trạng thái hiện tại của các run trong phạm vi.
 - Hoàn tất một run **không** bị gate chặn; gate áp dụng ở bước nghiệm thu.
 
 ### 5.8. Nhập và xuất dữ liệu
@@ -600,8 +612,8 @@ flowchart LR
         U16["Gợi ý bước bằng AI"]
     end
 
-    QL --> U1 & U2 & U5 & U6 & U7 & U10 & U12 & U13 & U14
-    QT --> U3 & U4 & U8 & U9 & U15 & U16
+    QL --> U1 & U2 & U4 & U5 & U6 & U7 & U10 & U12 & U13 & U14
+    QT --> U2 & U3 & U4 & U8 & U9 & U15 & U16
     PO --> U11 & U13 & U14
 ```
 
@@ -622,7 +634,7 @@ flowchart LR
 | UC-11 | Đính kèm file | Tester | Ảnh (dán từ clipboard), log, video cho test case hoặc attempt |
 | UC-12 | Lập test plan | QA Lead | Tên, mô tả, milestone, ngày, trạng thái |
 | UC-13 | Tạo test run | QA Lead | Trong plan hoặc đứng riêng; môi trường |
-| UC-14 | Thêm test vào run, gán người | QA Lead | Chọn test case Approved; gán người test |
+| UC-14 | Thêm test vào run, gán người | QA Lead | Chọn test case có phiên bản đã duyệt đang dùng (kể cả test case chờ duyệt lại); gán người test |
 | UC-15 | Ghi kết quả | Tester | Đơn lẻ hoặc hàng loạt; kết quả thực tế, thời lượng |
 | UC-16 | Retest | Tester | Ghi attempt mới cho cùng item |
 | UC-17 | Liên kết lỗi | Tester | Gắn lỗi vào attempt Failed; đánh dấu đã xử lý |
@@ -649,7 +661,7 @@ flowchart LR
 | BR-TC-03 | Chỉ chuyển trạng thái theo sơ đồ 5.2 | `InvalidTestCaseStatusTransition` |
 | BR-TC-04 | Duyệt sinh phiên bản mới; sửa test case đã duyệt đưa về UnderReview, phiên bản cũ vẫn là bản đang dùng | |
 | BR-TC-05 | Người duyệt được phép là tác giả; ghi chú thay đổi không bắt buộc | |
-| BR-TC-06 | Chỉ test case Approved mới vào được run | `TestCaseNotApproved` |
+| BR-TC-06 | Test case phải có phiên bản đã duyệt đang dùng (Approved, hoặc UnderReview sau một lần duyệt) mới vào được run | `TestCaseNotApproved` |
 | BR-TC-07 | Tag: tối đa 20, mỗi tag tối đa 50 ký tự, không chứa `,` hay `;` | `InvalidTag`, `TooManyTags` |
 | BR-TC-08 | Thứ tự bước phải hợp lệ khi sắp xếp lại | `InvalidStepOrder` |
 | BR-TC-09 | Cây thư viện không chứa Sprint hay Milestone | |
@@ -659,13 +671,14 @@ flowchart LR
 | Mã | Quy tắc |
 | :--- | :--- |
 | BR-VER-01 | `TestCaseVersion` bất biến: không có API sửa phiên bản |
-| BR-VER-02 | Phiên bản chứa trọn nội dung và bước tại lúc duyệt; plan và run luôn trỏ phiên bản đã chốt |
+| BR-VER-02 | Phiên bản chứa trọn nội dung, bước và phân loại (ưu tiên, severity, loại, tầng, cách chạy) tại lúc duyệt; plan và run luôn trỏ phiên bản đã chốt |
+| BR-VER-03 | Các chỉ số tính trên kết quả đã chạy (ví dụ tiêu chí P1 của Quality Gate) dùng ưu tiên **của phiên bản đã chạy**; đổi ưu tiên trong thư viện về sau không làm đổi kết quả đã có. Phiên bản cũ chưa có snapshot thì dùng giá trị hiện tại của test case |
 
 ### 7.3. Plan, Run, Execution
 | Mã | Quy tắc | Khi vi phạm |
 | :--- | :--- | :--- |
 | BR-RUN-01 | Run item bắt buộc có `TestCaseVersionId` | |
-| BR-RUN-02 | Run đã hoàn tất thì không ghi kết quả, không thêm hay bớt item | `TestRunAlreadyCompleted` |
+| BR-RUN-02 | Run đã hoàn tất thì không ghi kết quả, không thêm item | `TestRunAlreadyCompleted` |
 | BR-RUN-03 | `AttemptNumber` = lớn nhất hiện có + 1; không sửa, không xóa attempt | |
 | BR-RUN-04 | Trạng thái hiện tại của item là kết quả attempt cuối | |
 | BR-RUN-05 | Một test case chỉ một lần trong một run | `TestCaseAlreadyInRun`, `DuplicateTestRunItem` |
@@ -707,9 +720,9 @@ Giới hạn cấu hình qua `TestCaseManagementAttachmentOptions`.
 | 4 | Tốc độ thực thi | số lần chạy theo ngày; trung bình mỗi ngày và trung bình 7 ngày gần nhất | Dashboard |
 | 5 | Burn-down | số item chưa chạy giảm theo ngày | Dashboard |
 | 6 | Mật độ lỗi | số lỗi trên 100 test đã chạy; lỗi mở và đã xử lý; tỷ lệ test có lỗi | Dashboard |
-| 7 | Điểm flaky | số lần kết quả đổi ÷ (số kết quả − 1), trên 20 kết quả Passed hoặc Failed gần nhất; từ 0,15 là Watch, từ 0,30 là Flaky | Dashboard, cờ trong thư viện |
+| 7 | Điểm flaky | số lần kết quả đổi ÷ (số kết quả − 1), trên 20 kết quả Passed hoặc Failed gần nhất; từ 0,15 là Watch, từ 0,30 là Flaky; dưới 5 kết quả thì chưa đủ dữ liệu (`Insufficient`). Tính theo test case, gộp các lần chạy ở mọi phiên bản, nên một lần sửa bước test cũng có thể làm kết quả đổi | Dashboard, cờ trong thư viện |
 | 8 | Độ phủ yêu cầu | requirement có ít nhất 1 test case so với tổng; kèm đã đạt | RTM |
-| 9 | P1 executed | số item của test case Urgent đã có Passed hoặc Failed | Quality Gate |
+| 9 | P1 executed | số item có ưu tiên Urgent (P1) tại phiên bản đã chạy mà đã có Passed hoặc Failed | Quality Gate |
 | 10 | Lỗi mở theo severity | số issue còn liên kết chưa xử lý | Quality Gate |
 
 Mọi chỉ số lọc được theo **dự án**; dashboard còn lọc theo plan và theo số ngày (`Days`). Ngưỡng và cửa sổ của flaky cấu hình qua `TestCaseManagementInsightsOptions`.
@@ -787,11 +800,17 @@ Chưa thử trên ứng dụng thật của công ty, chưa thử với nhiều 
 ### 12.1. Giới hạn đã biết
 - **Quyền chưa theo dự án:** ai đọc được test case thì đọc được ở mọi dự án. Mã test case và requirement duy nhất toàn thư viện; nhóm bước dùng chung và Quality Gate dùng chung.
 - **Không có xóa Test Run**, chỉ hoàn tất; nhóm run theo plan hiển thị tối đa 100 run mỗi nhóm (có thông báo và chế độ danh sách để lọc).
-- Chữ ký nghiệm thu là băng SHA-256, không phải chữ ký số.
+- Chữ ký nghiệm thu là mã băm SHA-256 lưu cùng dữ liệu, không phải chữ ký số (xem 5.7).
+- Nghiệm thu không theo vai trò (chỉ đếm số người ký) và không bắt buộc run phải hoàn tất.
+- Vòng duyệt chưa có kiểm soát chéo: duyệt thẳng từ Draft được, người duyệt có thể là tác giả, trả về nháp không cần lý do.
+- Ghi kết quả đồng thời: số lần chạy tăng dần có chỉ mục duy nhất `(run item, số lần chạy)` nên không bao giờ trùng, nhưng chưa có cơ chế tự thử lại; người ghi sau có thể nhận lỗi và phải thao tác lại.
+- Dự án mặc định `DEFAULT` được tạo ở lần đọc danh sách dự án đầu tiên trên thư viện chưa có dự án (một thao tác đọc có ghi), dùng khóa trong tiến trình. Nên khởi tạo bằng bước seed khi triển khai.
+- Nhập dữ liệu chế độ cập nhật đưa các test case đã duyệt về UnderReview và chưa có thao tác duyệt hàng loạt; nhập nhiều test case thì phải duyệt từng cái.
+- Chưa có kiểm tra virus cho file đính kèm.
 - Khóa xử lý song song (nghiệm thu, gate mặc định) nằm trong tiến trình.
 - Dashboard và flaky dùng giờ máy chủ và đọc dữ liệu phạm vi vào bộ nhớ.
 - Xóa test case không xóa file đính kèm; file được giữ trong bộ nhớ khi lưu.
-- Mã test case so sánh theo quy tắc của cơ sở dữ liệu (phân biệt hoa thường trên SQLite và PostgreSQL).
+- Mã test case duy nhất toàn thư viện nên hai dự án không cùng dùng một mã; so sánh theo quy tắc của cơ sở dữ liệu (phân biệt hoa thường trên SQLite và PostgreSQL).
 - Cảnh báo bảo mật NU1903 của AutoMapper 14 đi kèm ABP 10.6.1 (bản AutoMapper mới hơn không tương thích nhị phân với ABP 10.6.1).
 - Giao diện giữ bảng màu sáng riêng, không theo chế độ tối của host.
 
@@ -818,10 +837,57 @@ Chưa thử trên ứng dụng thật của công ty, chưa thử với nhiều 
 | Ưu tiên | Hạng mục | Lý do |
 | :---: | :--- | :--- |
 | Cao | Quyền theo dự án; mã test case tự tăng theo khóa dự án | Tách hẳn dữ liệu và trách nhiệm giữa các dự án |
+| Cao | Các lựa chọn cần quyết định: cho phép bỏ qua Quality Gate có lý do bắt buộc và lưu audit; bắt buộc người duyệt khác tác giả và lý do khi trả về nháp; nghiệm thu theo vai trò; duyệt hàng loạt khi nhập nhiều test case | Cân bằng giữa kiểm soát chặt và tính linh hoạt khi release gấp; hiện đang chọn cách đơn giản |
 | Cao | Chạy lại toàn bộ test trên MySQL và thử trên ứng dụng thật | Giảm rủi ro khi đưa vào sử dụng |
 | Trung bình | Thông báo; luồng requirement đổi; xuất PDF biên bản; nhân bản test case; so sánh phiên bản | Tiện cho quy trình hằng ngày |
 | Trung bình | Xóa hoặc lưu trữ run chưa có kết quả; xu hướng chất lượng qua nhiều Sprint | Dọn dẹp và báo cáo quản lý |
 | Thấp | SignalR; mở rộng AI; MVC / Blazor; gói npm | Tùy nhu cầu |
+
+---
+
+## 13. CHUYỂN ĐỔI DỮ LIỆU VÀ TRIỂN KHAI (ĐỀ XUẤT)
+
+Mục này là **đề xuất** để leader xem xét; các mục tiêu cụ thể cần được xác nhận theo thực tế của công ty.
+
+### 13.1. Chuyển dữ liệu từ Excel hiện tại
+
+```mermaid
+flowchart TD
+    A["Chuẩn hóa file Excel theo mẫu của hệ thống<br/>(mỗi dòng một bước, các dòng cùng Code là một test case)"] --> B["Chọn dự án đích"]
+    B --> C["Nhập chạy thử (DryRun): xem báo cáo từng dòng"]
+    C --> D{"Có dòng lỗi?"}
+    D -- Có --> E["Sửa file"]
+    E --> C
+    D -- Không --> F["Nhập thật: test case vào trạng thái Draft"]
+    F --> G["QA Lead rà soát, gửi duyệt và duyệt từng test case"]
+    G --> H["Nhập kết quả chạy cũ nếu cần giữ lịch sử (mỗi dòng một attempt)"]
+```
+
+- Mẫu cột và quy tắc nằm ở mục 5.8. Có thể xuất vài test case ra trước để lấy file mẫu đúng cột.
+- Hệ thống tạo suite theo đường dẫn (`Suite`) nếu người nhập có quyền quản lý suite.
+- Test case nhập vào là Draft; **phải duyệt từng test case** vì chưa có duyệt hàng loạt. Kết quả chạy chỉ nhập được vào run đã có test case đã duyệt.
+- Mã test case trong file phải khác mọi mã đã có trong thư viện (duy nhất toàn thư viện); nên dùng tiền tố theo dự án.
+
+### 13.2. Các bước triển khai đề xuất
+
+| Bước | Nội dung |
+| :--- | :--- |
+| 1 | Cắm module vào môi trường thử của ứng dụng ABP công ty, chạy migration, cấp quyền cho các vai trò QA Lead, Tester, PO |
+| 2 | Chạy thử trên một dự án (pilot): nhập test case, tạo một plan và vài run thật |
+| 3 | Đào tạo QA theo `docs/HUONG_DAN_SU_DUNG.md` |
+| 4 | Mở rộng sang các dự án còn lại; ngừng dùng Excel cho dự án đã chuyển |
+
+### 13.3. Chỉ tiêu theo dõi gợi ý
+Tỷ lệ test case đã nhập và đã duyệt; số run ghi nhận trên hệ thống so với trên Excel; thời gian chốt báo cáo tiến độ; số lần phải sửa kết quả. Mức mục tiêu cần thống nhất với QA Lead.
+
+### 13.4. Rủi ro chính
+
+| Rủi ro | Hướng xử lý |
+| :--- | :--- |
+| Chưa thử trên ứng dụng thật và trên MySQL của công ty | Chạy bộ test trên MySQL và thử ở môi trường thử trước khi pilot |
+| Chưa có thông báo và kết nối công cụ quản lý lỗi | Chấp nhận nhập tay ở giai đoạn đầu; đưa vào lộ trình (12.3) |
+| Quyền chưa tách theo dự án | Dùng chung một đội QA cho các dự án trong giai đoạn đầu |
+| Dashboard chậm khi dữ liệu rất lớn | Theo dõi; tối ưu bằng tổng hợp ở tầng cơ sở dữ liệu nếu vượt ngưỡng |
 
 ---
 
@@ -843,8 +909,9 @@ Chưa thử trên ứng dụng thật của công ty, chưa thử với nhiều 
 | Requirement | Yêu cầu | User Story hoặc đặc tả dùng để truy vết |
 | RTM | Ma trận truy vết | Ánh xạ Requirement, Test Case, kết quả |
 | Quality Gate | Cổng chất lượng | Bộ ngưỡng phải đạt trước khi nghiệm thu |
-| Sign-off | Nghiệm thu | Bản chốt số liệu và chữ ký của nhiều người duyệt |
+| Sign-off | Nghiệm thu | Bản chốt số liệu và chữ ký của nhiều người duyệt; Superseded là bản đang chờ ký bị thay bằng một lần nghiệm thu mới cùng phạm vi |
 | Flaky | Test chập chờn | Test có kết quả đổi qua lại không ổn định |
+| P1 | Ưu tiên cao nhất | Cách gọi trong Quality Gate cho mức ưu tiên `Urgent` |
 | Priority / Severity | Ưu tiên / Mức nghiêm trọng | Priority của test case; Severity của test case và của lỗi |
 | Aggregate Root | Gốc tổng hợp (DDD) | Entity chính quản lý tính nhất quán của nhóm entity liên quan |
 | Reusable Module | Module tái sử dụng | Module ABP cắm vào nhiều ứng dụng không cần sửa mã nguồn |

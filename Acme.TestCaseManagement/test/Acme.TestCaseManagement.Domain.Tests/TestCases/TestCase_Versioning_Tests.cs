@@ -113,6 +113,54 @@ public class TestCase_Versioning_Tests : TestCaseManagementDomainTestBase
     }
 
     [Fact]
+    public async Task A_Version_Keeps_The_Classification_Of_The_Test_Case_As_It_Was_Approved()
+    {
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var testCase = await CreateTestCaseWithThreeStepsAsync();
+            var v1 = await _manager.ApproveAsync(testCase, null);
+
+            testCase.SetDetails(
+                description: null, preconditions: null, postconditions: null,
+                priority: PriorityLevel.Low, severity: SeverityLevel.Low, executionType: ExecutionType.Automated,
+                kind: TestKind.Usability, layer: TestLayer.Unit, automationId: null);
+
+            v1.Priority.ShouldBe(PriorityLevel.High);
+            v1.Severity.ShouldBe(SeverityLevel.Critical);
+            v1.Kind.ShouldBe(TestKind.Functional);
+            v1.Layer.ShouldBe(TestLayer.E2E);
+            v1.ExecutionType.ShouldBe(ExecutionType.Manual);
+        });
+    }
+
+    [Fact]
+    public async Task A_Test_Case_Has_A_Version_In_Use_Once_Approved_And_While_It_Waits_To_Be_Approved_Again()
+    {
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var testCase = await CreateTestCaseWithThreeStepsAsync();
+            testCase.HasApprovedVersionInUse().ShouldBeFalse();                  // a draft that was never approved
+
+            await _manager.ChangeStatusAsync(testCase, TestCaseStatus.UnderReview, null);
+            testCase.HasApprovedVersionInUse().ShouldBeFalse();                  // first review: no version yet
+
+            await _manager.ChangeStatusAsync(testCase, TestCaseStatus.Approved, null);
+            testCase.HasApprovedVersionInUse().ShouldBeTrue();
+
+            _manager.SendBackForReviewIfApproved(testCase);
+            testCase.HasApprovedVersionInUse().ShouldBeTrue();                   // edited, version 1 is still the one in use
+
+            await _manager.ChangeStatusAsync(testCase, TestCaseStatus.Approved, null);
+            await _manager.ChangeStatusAsync(testCase, TestCaseStatus.Draft, null);
+            testCase.HasApprovedVersionInUse().ShouldBeFalse();                  // taken back on purpose
+
+            await _manager.ChangeStatusAsync(testCase, TestCaseStatus.Approved, null);
+            await _manager.ChangeStatusAsync(testCase, TestCaseStatus.Deprecated, null);
+            testCase.HasApprovedVersionInUse().ShouldBeFalse();
+        });
+    }
+
+    [Fact]
     public async Task PublishNewVersion_Should_Increment_And_Leave_Earlier_Snapshots_Untouched()
     {
         await WithUnitOfWorkAsync(async () =>

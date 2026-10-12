@@ -8,7 +8,7 @@ particular host application: users, tenants and auditing come from ABP abstracti
 
 - **Test library** – nested suites, test cases with ordered steps, an approval status workflow, and immutable
   `TestCaseVersion` snapshots: a version is published when a test case is approved, an edit of an approved test case sends it back to Under review (the version
-  already approved stays in use), and plans and runs stay bound to the version they were created with.
+  already approved stays in use and the test case can still be added to a run while it waits), the version also keeps the priority, severity, kind, layer and execution type, and plans and runs stay bound to the version they were created with.
 - **Projects** – the top level: suites (and so test cases), plans, requirements and runs belong to one project (`EINV`, `HRM`) and are not mixed; the pages follow the project that is chosen at the top. What is made without a project goes to a default project, so a client that does not know about projects keeps working.
 - **Execution** – test plans, test runs with run items, and append-only executions with multiple attempts per
   item (the latest attempt is the current status; history is never rewritten). Defects from an issue tracker are
@@ -343,7 +343,7 @@ the requirement text. Details: plan.md, section 4.15.
 
 - **Pass rate** = Passed / (all run items − Skipped), using the current (latest-attempt) status. The gate compares
   the exact ratio with `MinPassRate` (default 95); the figure shown is rounded down to two decimals.
-- **P1 executed** – every item whose test case has priority Urgent has a Passed or Failed result.
+- **P1 executed** – every item that has priority Urgent has a Passed or Failed result. The priority is the one the version had when it was approved, so changing it in the library later does not change results already recorded (an older version without it reads the test case as it is now).
 - **Open Critical / High defects** – counted per distinct issue (system and key, case-insensitive) that still has an
   unresolved link; both limits are fixed at zero.
 - A gate has `RequiredApprovals` (default 2). There is deliberately no override: a failing gate blocks sign-off.

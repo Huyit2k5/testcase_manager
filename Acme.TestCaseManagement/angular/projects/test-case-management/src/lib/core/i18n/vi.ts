@@ -232,6 +232,7 @@ export const vi: Record<MessageKey, string> = {
   'picker.clear': 'Bỏ chọn',
   'picker.select': 'Chọn {code}',
   'picker.none': 'Không có test case nào.',
+  'picker.waitingReview': 'Chờ duyệt lại, chạy bản v{v}',
   'picker.selected': 'Đã chọn {n}',
   'picker.noAccess': 'Bạn không có quyền xem test case nên không thể chọn ở đây.',
   'run.loadFailed': 'Không mở được lần chạy này. Có thể nó không tồn tại hoặc bạn không có quyền truy cập.',

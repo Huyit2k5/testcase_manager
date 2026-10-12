@@ -46,6 +46,16 @@ public class TestCase : FullAuditedAggregateRoot<Guid>, IMultiTenant
     /// <summary>Number of the latest published <see cref="TestCaseVersion"/>; 0 until the first publish.</summary>
     public virtual int CurrentVersion { get; protected set; }
 
+    /// <summary>
+    /// Whether a run may take this test case: it has an approved version that is in use. A test case waiting to be approved
+    /// again after an edit still has one (the version that was approved), so it stays available while the edit is looked at; a
+    /// draft, a deprecated test case or one that was never approved is not.
+    /// </summary>
+    public virtual bool HasApprovedVersionInUse()
+    {
+        return CurrentVersion > 0 && (Status == TestCaseStatus.Approved || Status == TestCaseStatus.UnderReview);
+    }
+
     public virtual ICollection<TestStep> Steps { get; protected set; }
 
     public virtual ICollection<TestCaseTag> Tags { get; protected set; }

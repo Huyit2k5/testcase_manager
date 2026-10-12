@@ -266,6 +266,55 @@ public class TestRunAppService_Tests : TestCaseManagementApplicationTestBase
     }
 
     [Fact]
+    public async Task A_Test_Case_That_Waits_To_Be_Approved_Again_Can_Still_Be_Scheduled_With_Its_Approved_Version()
+    {
+        var run = await CreateRunWithItemsAsync(1);
+        var approved = await CreateApprovedTestCaseAsync("TC-EDITED");
+        var edited = await _testCases.UpdateAsync(approved.Id, new CreateUpdateTestCaseDto
+        {
+            SuiteId = _suiteId!.Value, Code = "TC-EDITED", Title = "A new title that nobody approved yet",
+            Steps = { new TestStepDto { Action = "Do it", ExpectedResult = "Done" } },
+        });
+        edited.Status.ShouldBe(TestCaseStatus.UnderReview);
+
+        var updated = await _runs.AddItemsAsync(run.Id, new AddTestRunItemsDto { TestCaseIds = { approved.Id } });
+
+        var item = updated.Items.Single(i => i.TestCaseCode == "TC-EDITED");
+        item.VersionNumber.ShouldBe(1);   // the version that was approved, not the title in review
+
+        // Taken back on purpose to a draft, or deprecated: the test case is not offered to a run.
+        await _testCases.ChangeStatusAsync(approved.Id, new ChangeTestCaseStatusDto { TargetStatus = TestCaseStatus.Approved });
+        await _testCases.ChangeStatusAsync(approved.Id, new ChangeTestCaseStatusDto { TargetStatus = TestCaseStatus.Deprecated });
+        var otherCase = await CreateApprovedTestCaseAsync("TC-OTHER");
+        var other = await _runs.CreateAsync(new CreateTestRunDto { Title = "Other", Environment = "Staging", TestCaseIds = { otherCase.Id } });
+        (await Should.ThrowAsync<BusinessException>(
+                () => _runs.AddItemsAsync(other.Id, new AddTestRunItemsDto { TestCaseIds = { approved.Id } })))
+            .Code.ShouldBe(TestCaseManagementErrorCodes.TestCaseNotApproved);
+    }
+
+    [Fact]
+    public async Task A_Test_Case_Taken_Back_To_Draft_On_Purpose_Is_Not_Offered_To_A_Run_Although_It_Was_Approved_Before()
+    {
+        var run = await CreateRunWithItemsAsync(1);
+        var approved = await CreateApprovedTestCaseAsync("TC-BACK");
+        approved.CurrentVersion.ShouldBe(1);
+
+        var draft = await _testCases.ChangeStatusAsync(approved.Id, new ChangeTestCaseStatusDto { TargetStatus = TestCaseStatus.Draft });
+        draft.Status.ShouldBe(TestCaseStatus.Draft);
+        draft.CurrentVersion.ShouldBe(1);   // it still has a version, but the person who took it back wants to rewrite it first
+
+        (await Should.ThrowAsync<BusinessException>(
+                () => _runs.AddItemsAsync(run.Id, new AddTestRunItemsDto { TestCaseIds = { approved.Id } })))
+            .Code.ShouldBe(TestCaseManagementErrorCodes.TestCaseNotApproved);
+        (await _runs.GetAsync(run.Id)).Items.Select(i => i.TestCaseCode).ShouldBe(new[] { "TC-001" });
+
+        // Approved again, it is offered again, now with the new version.
+        await _testCases.ChangeStatusAsync(approved.Id, new ChangeTestCaseStatusDto { TargetStatus = TestCaseStatus.Approved });
+        var updated = await _runs.AddItemsAsync(run.Id, new AddTestRunItemsDto { TestCaseIds = { approved.Id } });
+        updated.Items.Single(i => i.TestCaseCode == "TC-BACK").VersionNumber.ShouldBe(2);
+    }
+
+    [Fact]
     public async Task A_Test_Case_Is_Scheduled_Once_In_A_Run_Even_After_An_Edit_Made_A_New_Version()
     {
         var run = await CreateRunWithItemsAsync(1);

@@ -291,7 +291,7 @@ public class AutomationResultsAppService : TestCaseManagementAppService, IAutoma
             {
                 Reject(outcome, AutomationOutcome.NotInRun, messages.Get("Automation:NotInRun", ("Code", testCase.Code)));
             }
-            else if (testCase.Status != TestCaseStatus.Approved || testCase.CurrentVersion == 0)
+            else if (!testCase.HasApprovedVersionInUse())
             {
                 Reject(outcome, AutomationOutcome.NotApproved, messages.Get("Automation:NotApproved", ("Code", testCase.Code), ("Status", testCase.Status)));
             }

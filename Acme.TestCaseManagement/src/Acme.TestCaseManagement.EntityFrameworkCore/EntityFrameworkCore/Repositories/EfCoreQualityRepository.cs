@@ -48,6 +48,7 @@ public class EfCoreQualityRepository : IQualityRepository, ITransientDependency
                 RunItemId = item.Id,
                 RunId = run.Id,
                 version.TestCaseId,
+                SnapshotPriority = version.Priority,
                 Status = item.CurrentStatus,
                 FirstAttemptStatus = dbContext.TestExecutions
                     .Where(e => e.TestRunItemId == item.Id && e.AttemptNumber == 1)
@@ -55,8 +56,10 @@ public class EfCoreQualityRepository : IQualityRepository, ITransientDependency
                     .FirstOrDefault(),
             }).ToListAsync(cancellationToken);
 
-        // The priority comes from the library test case. A soft-deleted test case still gives its priority, otherwise
-        // its items would silently leave the scope.
+        // The priority is the one in the version the item was run on, so changing the library test case later does not change
+        // the gate for results that were already recorded. A version published before the snapshot held it has none; then the
+        // priority comes from the library test case. A soft-deleted test case still gives its priority, otherwise its items
+        // would silently leave the scope.
         var testCaseIds = items.Select(i => i.TestCaseId).Distinct().ToList();
         Dictionary<Guid, PriorityLevel> priorities;
         using (_dataFilter.Disable<ISoftDelete>())
@@ -72,7 +75,7 @@ public class EfCoreQualityRepository : IQualityRepository, ITransientDependency
                 i.RunItemId,
                 i.RunId,
                 i.TestCaseId,
-                priorities.GetValueOrDefault(i.TestCaseId, PriorityLevel.Medium),
+                i.SnapshotPriority ?? priorities.GetValueOrDefault(i.TestCaseId, PriorityLevel.Medium),
                 i.Status,
                 i.FirstAttemptStatus))
             .ToList();

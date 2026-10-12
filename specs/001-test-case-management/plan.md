@@ -1202,6 +1202,19 @@ A screenshot showed the progress columns of the list of runs at 0 for every run.
   ask for their runs (up to 100) when opened. A group "Runs without a plan" shows when there are such runs (`GetTestRunListInput.NoPlan`). The list view with its filters and paging is one button away; a group that holds more runs than it shows says so and points to it.
 - Not done: putting running runs first, deleting a run.
 
+### 4.26. Phase 27: the version keeps the classification, and a test case waiting for review can still be run
+
+A review of the business analysis found two gaps, both confirmed in the code.
+
+- **The version did not keep the classification.** `TestCaseVersion` held the title, conditions and steps, but not the priority, severity, kind, layer and execution type, while the "all P1 executed" criterion of the quality gate read the priority of the live test case. Changing a priority in the library changed the gate for results that were already recorded. The version now holds the five values (nullable columns: a version published earlier has none, and then the live test case is read, as before), and the gate reads the priority of the version the item ran on. The values are not shown in the version screens or in the version DTO; the contract is unchanged.
+- **A test case edited after approval could not be added to a new run.** The rule was "status is Approved", and an edit sends the test case back to Under review while the version already approved is still the one in use. `TestCase.HasApprovedVersionInUse()` is now the rule: a version exists and the status is Approved or Under review. A draft (taken back on purpose), a deprecated test case and one that was never approved are still refused. The same rule applies to the publication of automated results with `AddMissingToRun`, and the list of test cases offered to a run shows the ones waiting for review with the version that will run.
+
+Hosts add a migration for the five nullable columns of `TcmTestCaseVersions`; the sandbox has `AddVersionSnapshotFields`. A host that creates the schema with `EnsureCreated` (the sample host) needs a new database.
+
+The review also pointed at things left as they are on purpose or for later (cross-check of approvers, a reason when a test case goes back to draft, override of the gate, sign-off by role, codes per project, bulk approval): they are listed in section 12 of `BUSINESS_ANALYSIS_TEST_CASE_MANAGEMENT.md`.
+
+---
+
 ## 5. Security, RBAC & Permissions
 
 Defined in `TestCaseManagementPermissions`:

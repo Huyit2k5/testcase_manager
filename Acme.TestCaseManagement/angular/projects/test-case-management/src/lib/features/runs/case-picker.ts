@@ -1,4 +1,5 @@
 import { Component, OnInit, inject, input, model, signal } from '@angular/core';
+import { forkJoin, map } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { AuthService, Permissions } from '../../core/auth';
 import { I18nService, TranslatePipe } from '../../core/i18n/i18n';
@@ -7,7 +8,7 @@ import { TestCase } from '../../proxy/dtos';
 import { PriorityLevel, TestCaseStatus } from '../../proxy/enums';
 import { TestCaseService } from '../../proxy/services';
 
-/** A checklist of approved test cases; only approved ones can be scheduled in a run. */
+/** A checklist of test cases for a run: the approved ones, and those waiting to be approved again after an edit (their approved version is the one that runs). */
 @Component({
   selector: 'app-case-picker',
   imports: [FormsModule, TranslatePipe],
@@ -27,7 +28,7 @@ import { TestCaseService } from '../../proxy/services';
             <tr>
               <td style="width: 32px"><input type="checkbox" [name]="'pick' + tc.id" [checked]="isSelected(tc.id)" (change)="toggle(tc.id)" [attr.aria-label]="'picker.select' | t: { code: tc.code }" /></td>
               <td class="mono nowrap">{{ tc.code }}</td>
-              <td>{{ tc.title }}</td>
+              <td>{{ tc.title }}@if (tc.status === waiting) { <span class="badge warn" style="margin-left: 6px" data-test="waiting-review">{{ 'picker.waitingReview' | t: { v: tc.currentVersion } }}</span> }</td>
               <td><span class="badge" [class]="badgeOf('priority', tc.priority)">{{ priorityName(tc.priority) }}</span></td>
             </tr>
           }
@@ -56,6 +57,7 @@ export class CasePickerComponent implements OnInit {
   protected readonly cases = signal<TestCase[]>([]);
   protected search = '';
   protected readonly badgeOf = badge;
+  protected readonly waiting = TestCaseStatus.UnderReview;
 
   ngOnInit(): void {
     this.load();
@@ -64,10 +66,16 @@ export class CasePickerComponent implements OnInit {
   protected load(): void {
     if (!this.allowed) { return; }
     const request = ++this.request;
-    this.service.list({ filter: this.search, status: this.onlyApproved() ? TestCaseStatus.Approved : null, maxResultCount: 200, sorting: 'code' }).subscribe(result => {
+    const query = (status: TestCaseStatus | null) => this.service.list({ filter: this.search, status, maxResultCount: 200, sorting: 'code' });
+    // A run takes a test case with an approved version in use: an approved one, or one back in review after an edit.
+    const source = this.onlyApproved()
+      ? forkJoin([query(TestCaseStatus.Approved), query(TestCaseStatus.UnderReview)]).pipe(
+          map(([approved, review]) => [...approved.items, ...review.items.filter(tc => tc.currentVersion > 0)].sort((a, b) => a.code.localeCompare(b.code))))
+      : query(null).pipe(map(result => result.items));
+    source.subscribe(items => {
       if (request !== this.request) { return; }
       const excluded = new Set(this.exclude());
-      this.cases.set(result.items.filter(tc => !excluded.has(tc.id)));
+      this.cases.set(items.filter(tc => !excluded.has(tc.id)));
     });
   }
 

@@ -230,6 +230,7 @@ export const en = {
   'picker.clear': 'Clear',
   'picker.select': 'Select {code}',
   'picker.none': 'No test case available.',
+  'picker.waitingReview': 'Waiting for review, v{v} runs',
   'picker.selected': '{n} selected',
   'picker.noAccess': 'You do not have permission to browse test cases, so none can be picked here.',
   'run.loadFailed': 'This run could not be opened. It may not exist, or you may not have access to it.',

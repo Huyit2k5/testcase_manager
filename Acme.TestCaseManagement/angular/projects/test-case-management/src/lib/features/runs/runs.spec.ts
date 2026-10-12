@@ -126,18 +126,41 @@ describe('CasePickerComponent', () => {
   const list = () => http.match(r => r.url === `${ROOT}/test-cases`);
   const page = (id: string) => ({ items: [{ id, code: id, title: id, priority: 1 } as unknown as TestCase], totalCount: 1 });
 
+  const empty = { items: [], totalCount: 0 };
+  const inReview = (id: string, currentVersion: number) => ({ items: [{ id, code: id, title: id, priority: 1, status: 1, currentVersion } as unknown as TestCase], totalCount: 1 });
+
   it('shows the answer to the latest search even when an older answer arrives after it', () => {
     const fixture = setup(Permissions.TestCases.Default);
     const component = fixture.componentInstance as unknown as { load(): void; cases: () => TestCase[] };
     component.load();
-    const [old] = list();
+    const [oldApproved, oldReview] = list();
     component.load();
-    const [latest] = list();
+    const [latestApproved, latestReview] = list();
 
-    latest.flush(page('new'));
-    old.flush(page('old'));
+    latestApproved.flush(page('new'));
+    latestReview.flush(empty);
+    oldApproved.flush(page('old'));
+    oldReview.flush(empty);
 
     expect(component.cases().map(c => c.id)).toEqual(['new']);
+  });
+
+  it('offers a test case that is back in review after an edit, because its approved version still runs, but not one never approved', () => {
+    const fixture = setup(Permissions.TestCases.Default);
+    fixture.detectChanges();
+    const [approved, review] = list();
+    expect(approved.request.params.get('status')).toBe('2');
+    expect(review.request.params.get('status')).toBe('1');
+
+    approved.flush(page('A-1'));
+    review.flush({ items: [...inReview('B-2', 3).items, ...inReview('C-3', 0).items], totalCount: 2 });
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const codes = [...root.querySelectorAll('tbody tr td.mono')].map(td => td.textContent?.trim());
+    expect(codes).toEqual(['A-1', 'B-2']);
+    expect(root.querySelectorAll('[data-test=waiting-review]').length).toBe(1);
+    expect(root.querySelector('[data-test=waiting-review]')?.textContent).toContain('v3');
   });
 
   it('does not ask for test cases without TestCases, and says so instead of showing an empty panel', () => {

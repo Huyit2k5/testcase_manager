@@ -136,7 +136,12 @@ public class TestCaseManager : DomainService
             testCase.Preconditions,
             TestStepSnapshot.Serialize(snapshot),
             testCase.Postconditions,
-            changeSummary);
+            changeSummary,
+            testCase.Priority,
+            testCase.Severity,
+            testCase.Kind,
+            testCase.Layer,
+            testCase.ExecutionType);
 
         return await _versionRepository.InsertAsync(version);
     }

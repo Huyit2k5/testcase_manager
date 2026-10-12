@@ -82,7 +82,7 @@ public class TestRunManager : DomainService
         var testCase = await _testCaseRepository.GetAsync(testCaseId, includeDetails: false);
         await _projectManager.EnsureSameProjectAsync("A run and a test case", run.ProjectId, await _projectManager.GetProjectOfSuiteAsync(testCase.SuiteId));
 
-        var version = testCase.Status == TestCaseStatus.Approved && testCase.CurrentVersion > 0
+        var version = testCase.HasApprovedVersionInUse()
             ? await _versionRepository.FindAsync(v => v.TestCaseId == testCaseId && v.VersionNumber == testCase.CurrentVersion)
             : null;
 

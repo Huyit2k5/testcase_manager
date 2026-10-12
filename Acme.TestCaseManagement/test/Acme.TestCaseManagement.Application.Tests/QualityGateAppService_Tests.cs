@@ -13,6 +13,7 @@ using Acme.TestCaseManagement.TestCases.Dtos;
 using Shouldly;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Validation;
 using Xunit;
 
@@ -191,6 +192,65 @@ public class QualityGateAppService_Tests : TestCaseManagementApplicationTestBase
         scope.QualityGateId = lenient.Id;
         var named = await _gates.EvaluateAsync(scope);
         (named.Gate.Name, named.Passed).ShouldBe(("Lenient", true));
+    }
+
+    [Fact]
+    public async Task The_Gate_Uses_The_Priority_The_Test_Case_Had_When_It_Was_Approved_Not_One_Edited_Later()
+    {
+        var plan = await PlanWithResultsAsync("Snap", Results(passed: 1, blocked: 1), priority: PriorityLevel.Urgent);
+        var run = (await _runs.GetListAsync(new GetTestRunListInput { TestPlanId = plan.Id })).Items.Single();
+        var item = (await _runs.GetAsync(run.Id)).Items.First();
+        var testCase = await _testCases.GetAsync(item.TestCaseId);
+
+        // Somebody lowers the priority in the library after the results were recorded.
+        await _testCases.UpdateAsync(testCase.Id, new CreateUpdateTestCaseDto
+        {
+            SuiteId = testCase.SuiteId, Code = testCase.Code, Title = testCase.Title, Priority = PriorityLevel.Low,
+            Steps = { new TestStepDto { Action = "Do", ExpectedResult = "Done" } },
+        });
+
+        var evaluation = await _gates.EvaluateAsync(new EvaluateQualityGateInput { TestPlanId = plan.Id });
+
+        var p1 = evaluation.Criteria.Single(c => c.Code == QualityGateCriteria.P1Executed);
+        p1.Actual.ShouldBe(50m);   // one of two P1 items is blocked, as it was when the results were recorded
+    }
+
+    [Fact]
+    public async Task A_Version_Published_Before_The_Snapshot_Held_The_Priority_Falls_Back_To_The_Test_Case()
+    {
+        var plan = await PlanWithResultsAsync("Legacy", Results(passed: 1, blocked: 1), priority: PriorityLevel.Urgent);
+        var run = (await _runs.GetListAsync(new GetTestRunListInput { TestPlanId = plan.Id })).Items.Single();
+        var items = (await _runs.GetAsync(run.Id)).Items;
+
+        // Make the versions look as they do in a database that existed before the snapshot: the five columns are empty.
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var versions = GetRequiredService<IRepository<TestCaseVersion, Guid>>();
+            var testCaseIds = items.Select(i => i.TestCaseId).ToList();
+            foreach (var version in await versions.GetListAsync(v => testCaseIds.Contains(v.TestCaseId)))
+            {
+                foreach (var name in new[] { nameof(TestCaseVersion.Priority), nameof(TestCaseVersion.Severity), nameof(TestCaseVersion.Kind), nameof(TestCaseVersion.Layer), nameof(TestCaseVersion.ExecutionType) })
+                {
+                    typeof(TestCaseVersion).GetProperty(name)!.SetValue(version, null);
+                }
+
+                await versions.UpdateAsync(version, autoSave: true);
+            }
+        });
+
+        // The priority is read from the test case as it is now: Urgent, one of two P1 items blocked.
+        var before = await _gates.EvaluateAsync(new EvaluateQualityGateInput { TestPlanId = plan.Id });
+        before.Criteria.Single(c => c.Code == QualityGateCriteria.P1Executed).Actual.ShouldBe(50m);
+
+        // And it follows the test case, which is how the gate behaved before versions held the priority.
+        var testCase = await _testCases.GetAsync(items.First().TestCaseId);
+        await _testCases.UpdateAsync(testCase.Id, new CreateUpdateTestCaseDto
+        {
+            SuiteId = testCase.SuiteId, Code = testCase.Code, Title = testCase.Title, Priority = PriorityLevel.Low,
+            Steps = { new TestStepDto { Action = "Do", ExpectedResult = "Done" } },
+        });
+        var after = await _gates.EvaluateAsync(new EvaluateQualityGateInput { TestPlanId = plan.Id });
+        after.Criteria.Single(c => c.Code == QualityGateCriteria.P1Executed).Actual.ShouldNotBe(50m);
     }
 
     [Fact]

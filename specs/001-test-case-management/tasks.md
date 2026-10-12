@@ -339,3 +339,11 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 - [x] T138 The list of runs carries the progress of each run (it was 0 for all); a test that the list and the run agree.
 - [x] T139 The page of runs and plans: filters, paging of 15 runs, plans filtered and paged in the page; tests (plan.md 4.25).
 - [x] T140 The runs grouped under their plans (`RunCount` on the plan, `NoPlan` on the list of runs, groups opened on request, the view kept), with tests for the back end and the page.
+
+---
+
+## Phase 27: Review of the business analysis
+
+- [x] T141 `TestCaseVersion` keeps priority, severity, kind, layer and execution type (nullable for older versions); the quality gate reads the priority of the version that ran; tests (Domain 2, Application 3, among them one for a version published before the snapshot, whose columns are empty).
+- [x] T142 `TestCase.HasApprovedVersionInUse()`: a test case waiting to be approved again can be added to a run (and published by automation); the picker of the page offers it with its version; tests (Application 2, page 1).
+- [x] T143 `BUSINESS_ANALYSIS_TEST_CASE_MANAGEMENT.md` corrected after the review (version snapshot, rule to enter a run, Superseded, hash, sign-off scope and roles, flaky, section 13 on migration and roll-out, limits); plan 4.26; sandbox migration `AddVersionSnapshotFields`.
