@@ -347,3 +347,12 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 - [x] T141 `TestCaseVersion` keeps priority, severity, kind, layer and execution type (nullable for older versions); the quality gate reads the priority of the version that ran; tests (Domain 2, Application 3, among them one for a version published before the snapshot, whose columns are empty).
 - [x] T142 `TestCase.HasApprovedVersionInUse()`: a test case waiting to be approved again can be added to a run (and published by automation); the picker of the page offers it with its version; tests (Application 2, page 1).
 - [x] T143 `BUSINESS_ANALYSIS_TEST_CASE_MANAGEMENT.md` corrected after the review (version snapshot, rule to enter a run, Superseded, hash, sign-off scope and roles, flaky, section 13 on migration and roll-out, limits); plan 4.26; sandbox migration `AddVersionSnapshotFields`.
+
+---
+
+## Phase 28: History, comparison, deleting a run
+
+- [x] T144 The history of a test case: entity `TestCaseHistoryEntry`, `TestCaseHistoryRecorder`, `GET test-cases/{id}/history`, lines recorded for create, edit (fields), status, version, tags, step order and shared steps; test cases made before it show their creation and versions; tests (Application 6, HttpApi flow).
+- [x] T145 Comparison of two versions in the page: pure `diffVersions` and `wordDiff`, the component, the five classification fields in `TestCaseVersionDto`; tests (7 for the logic, 3 for the component).
+- [x] T146 `DELETE runs/{id}` for a run without results (back end with 3 tests and the contract; button in the list of runs with 2 tests); the timeline in the detail dialog (3 tests).
+- [x] T147 The documentation (business analysis, plan 4.27) and the migration `AddTestCaseHistory` of the sandbox; tried in the browser on the sandbox.

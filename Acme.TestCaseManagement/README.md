@@ -6,7 +6,7 @@ particular host application: users, tenants and auditing come from ABP abstracti
 
 ## What it provides
 
-- **Test library** – nested suites, test cases with ordered steps, an approval status workflow, and immutable
+- **Test library** – the history of each test case (who changed what and when) and a comparison of any two versions; nested suites, test cases with ordered steps, an approval status workflow, and immutable
   `TestCaseVersion` snapshots: a version is published when a test case is approved, an edit of an approved test case sends it back to Under review (the version
   already approved stays in use and the test case can still be added to a run while it waits), the version also keeps the priority, severity, kind, layer and execution type, and plans and runs stay bound to the version they were created with.
 - **Projects** – the top level: suites (and so test cases), plans, requirements and runs belong to one project (`EINV`, `HRM`) and are not mixed; the pages follow the project that is chosen at the top. What is made without a project goes to a default project, so a client that does not know about projects keeps working.
@@ -158,11 +158,12 @@ All routes start with `api/test-case-management/`.
 | `projects` | list (archived ones on request), get, create, update, archive, restore, delete (only while empty) |
 | `suites` | suite tree (`projectId` limits it to one project), create, update, move, delete |
 | `test-cases` | test cases, step ordering, status changes, versions, linked defects; `GET` filters by text, suite, status, priority, severity, kind, layer, execution type, `Tags` (all of them) and `HasAutomationId` |
+| `test-cases/{id}/history` | what happened to a test case, newest first: made, edited (the fields), status, versions published, tags, step order, shared steps |
 | `test-cases/{id}/tags`, `test-cases/tags` | replace the tags of a test case (no new version), and list the tags in use with their counts |
 | `test-cases/export`, `test-cases/import` | Excel or CSV export (with the list filters) and import of test cases |
 | `runs/{runId}/results/export`, `.../import` | Excel or CSV export of every attempt of a run, and import of results |
 | `plans` | test plans and plan status |
-| `runs` | runs, run items, assignment, executions (single and batch), completion |
+| `runs` | runs, run items, assignment, executions (single and batch), completion, and `DELETE runs/{id}` for a run that has no result yet (a run with one is completed, not deleted) |
 | `executions/{executionId}/defects` | link, list, update (severity, resolved) and remove defect links |
 | `requirements` | requirements and their test-case links |
 | `rtm` | requirements traceability matrix |

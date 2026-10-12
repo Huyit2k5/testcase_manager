@@ -23,6 +23,7 @@ public static class TestCaseManagementErrorCodes
     // Runs
     public const string InvalidExecutionStatus = "TestCaseManagement:InvalidExecutionStatus";
     public const string TestRunAlreadyCompleted = "TestCaseManagement:TestRunAlreadyCompleted";
+    public const string TestRunHasResults = "TestCaseManagement:TestRunHasResults";
     public const string TestCaseAlreadyInRun = "TestCaseManagement:TestCaseAlreadyInRun";
     public const string TestPlanArchived = "TestCaseManagement:TestPlanArchived";
     public const string TestRunItemNotFound = "TestCaseManagement:TestRunItemNotFound";

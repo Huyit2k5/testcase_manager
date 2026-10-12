@@ -15,6 +15,7 @@
 | Phiên bản | Ngày | Nội dung |
 | :--- | :--- | :--- |
 | 1.0 | 2026-10-12 | Bản đầu đủ nghiệp vụ và sơ đồ, đối chiếu với code |
+| 1.2 | 2026-10-12 | Thêm so sánh hai phiên bản, lịch sử thay đổi của từng test case (bảng `TcmTestCaseHistory`), xóa run chưa có kết quả; bỏ ba hạng mục này khỏi phần chưa làm |
 | 1.1 | 2026-10-12 | Sau review: phiên bản test case chụp thêm Priority, Severity, Kind, Layer, ExecutionType; Quality Gate đọc priority từ phiên bản đã chạy; test case chờ duyệt lại vẫn đưa vào run được; bổ sung quy tắc Superseded, mã băm, phạm vi nghiệm thu, flaky, mục 13 chuyển đổi và triển khai |
 
 ---
@@ -73,8 +74,8 @@
 | Nhóm | Chức năng |
 | :--- | :--- |
 | Dự án | Tạo, sửa, lưu trữ, xóa khi trống; dự án mặc định; chọn dự án đang làm việc |
-| Thư viện test | Cây suite lồng nhau, test case có bước, tag, bộ lọc; vòng duyệt; phiên bản bất biến; nhóm bước dùng chung |
-| Kế hoạch và thực thi | Test plan; test run (trong hoặc ngoài plan); run item gắn đúng phiên bản; gán người test; ghi kết quả đơn lẻ hoặc hàng loạt; nhiều lần chạy |
+| Thư viện test | Cây suite lồng nhau, test case có bước, tag, bộ lọc; vòng duyệt; phiên bản bất biến và so sánh hai phiên bản; lịch sử thay đổi từng test case; nhóm bước dùng chung |
+| Kế hoạch và thực thi | Test plan; test run (trong hoặc ngoài plan); run item gắn đúng phiên bản; gán người test; ghi kết quả đơn lẻ hoặc hàng loạt; nhiều lần chạy; xóa run chưa có kết quả |
 | Truy vết | Requirement; ma trận truy vết RTM |
 | Chất lượng | Quality Gate cấu hình được; nghiệm thu (Sign-off) nhiều người ký có băng SHA-256 |
 | Báo cáo | Dashboard (pass rate, tốc độ, burn-down, mật độ lỗi); phát hiện test chập chờn (flaky) |
@@ -286,6 +287,7 @@ Người dùng được lưu dưới dạng `Guid` (id) và audit của ABP; mod
 | **TestCase** | `SuiteId`, `Code`, `Title`, `Description`, `Preconditions`, `Postconditions`, `Priority`, `Severity`, `Status`, `ExecutionType`, `Kind`, `Layer`, `IsFlaky`, `CurrentVersion`, `Steps`, `Tags` | Thuộc dự án thông qua suite; `Code` duy nhất toàn thư viện |
 | **TestStep** | thứ tự, hành động, dữ liệu test, kết quả mong đợi, liên kết nhóm bước chung | |
 | **TestCaseVersion** | `TestCaseId`, `VersionNumber`, `Title`, `Preconditions`, `Postconditions`, `StepsJson`, `ChangeSummary?`, `Priority?`, `Severity?`, `Kind?`, `Layer?`, `ExecutionType?` | Bản chụp bất biến lúc duyệt, gồm cả phân loại của test case. Năm trường phân loại để trống ở phiên bản tạo trước khi có snapshot này; khi đó hệ thống lấy giá trị hiện tại của test case |
+| **TestCaseHistoryEntry** (`TcmTestCaseHistory`) | `TestCaseId`, `Type`, `FromValue?`, `ToValue?`, `VersionNumber?`, `Note?`, thời điểm và người ghi (audit tạo của ABP) | Một dòng của lịch sử test case; chỉ thêm, không khóa ngoại tới test case |
 | **SharedStepGroup / SharedStep** | tên, các bước, số hiệu chỉnh sửa (revision) | Test case giữ **bản sao riêng** kèm liên kết |
 | **TestPlan** | `ProjectId`, `Name`, `Description`, `MilestoneId?`, `StartDate`, `EndDate`, `Status` | |
 | **TestRun** | `ProjectId`, `TestPlanId?`, `Title`, `Environment`, `AssignedToUserId?`, `Status` | Có thể đứng ngoài plan. `AssignedToUserId` là người phụ trách chung của run (tùy chọn, đặt qua API); người thực hiện từng test được gán ở `TestRunItem.AssignedUserId` và giao diện chỉ gán theo từng item |
@@ -313,6 +315,7 @@ Người dùng được lưu dưới dạng `Guid` (id) và audit của ABP; mod
 | `TestResultStatus` | Untested, Passed, Failed, Blocked, Skipped |
 | `SignOffStatus` | Pending, Approved, Superseded |
 | `RequirementCoverageStatus` | Uncovered, NotRun, Passed, Failed, Blocked |
+| `TestCaseHistoryType` | Created, Edited, StatusChanged, VersionPublished, TagsChanged, StepsReordered, SharedStepsChanged |
 | `FlakinessLevel` | Insufficient, Stable, Watch, Flaky |
 
 ---
@@ -380,6 +383,8 @@ sequenceDiagram
 5. **Xóa hoặc ngừng dùng test case đang nằm trong run:** run đã tạo vẫn chạy tiếp với phiên bản đã gắn (xóa là xóa mềm, các phiên bản còn lại). Hệ thống không có thao tác nâng một run item lên phiên bản mới; muốn chạy bản mới thì thêm test case vào một run mới.
 6. **Tag** là nhãn, không thuộc phiên bản: đổi tag không sinh phiên bản (tối đa 20 tag, mỗi tag tối đa 50 ký tự, không chứa dấu phẩy hay chấm phẩy, không phân biệt hoa thường).
 7. **Cờ Flaky** do hệ thống đánh (xem 8.1).
+8. **So sánh hai phiên bản:** trong màn chi tiết test case, chọn hai phiên bản bất kỳ (mặc định bản mới nhất và bản liền trước) để xem khác biệt. Hệ thống chỉ ra: các trường văn bản đã đổi (tiêu đề, điều kiện trước, điều kiện sau) với **từng từ thêm hoặc bỏ** được tô màu; các trường phân loại đã đổi (ưu tiên, mức nghiêm trọng, loại, tầng, cách chạy) chỉ khi cả hai phiên bản đều có giá trị; và từng bước thuộc loại **Thêm mới, Đã xóa, Đã sửa, Đổi vị trí** hay **Giữ nguyên**. Các bước được ghép theo mã của bước nên chèn một bước không làm các bước sau bị tính là đổi vị trí. Bước làm lại từ nhóm bước dùng chung có thể hiện là một bước xóa và một bước thêm.
+9. **Lịch sử thay đổi:** mỗi test case có dòng thời gian, mới nhất ở trên, mỗi dòng ghi thời điểm, người thực hiện và nội dung: tạo test case; sửa (kèm **tên các trường đã đổi**, ví dụ "Tiêu đề, Các bước"); đổi trạng thái (trạng thái cũ → mới, kèm ghi chú "sửa sau khi đã duyệt" khi bản đã duyệt bị đưa về xem xét lại); phát hành phiên bản (kèm ghi chú thay đổi nếu có); đổi tag; đổi thứ tự bước; chèn, làm mới hoặc gỡ nhóm bước dùng chung. Một lần lưu mà không đổi gì thì không ghi dòng nào; đổi tag mà tập tag vẫn như cũ thì cũng không. Lịch sử chỉ thêm, không sửa, và còn lại khi test case bị xóa. Test case được tạo trước khi có lịch sử vẫn hiện dòng "tạo" và các dòng phiên bản đã phát hành (dựng từ chính dữ liệu của test case và các phiên bản) nhưng không có các dòng sửa trước đó. Lịch sử do module tự ghi nên không phụ thuộc vào việc host có dùng module Audit Logging của ABP hay không.
 
 ### 5.3. Nhóm bước dùng chung (Shared Steps)
 
@@ -441,7 +446,7 @@ sequenceDiagram
 - Mỗi run item có **1..N lần chạy** (`TestExecution`). Lần chạy cũ giữ nguyên; trạng thái hiện tại của item là kết quả lần chạy mới nhất. Retest chính là ghi thêm một attempt.
 - Mỗi attempt lưu kết quả thực tế, thời lượng, người chạy và thời điểm (audit ABP), đính kèm và liên kết lỗi.
 - **Chạy hàng loạt** (batch) cho run hồi quy lớn.
-- **Run** chuyển Planned → InProgress khi có kết quả đầu tiên → Completed. Run đã hoàn tất bị **khóa**: không ghi kết quả, không thêm item. (Hệ thống không có thao tác bớt item khỏi một run, kể cả khi run chưa hoàn tất.)
+- **Run** chuyển Planned → InProgress khi có kết quả đầu tiên → Completed. Run đã hoàn tất bị **khóa**: không ghi kết quả, không thêm item. (Hệ thống không có thao tác bớt item khỏi một run.) **Xóa run:** run **chưa có kết quả nào** (không có lần chạy nào, mọi item còn Untested) xóa được, dù đã hoàn tất hay chưa; các test case của run đó lại tự do để đưa vào run khác. Run đã có dù chỉ một lần chạy thì không xóa được, vì là một phần của lịch sử; hãy hoàn tất run. Cần quyền `TestPlans.Manage`; giao diện chỉ hiện nút Xóa ở những run đủ điều kiện, có hỏi xác nhận.
 - **Plan** có ngày bắt đầu và kết thúc (kiểm tra hợp lệ), có thể gắn milestone; plan còn run thì không xóa được; plan lưu trữ không thêm run.
 - **Gán người test** theo từng item; host cung cấp danh sách người dùng qua `TCM_USER_DIRECTORY` (mặc định dùng tra cứu người dùng của ABP).
 - **Giao diện danh sách run:** mặc định nhóm theo plan (mở / đóng từng nhóm, nhóm "Runs without a plan" cho run không thuộc plan, hiển thị số run, trạng thái, ngày), có chế độ danh sách phẳng với lọc theo từ khóa, plan, trạng thái, môi trường và phân trang. Mỗi run hiện tiến độ, số đạt, số không đạt.
@@ -593,6 +598,7 @@ flowchart LR
         U3["Soạn test case, tag, bước"]
         U4["Nhóm bước dùng chung"]
         U5["Duyệt / đưa về nháp / ngừng dùng"]
+        U17["Xem lịch sử, so sánh phiên bản"]
     end
     subgraph EXE["Kế hoạch và thực thi"]
         U6["Lập plan, tạo run"]
@@ -600,6 +606,7 @@ flowchart LR
         U8["Ghi kết quả, retest"]
         U9["Liên kết lỗi"]
         U10["Hoàn tất run"]
+        U18["Xóa run chưa có kết quả"]
     end
     subgraph QUA["Chất lượng và báo cáo"]
         U11["Quản lý requirement, xem RTM"]
@@ -612,8 +619,8 @@ flowchart LR
         U16["Gợi ý bước bằng AI"]
     end
 
-    QL --> U1 & U2 & U4 & U5 & U6 & U7 & U10 & U12 & U13 & U14
-    QT --> U2 & U3 & U4 & U8 & U9 & U15 & U16
+    QL --> U1 & U2 & U4 & U5 & U6 & U7 & U10 & U12 & U13 & U14 & U17 & U18
+    QT --> U2 & U3 & U4 & U8 & U9 & U15 & U16 & U17
     PO --> U11 & U13 & U14
 ```
 
@@ -628,7 +635,7 @@ flowchart LR
 | UC-05 | Gửi duyệt | Tester | Draft sang UnderReview |
 | UC-06 | Duyệt / trả về nháp | QA Lead | Duyệt sinh phiên bản; trả về nháp để sửa |
 | UC-07 | Ngừng dùng test case | QA Lead | Deprecated; không thêm vào run mới |
-| UC-08 | Xem phiên bản | Tester, QA Lead | Xem danh sách và nội dung các phiên bản |
+| UC-08 | Xem và so sánh phiên bản | Tester, QA Lead | Xem danh sách và nội dung các phiên bản; so sánh hai phiên bản bất kỳ (trường, từng từ, từng bước) |
 | UC-09 | Quản lý nhóm bước dùng chung | QA Lead, Tester | Tạo, sửa, xem nơi dùng, chèn vào test case, làm mới, cập nhật hàng loạt |
 | UC-10 | Gắn tag và lọc | Tester | Tag không sinh phiên bản; lọc cùng lúc theo nhiều tag |
 | UC-11 | Đính kèm file | Tester | Ảnh (dán từ clipboard), log, video cho test case hoặc attempt |
@@ -648,6 +655,8 @@ flowchart LR
 | UC-25 | Nhập test case, kết quả | Tester | Excel / CSV, chạy thử trước |
 | UC-26 | Xuất test case, kết quả | Tester | Excel / CSV theo bộ lọc |
 | UC-27 | Gợi ý bước bằng AI | Tester | Đề xuất, xem, chọn thêm |
+| UC-28 | Xem lịch sử thay đổi của test case | Tester, QA Lead | Dòng thời gian: tạo, sửa (các trường), trạng thái, phiên bản, tag, bước, nhóm bước dùng chung |
+| UC-29 | Xóa run chưa có kết quả | QA Lead | Xóa run tạo nhầm; không xóa run đã có kết quả |
 
 ---
 
@@ -679,6 +688,7 @@ flowchart LR
 | :--- | :--- | :--- |
 | BR-RUN-01 | Run item bắt buộc có `TestCaseVersionId` | |
 | BR-RUN-02 | Run đã hoàn tất thì không ghi kết quả, không thêm item | `TestRunAlreadyCompleted` |
+| BR-RUN-10 | Chỉ xóa được run chưa có kết quả nào (không có lần chạy, mọi item Untested); xóa run cũng xóa các item của nó | `TestRunHasResults` |
 | BR-RUN-03 | `AttemptNumber` = lớn nhất hiện có + 1; không sửa, không xóa attempt | |
 | BR-RUN-04 | Trạng thái hiện tại của item là kết quả attempt cuối | |
 | BR-RUN-05 | Một test case chỉ một lần trong một run | `TestCaseAlreadyInRun`, `DuplicateTestRunItem` |
@@ -765,7 +775,7 @@ Tên sign-off; phạm vi (plan hoặc milestone); tên và ngưỡng của Quali
 1. Host dùng ABP từ 10.6.1 trở lên.
 2. Tham chiếu 6 dự án (hoặc gói) và thêm từng module vào `[DependsOn]` đúng tầng.
 3. Nhúng model vào DbContext của host (`[ReplaceDbContext]`, đủ `DbSet`, `builder.ConfigureTestCaseManagement()`), tạo migration, chạy migrator. Vai trò admin của template được cấp quyền của module khi seed.
-4. Cần các `DbSet`: `Project`, `TestSuite`, `TestCase`, `SharedStepGroup`, `TestPlan`, `TestRun`, `Requirement`, `QualityGate`, `SignOffReport`, `Attachment` cùng các bảng con của module.
+4. Cần các `DbSet`: `Project`, `TestSuite`, `TestCase`, `SharedStepGroup`, `TestPlan`, `TestRun`, `Requirement`, `QualityGate`, `SignOffReport`, `Attachment`, `TestCaseHistoryEntry` cùng các bảng con của module.
 5. Cấu hình provider BlobStoring cho file đính kèm.
 6. Thêm `vi` vào `AbpLocalizationOptions.Languages` nếu cần tiếng Việt.
 
@@ -799,7 +809,7 @@ Chưa thử trên ứng dụng thật của công ty, chưa thử với nhiều 
 
 ### 12.1. Giới hạn đã biết
 - **Quyền chưa theo dự án:** ai đọc được test case thì đọc được ở mọi dự án. Mã test case và requirement duy nhất toàn thư viện; nhóm bước dùng chung và Quality Gate dùng chung.
-- **Không có xóa Test Run**, chỉ hoàn tất; nhóm run theo plan hiển thị tối đa 100 run mỗi nhóm (có thông báo và chế độ danh sách để lọc).
+- **Run đã có kết quả không xóa được** (chỉ hoàn tất); chưa có lưu trữ run; nhóm run theo plan hiển thị tối đa 100 run mỗi nhóm (có thông báo và chế độ danh sách để lọc).
 - Chữ ký nghiệm thu là mã băm SHA-256 lưu cùng dữ liệu, không phải chữ ký số (xem 5.7).
 - Nghiệm thu không theo vai trò (chỉ đếm số người ký) và không bắt buộc run phải hoàn tất.
 - Vòng duyệt chưa có kiểm soát chéo: duyệt thẳng từ Draft được, người duyệt có thể là tác giả, trả về nháp không cần lý do.
@@ -823,8 +833,6 @@ Chưa thử trên ứng dụng thật của công ty, chưa thử với nhiều 
 | Thực thể Milestone riêng | `MilestoneId` là tham chiếu tự do dùng làm phạm vi cho gate và sign-off |
 | Mã test case tự sinh theo dự án | Người dùng nhập mã |
 | Nhân bản test case | Chưa có |
-| So sánh khác biệt giữa hai phiên bản | Xem từng phiên bản, chưa có so sánh |
-| Timeline lịch sử thay đổi từ `EntityChange` | Có danh sách phiên bản và các attempt |
 | Xuất biên bản nghiệm thu PDF hoặc Excel | Xem trong giao diện và API |
 | Kết quả chạy theo từng bước | Kết quả ghi ở cấp attempt |
 | Cập nhật dashboard realtime (SignalR) | Tải lại để cập nhật |
@@ -840,7 +848,7 @@ Chưa thử trên ứng dụng thật của công ty, chưa thử với nhiều 
 | Cao | Các lựa chọn cần quyết định: cho phép bỏ qua Quality Gate có lý do bắt buộc và lưu audit; bắt buộc người duyệt khác tác giả và lý do khi trả về nháp; nghiệm thu theo vai trò; duyệt hàng loạt khi nhập nhiều test case | Cân bằng giữa kiểm soát chặt và tính linh hoạt khi release gấp; hiện đang chọn cách đơn giản |
 | Cao | Chạy lại toàn bộ test trên MySQL và thử trên ứng dụng thật | Giảm rủi ro khi đưa vào sử dụng |
 | Trung bình | Thông báo; luồng requirement đổi; xuất PDF biên bản; nhân bản test case; so sánh phiên bản | Tiện cho quy trình hằng ngày |
-| Trung bình | Xóa hoặc lưu trữ run chưa có kết quả; xu hướng chất lượng qua nhiều Sprint | Dọn dẹp và báo cáo quản lý |
+| Trung bình | Xu hướng chất lượng qua nhiều Sprint | Báo cáo quản lý |
 | Thấp | SignalR; mở rộng AI; MVC / Blazor; gói npm | Tùy nhu cầu |
 
 ---
@@ -926,13 +934,14 @@ Mọi route bắt đầu bằng `api/test-case-management/`. Hầu hết các en
 | :--- | :--- |
 | `projects` | Liệt kê (có thể kèm dự án đã lưu trữ), xem, tạo, sửa, lưu trữ, khôi phục, xóa khi trống |
 | `suites` | Cây suite, tạo, sửa, di chuyển, xóa |
+| `test-cases/{id}/history` | Lịch sử thay đổi của test case, mới nhất trước |
 | `test-cases` | Danh sách (lọc theo từ khóa, suite, trạng thái, ưu tiên, severity, loại, tầng, cách chạy, tag), chi tiết, tạo, sửa, sắp xếp bước, đổi trạng thái, phiên bản, lỗi liên quan |
 | `test-cases/{id}/tags`, `test-cases/tags` | Thay tag của test case; liệt kê tag đang dùng kèm số lượng |
 | `test-cases/export`, `test-cases/import` | Xuất và nhập test case |
 | `test-cases/{id}/shared-steps` | Chèn nhóm bước, làm mới, gỡ liên kết |
 | `shared-step-groups` | Thư viện nhóm bước, nơi dùng, cập nhật hàng loạt |
 | `plans` | Quản lý plan và trạng thái |
-| `runs` | Quản lý run (lọc theo plan, trạng thái, môi trường, từ khóa, run không có plan), item, gán người, ghi kết quả đơn và hàng loạt, hoàn tất |
+| `runs` | Quản lý run (lọc theo plan, trạng thái, môi trường, từ khóa, run không có plan), item, gán người, ghi kết quả đơn và hàng loạt, hoàn tất, xóa run chưa có kết quả (`DELETE runs/{id}`) |
 | `runs/{runId}/results/export`, `.../import` | Xuất và nhập kết quả run |
 | `executions/{executionId}/defects` | Liên kết lỗi: thêm, liệt kê, sửa, xóa |
 | `requirements`, `rtm` | Requirement và ma trận truy vết |
@@ -954,7 +963,7 @@ Tiền tố `TestCaseManagement:`. Thông báo hiển thị theo ngôn ngữ c�
 | Suite | `SuiteNotFound`, `SuiteNotEmpty`, `CircularSuiteDependency` |
 | Test case | `DuplicateTestCaseCode`, `InvalidTestCaseStatusTransition`, `TestCaseHasNoSteps`, `TestCaseNotApproved`, `InvalidStepOrder`, `InvalidTag`, `TooManyTags` |
 | Nhóm bước dùng chung | `DuplicateSharedStepGroupName`, `SharedStepGroupHasNoSteps`, `SharedStepGroupTooLarge`, `SharedStepGroupInUse`, `SharedStepsNotLinked`, `SharedStepGroupAlreadyUsed` |
-| Plan và run | `TestPlanNotFound`, `InvalidTestPlanStatusTransition`, `InvalidTestPlanDates`, `TestPlanHasRuns`, `TestPlanArchived`, `TestRunAlreadyCompleted`, `TestCaseAlreadyInRun`, `TestRunItemNotFound`, `DuplicateTestRunItem`, `InvalidExecutionStatus` |
+| Plan và run | `TestPlanNotFound`, `InvalidTestPlanStatusTransition`, `InvalidTestPlanDates`, `TestPlanHasRuns`, `TestPlanArchived`, `TestRunAlreadyCompleted`, `TestRunHasResults`, `TestCaseAlreadyInRun`, `TestRunItemNotFound`, `DuplicateTestRunItem`, `InvalidExecutionStatus` |
 | Lỗi (defect) | `DefectRequiresFailedExecution`, `DuplicateDefectLink`, `InvalidDefectUrl` |
 | Requirement | `DuplicateRequirementCode` |
 | Chất lượng và nghiệm thu | `QualityGateNotPassed`, `DuplicateQualityGateName`, `InvalidSignOffScope`, `SignOffScopeEmpty`, `SignOffRequiresUser`, `SignOffNotPending`, `DuplicateSignOffApproval` |

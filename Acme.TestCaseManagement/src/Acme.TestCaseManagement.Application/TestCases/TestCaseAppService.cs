@@ -34,6 +34,8 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
     private readonly IDefectLinkRepository _defectLinkRepository;
     private readonly IRepository<SharedStepGroup, Guid> _sharedStepGroups;
     private readonly TestCaseManager _testCaseManager;
+    private readonly TestCaseHistoryRecorder _history;
+    private readonly IRepository<TestCaseHistoryEntry, Guid> _historyRepository;
 
     public TestCaseAppService(
         ITestCaseRepository testCaseRepository,
@@ -41,7 +43,9 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
         IRepository<TestSuite, Guid> suiteRepository,
         IDefectLinkRepository defectLinkRepository,
         IRepository<SharedStepGroup, Guid> sharedStepGroups,
-        TestCaseManager testCaseManager)
+        TestCaseManager testCaseManager,
+        TestCaseHistoryRecorder history,
+        IRepository<TestCaseHistoryEntry, Guid> historyRepository)
     {
         _testCaseRepository = testCaseRepository;
         _versionRepository = versionRepository;
@@ -49,6 +53,8 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
         _defectLinkRepository = defectLinkRepository;
         _sharedStepGroups = sharedStepGroups;
         _testCaseManager = testCaseManager;
+        _history = history;
+        _historyRepository = historyRepository;
     }
 
     public virtual async Task<TestCaseDto> GetAsync(Guid id)
@@ -92,6 +98,7 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
         ApplyContent(testCase, input);
 
         await _testCaseRepository.InsertAsync(testCase, autoSave: true);
+        await _history.RecordAsync(testCase.Id, TestCaseHistoryType.Created);
 
         return await MapAsync(testCase);
     }
@@ -100,6 +107,7 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
     public virtual async Task<TestCaseDto> UpdateAsync(Guid id, CreateUpdateTestCaseDto input)
     {
         var testCase = await _testCaseRepository.GetAsync(id);
+        var before = TestCaseContentSnapshot.Of(testCase);
 
         await _testCaseManager.ChangeCodeAsync(testCase, input.Code);
         await _testCaseManager.ChangeSuiteAsync(testCase, input.SuiteId);
@@ -113,8 +121,13 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
 
         ApplyContent(testCase, input);
 
-        _testCaseManager.SendBackForReviewIfApproved(testCase);
+        var changed = before.ChangedFields(TestCaseContentSnapshot.Of(testCase));
+        var sentBack = _testCaseManager.SendBackForReviewIfApproved(testCase);
         await _testCaseRepository.UpdateAsync(testCase, autoSave: true);
+        if (changed.Count > 0 || sentBack)
+        {
+            await _history.RecordContentChangeAsync(testCase, TestCaseHistoryType.Edited, string.Join(", ", changed), sentBack);
+        }
 
         return await MapAsync(testCase);
     }
@@ -133,8 +146,9 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
 
         testCase.ReorderSteps(input.StepIds);
 
-        _testCaseManager.SendBackForReviewIfApproved(testCase);
+        var sentBack = _testCaseManager.SendBackForReviewIfApproved(testCase);
         await _testCaseRepository.UpdateAsync(testCase, autoSave: true);
+        await _history.RecordContentChangeAsync(testCase, TestCaseHistoryType.StepsReordered, null, sentBack);
 
         return await MapAsync(testCase);
     }
@@ -147,8 +161,9 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
 
         testCase.InsertSharedSteps(group, input.Position);
 
-        _testCaseManager.SendBackForReviewIfApproved(testCase);
+        var sentBack = _testCaseManager.SendBackForReviewIfApproved(testCase);
         await _testCaseRepository.UpdateAsync(testCase, autoSave: true);
+        await _history.RecordContentChangeAsync(testCase, TestCaseHistoryType.SharedStepsChanged, "Inserted: " + group.Name, sentBack);
 
         return await MapAsync(testCase);
     }
@@ -161,8 +176,9 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
 
         testCase.RefreshSharedSteps(group);
 
-        _testCaseManager.SendBackForReviewIfApproved(testCase);
+        var sentBack = _testCaseManager.SendBackForReviewIfApproved(testCase);
         await _testCaseRepository.UpdateAsync(testCase, autoSave: true);
+        await _history.RecordContentChangeAsync(testCase, TestCaseHistoryType.SharedStepsChanged, "Refreshed: " + group.Name, sentBack);
 
         return await MapAsync(testCase);
     }
@@ -175,6 +191,7 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
         // Only the link is removed: the steps are the same, so there is nothing to version.
         testCase.DetachSharedSteps(groupId);
         await _testCaseRepository.UpdateAsync(testCase, autoSave: true);
+        await _history.RecordAsync(testCase.Id, TestCaseHistoryType.SharedStepsChanged, note: "Detached");
 
         return await MapAsync(testCase);
     }
@@ -185,8 +202,14 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
         var testCase = await _testCaseRepository.GetAsync(id);
 
         // Labels are not content: no new version, and the status stays as it is.
+        var tagsBefore = string.Join(", ", testCase.Tags.Select(t => t.Name).OrderBy(n => n, StringComparer.OrdinalIgnoreCase));
         testCase.SetTags(input.Tags);
         await _testCaseRepository.UpdateAsync(testCase, autoSave: true);
+        var tagsAfter = string.Join(", ", testCase.Tags.Select(t => t.Name).OrderBy(n => n, StringComparer.OrdinalIgnoreCase));
+        if (!string.Equals(tagsBefore, tagsAfter, StringComparison.Ordinal))
+        {
+            await _history.RecordAsync(testCase.Id, TestCaseHistoryType.TagsChanged, note: tagsAfter);
+        }
 
         return await MapAsync(testCase);
     }
@@ -208,9 +231,11 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
         }
 
         var testCase = await _testCaseRepository.GetAsync(id);
+        var from = testCase.Status;
 
-        await _testCaseManager.ChangeStatusAsync(testCase, input.TargetStatus, input.ChangeSummary);
+        var published = await _testCaseManager.ChangeStatusAsync(testCase, input.TargetStatus, input.ChangeSummary);
         await _testCaseRepository.UpdateAsync(testCase, autoSave: true);
+        await _history.RecordStatusChangeAsync(testCase, from, published, input.ChangeSummary);
 
         return await MapAsync(testCase);
     }
@@ -234,6 +259,39 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
         }
 
         return ObjectMapper.Map<TestCaseVersion, TestCaseVersionDto>(version);
+    }
+
+    public virtual async Task<List<TestCaseHistoryDto>> GetHistoryAsync(Guid id)
+    {
+        var testCase = await _testCaseRepository.GetAsync(id, includeDetails: false);
+
+        var entries = await _historyRepository.GetListAsync(x => x.TestCaseId == id);
+        var lines = ObjectMapper.Map<List<TestCaseHistoryEntry>, List<TestCaseHistoryDto>>(entries);
+
+        // A test case made before the history was kept still tells when it was made and which versions it has.
+        if (!lines.Any(l => l.Type == TestCaseHistoryType.Created))
+        {
+            lines.Add(new TestCaseHistoryDto
+            {
+                Id = Guid.Empty, TestCaseId = id, Type = TestCaseHistoryType.Created,
+                CreationTime = testCase.CreationTime, CreatorId = testCase.CreatorId,
+            });
+        }
+
+        var published = lines.Where(l => l.Type == TestCaseHistoryType.VersionPublished && l.VersionNumber.HasValue).Select(l => l.VersionNumber!.Value).ToHashSet();
+        foreach (var version in await _versionRepository.GetListAsync(x => x.TestCaseId == id))
+        {
+            if (!published.Contains(version.VersionNumber))
+            {
+                lines.Add(new TestCaseHistoryDto
+                {
+                    Id = Guid.Empty, TestCaseId = id, Type = TestCaseHistoryType.VersionPublished, VersionNumber = version.VersionNumber,
+                    Note = version.ChangeSummary, CreationTime = version.CreationTime, CreatorId = version.CreatorId,
+                });
+            }
+        }
+
+        return lines.OrderByDescending(l => l.CreationTime).ThenByDescending(l => l.VersionNumber ?? 0).ToList();
     }
 
     public virtual async Task<List<TestCaseDefectDto>> GetDefectLinksAsync(Guid id)

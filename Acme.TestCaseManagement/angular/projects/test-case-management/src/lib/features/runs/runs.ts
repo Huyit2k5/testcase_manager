@@ -228,6 +228,21 @@ export class RunsComponent implements OnInit {
     });
   }
 
+  /** A run that has no result yet can be deleted (made by mistake); one with a result is part of the history and is completed instead. */
+  protected canDeleteRun(run: TestRun): boolean {
+    return this.auth.can(Permissions.TestPlans.Manage) && run.summary.executedItems === 0;
+  }
+
+  protected deleteRun(run: TestRun): void {
+    this.confirmer.ask({ message: this.i18n.t('runs.confirmDeleteRun', { name: run.title }), confirmText: this.i18n.t('common.delete'), danger: true }).subscribe(ok => {
+      if (!ok) { return; }
+      this.runService.delete(run.id).subscribe(() => {
+        this.toast.success(this.i18n.t('runs.runDeleted'));
+        this.reload();
+      });
+    });
+  }
+
   protected deletePlan(plan: TestPlan): void {
     this.confirmer.ask({ message: this.i18n.t('runs.confirmDeletePlan', { name: plan.name }), confirmText: this.i18n.t('common.delete'), danger: true }).subscribe(ok => {
       if (!ok) { return; }

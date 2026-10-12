@@ -1,6 +1,6 @@
 // Mirrors the DTOs of Acme.TestCaseManagement.Application.Contracts (camelCase JSON).
 import {
-  ExecutionType, ImportOutcome, PlanStatus, PriorityLevel, RequirementCoverageStatus, RunStatus, SeverityLevel, SignOffStatus,
+  ExecutionType, ImportOutcome, PlanStatus, PriorityLevel, RequirementCoverageStatus, RunStatus, SeverityLevel, SignOffStatus, TestCaseHistoryType,
   TestCaseStatus, TestKind, TestLayer, TestResultStatus, TransferFormat,
 } from './enums';
 
@@ -46,6 +46,14 @@ export interface SaveTestCase {
 export interface TestCaseVersion {
   id: string; testCaseId: string; versionNumber: number; title: string; preconditions: string | null;
   postconditions: string | null; changeSummary: string | null; steps: TestStep[]; creationTime: string;
+  /** The classification when the version was published; missing on a version published before it was kept. */
+  priority?: PriorityLevel | null; severity?: SeverityLevel | null; kind?: TestKind | null; layer?: TestLayer | null; executionType?: ExecutionType | null;
+}
+
+/** One line of the history of a test case. */
+export interface TestCaseHistory {
+  id: string; testCaseId: string; type: TestCaseHistoryType; fromValue: string | null; toValue: string | null;
+  versionNumber: number | null; note: string | null; creationTime: string; creatorId: string | null;
 }
 
 export interface TestCaseDefect {

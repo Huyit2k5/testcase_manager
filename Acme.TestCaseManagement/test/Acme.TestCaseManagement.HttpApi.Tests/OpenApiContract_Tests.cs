@@ -55,6 +55,7 @@ public class OpenApiContract_Tests
         "TestCase_ChangeStatus POST /test-cases/{id}/status",
         "TestCase_GetVersions GET /test-cases/{id}/versions",
         "TestCase_GetVersion GET /test-cases/{id}/versions/{versionNumber}",
+        "TestCase_GetHistory GET /test-cases/{id}/history",
         "TestCase_GetDefectLinks GET /test-cases/{id}/defects",
         "TestCaseTransfer_Export GET /test-cases/export",
         "TestCaseTransfer_Import POST /test-cases/import",
@@ -75,6 +76,7 @@ public class OpenApiContract_Tests
         "TestRun_GetExecutions GET /runs/{id}/items/{itemId}/executions",
         "TestRun_BatchExecute POST /runs/{id}/executions/batch",
         "TestRun_Complete POST /runs/{id}/complete",
+        "TestRun_Delete DELETE /runs/{id}",
         "TestRun_AddDefectLink POST /executions/{executionId}/defects",
         "TestRun_GetDefectLinks GET /executions/{executionId}/defects",
         "TestRun_UpdateDefectLink PUT /executions/{executionId}/defects/{defectLinkId}",
@@ -341,7 +343,7 @@ public class OpenApiContract_Tests
         var schemas = Schemas(await GetDocumentAsync());
 
         var documented = schemas.Where(schema => schema.Key.StartsWith("Acme.TestCaseManagement.Enums.")).ToList();
-        documented.Count.ShouldBe(17);
+        documented.Count.ShouldBe(18);
 
         foreach (var (name, schema) in documented)
         {

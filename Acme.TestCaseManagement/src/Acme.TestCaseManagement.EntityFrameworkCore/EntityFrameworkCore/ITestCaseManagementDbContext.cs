@@ -26,6 +26,8 @@ public interface ITestCaseManagementDbContext : IEfCoreDbContext
 
     DbSet<TestCaseVersion> TestCaseVersions { get; }
 
+    DbSet<TestCaseHistoryEntry> TestCaseHistory { get; }
+
     // Execution cycle (runtime)
     DbSet<TestPlan> TestPlans { get; }
 

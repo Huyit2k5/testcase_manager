@@ -117,6 +117,13 @@ public class TestCaseController : TestCaseManagementController, ITestCaseAppServ
     }
 
     /// <inheritdoc />
+    [HttpGet("{id:guid}/history")]
+    public virtual Task<List<TestCaseHistoryDto>> GetHistoryAsync(Guid id)
+    {
+        return _testCaseAppService.GetHistoryAsync(id);
+    }
+
+    /// <inheritdoc />
     [HttpGet("{id:guid}/versions/{versionNumber:int}")]
     public virtual Task<TestCaseVersionDto> GetVersionAsync(Guid id, int versionNumber)
     {

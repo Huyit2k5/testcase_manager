@@ -315,6 +315,44 @@ public class TestRunAppService_Tests : TestCaseManagementApplicationTestBase
     }
 
     [Fact]
+    public async Task A_Run_Without_Any_Result_Can_Be_Deleted_And_Its_Test_Cases_Are_Free_For_Another_Run()
+    {
+        var run = await CreateRunWithItemsAsync(2);
+        var codes = run.Items.Select(i => i.TestCaseId).ToList();
+
+        await _runs.DeleteAsync(run.Id);
+
+        (await _runs.GetListAsync(new GetTestRunListInput())).Items.ShouldNotContain(r => r.Id == run.Id);
+        await Should.ThrowAsync<EntityNotFoundException>(() => _runs.GetAsync(run.Id));
+
+        var again = await _runs.CreateAsync(new CreateTestRunDto { Title = "Again", Environment = "Staging", TestCaseIds = codes });
+        again.Items.Count.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task A_Run_With_Even_One_Result_Cannot_Be_Deleted()
+    {
+        var run = await CreateRunWithItemsAsync(2);
+        await _runs.ExecuteItemAsync(run.Id, run.Items[0].Id, new ExecuteTestItemDto { Status = TestResultStatus.Failed });
+
+        var error = await Should.ThrowAsync<BusinessException>(() => _runs.DeleteAsync(run.Id));
+
+        error.Code.ShouldBe(TestCaseManagementErrorCodes.TestRunHasResults);
+        (await _runs.GetAsync(run.Id)).Items.Count.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task A_Completed_Run_That_Never_Had_A_Result_Can_Be_Deleted_Too()
+    {
+        var run = await CreateRunWithItemsAsync(1);
+        await _runs.CompleteAsync(run.Id);
+
+        await _runs.DeleteAsync(run.Id);
+
+        await Should.ThrowAsync<EntityNotFoundException>(() => _runs.GetAsync(run.Id));
+    }
+
+    [Fact]
     public async Task A_Test_Case_Is_Scheduled_Once_In_A_Run_Even_After_An_Edit_Made_A_New_Version()
     {
         var run = await CreateRunWithItemsAsync(1);

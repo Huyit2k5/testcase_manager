@@ -84,6 +84,19 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
             b.HasMany(x => x.Tags).WithOne().HasForeignKey(x => x.TestCaseId).IsRequired().OnDelete(DeleteBehavior.Cascade);
         });
 
+        builder.Entity<TestCaseHistoryEntry>(b =>
+        {
+            b.ToTable(TableName("TestCaseHistory"), TestCaseManagementDbProperties.DbSchema);
+            b.ConfigureByConvention();
+
+            b.Property(x => x.FromValue).HasMaxLength(TestCaseHistoryConsts.MaxValueLength);
+            b.Property(x => x.ToValue).HasMaxLength(TestCaseHistoryConsts.MaxValueLength);
+            b.Property(x => x.Note).HasMaxLength(TestCaseHistoryConsts.MaxNoteLength);
+
+            // No foreign key: the history stays when the test case is deleted. It is read by test case, newest first.
+            b.HasIndex(x => new { x.TestCaseId, x.CreationTime });
+        });
+
         builder.Entity<TestCaseTag>(b =>
         {
             b.ToTable(TableName("TestCaseTags"), TestCaseManagementDbProperties.DbSchema);

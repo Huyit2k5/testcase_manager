@@ -109,4 +109,11 @@ public class TestRunController : TestCaseManagementController, ITestRunAppServic
     {
         return _runAppService.CompleteAsync(id);
     }
+
+    /// <inheritdoc />
+    [HttpDelete("{id:guid}")]
+    public virtual Task DeleteAsync(Guid id)
+    {
+        return _runAppService.DeleteAsync(id);
+    }
 }

@@ -131,3 +131,9 @@ public static class SharedStepGroupConsts
 
     public const int MaxSteps = 50;
 }
+
+public static class TestCaseHistoryConsts
+{
+    public const int MaxValueLength = 64;
+    public const int MaxNoteLength = 1000;
+}

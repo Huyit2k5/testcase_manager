@@ -16,17 +16,20 @@ public class SharedStepGroupAppService : TestCaseManagementAppService, ISharedSt
     private readonly ITestCaseRepository _testCases;
     private readonly SharedStepGroupManager _manager;
     private readonly TestCaseManager _testCaseManager;
+    private readonly TestCaseHistoryRecorder _history;
 
     public SharedStepGroupAppService(
         IRepository<SharedStepGroup, Guid> groups,
         ITestCaseRepository testCases,
         SharedStepGroupManager manager,
-        TestCaseManager testCaseManager)
+        TestCaseManager testCaseManager,
+        TestCaseHistoryRecorder history)
     {
         _groups = groups;
         _testCases = testCases;
         _manager = manager;
         _testCaseManager = testCaseManager;
+        _history = history;
     }
 
     public virtual async Task<List<SharedStepGroupSummaryDto>> GetListAsync(GetSharedStepGroupsInput input)
@@ -140,12 +143,14 @@ public class SharedStepGroupAppService : TestCaseManagementAppService, ISharedSt
             testCase.RefreshSharedSteps(group);
 
             // An approved test case is changed in content, so it goes back to review, as for any other edit of its steps.
-            if (_testCaseManager.SendBackForReviewIfApproved(testCase))
+            var sentBack = _testCaseManager.SendBackForReviewIfApproved(testCase);
+            if (sentBack)
             {
                 result.SentToReview++;
             }
 
             await _testCases.UpdateAsync(testCase);
+            await _history.RecordContentChangeAsync(testCase, TestCaseHistoryType.SharedStepsChanged, "Refreshed: " + group.Name, sentBack);
             result.Codes.Add(testCase.Code);
         }
 

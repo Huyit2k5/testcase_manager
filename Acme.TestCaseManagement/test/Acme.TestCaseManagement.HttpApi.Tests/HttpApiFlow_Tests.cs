@@ -113,6 +113,9 @@ public class HttpApiFlow_Tests
         (await qaLead.GetAsync<List<TestCaseVersionDto>>($"{Root}/test-cases/{caseA.Id}/versions"))
             .Select(version => version.VersionNumber).ShouldBe(new[] { 1, 2 }, ignoreOrder: true);
         (await qaLead.GetAsync<TestCaseVersionDto>($"{Root}/test-cases/{caseA.Id}/versions/1")).Title.ShouldBe("Pay with a valid card");
+        var history = await qaLead.GetAsync<List<TestCaseHistoryDto>>($"{Root}/test-cases/{caseA.Id}/history");
+        history.Select(line => line.Type).ShouldContain(TestCaseHistoryType.Created);
+        history.Single(line => line.Type == TestCaseHistoryType.VersionPublished && line.VersionNumber == 2).Note.ShouldBe("Added 3-D Secure");
 
         var reordered = await qaLead.PutAsync<TestCaseDto>(
             $"{Root}/test-cases/{caseC.Id}/steps/order",
@@ -251,6 +254,11 @@ public class HttpApiFlow_Tests
         passing.Criteria.ShouldAllBe(criterion => criterion.Passed);
 
         (await qaLead.PostAsync<TestRunDto>($"{Root}/runs/{run.Id}/complete")).Status.ShouldBe(RunStatus.Completed);
+
+        // A run that has results is not deleted; one made by mistake, with none, is.
+        (await qaLead.SendExpectingErrorAsync(HttpMethod.Delete, $"{Root}/runs/{run.Id}")).Status.ShouldBe(HttpStatusCode.Forbidden);
+        var mistake = await qaLead.PostAsync<TestRunDto>($"{Root}/runs", new CreateTestRunDto { Title = "By mistake", Environment = "Staging", TestCaseIds = { caseA.Id } });
+        await qaLead.SendAsync(HttpMethod.Delete, $"{Root}/runs/{mistake.Id}");
 
         var pending = await qaLead.PostAsync<SignOffReportDto>(
             $"{Root}/sign-off", new StartSignOffDto { TestPlanId = plan.Id, ApproverRole = "QA Lead", Comment = "Regression complete" });

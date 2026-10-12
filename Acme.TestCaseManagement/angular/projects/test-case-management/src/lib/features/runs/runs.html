@@ -20,7 +20,7 @@
         <tr>
           <th>{{ 'runs.colRun' | t }}</th>
           @if (withPlan) { <th>{{ 'common.plan' | t }}</th> }
-          <th>{{ 'common.environment' | t }}</th><th>{{ 'common.status' | t }}</th><th>{{ 'runs.colProgress' | t }}</th><th>{{ 'runs.colPassed' | t }}</th><th>{{ 'runs.colFailed' | t }}</th>
+          <th>{{ 'common.environment' | t }}</th><th>{{ 'common.status' | t }}</th><th>{{ 'runs.colProgress' | t }}</th><th>{{ 'runs.colPassed' | t }}</th><th>{{ 'runs.colFailed' | t }}</th><th></th>
         </tr>
       </thead>
       <tbody>
@@ -35,6 +35,7 @@
             </td>
             <td>{{ run.summary.passed }}</td>
             <td>{{ run.summary.failed }}</td>
+            <td class="nowrap">@if (canDeleteRun(run)) { <button type="button" class="btn sm danger" data-test="delete-run" [attr.aria-label]="'runs.deleteRun' | t" (click)="deleteRun(run)">{{ 'runs.deleteRun' | t }}</button> }</td>
           </tr>
         }
       </tbody>

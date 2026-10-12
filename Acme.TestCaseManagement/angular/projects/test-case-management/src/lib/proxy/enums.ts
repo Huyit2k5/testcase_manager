@@ -10,6 +10,7 @@ export enum TestLayer { Unit = 0, Integration = 1, E2E = 2, Acceptance = 3 }
 export enum PlanStatus { Draft = 0, Active = 1, Completed = 2, Archived = 3 }
 export enum RunStatus { Planned = 0, InProgress = 1, Completed = 2 }
 export enum RequirementCoverageStatus { Uncovered = 0, NotRun = 1, Passed = 2, Failed = 3, Blocked = 4 }
+export enum TestCaseHistoryType { Created = 0, Edited = 1, StatusChanged = 2, VersionPublished = 3, TagsChanged = 4, StepsReordered = 5, SharedStepsChanged = 6 }
 export enum SignOffStatus { Pending = 0, Approved = 1, Superseded = 2 }
 export enum TransferFormat { Csv = 0, Xlsx = 1 }
 export enum ImportConflictMode { Skip = 0, Update = 1 }

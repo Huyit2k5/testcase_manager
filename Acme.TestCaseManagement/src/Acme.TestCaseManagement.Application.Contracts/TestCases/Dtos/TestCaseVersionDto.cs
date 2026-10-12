@@ -1,3 +1,4 @@
+using Acme.TestCaseManagement.Enums;
 using Volo.Abp.Application.Dtos;
 
 namespace Acme.TestCaseManagement.TestCases.Dtos;
@@ -16,6 +17,17 @@ public class TestCaseVersionDto : CreationAuditedEntityDto<Guid>
     public string? Postconditions { get; set; }
 
     public string? ChangeSummary { get; set; }
+
+    /// <summary>The classification of the test case when the version was published; null on a version published before it was kept.</summary>
+    public PriorityLevel? Priority { get; set; }
+
+    public SeverityLevel? Severity { get; set; }
+
+    public TestKind? Kind { get; set; }
+
+    public TestLayer? Layer { get; set; }
+
+    public ExecutionType? ExecutionType { get; set; }
 
     public List<TestStepDto> Steps { get; set; } = new();
 }

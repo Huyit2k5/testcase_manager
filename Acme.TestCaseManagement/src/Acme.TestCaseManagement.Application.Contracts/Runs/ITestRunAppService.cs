@@ -42,4 +42,10 @@ public interface ITestRunAppService : IApplicationService
 
     /// <summary>Closes the run. A completed run accepts no more items or attempts.</summary>
     Task<TestRunDto> CompleteAsync(Guid id);
+
+    /// <summary>
+    /// Deletes a run that has no result yet (nothing was executed in it), for example one made by mistake. A run with even one
+    /// attempt is part of the history and is completed, not deleted.
+    /// </summary>
+    Task DeleteAsync(Guid id);
 }

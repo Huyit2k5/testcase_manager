@@ -282,6 +282,23 @@ public class TestRunAppService : TestCaseManagementAppService, ITestRunAppServic
         return await BuildRunDtoAsync(run);
     }
 
+    [Authorize(TestCaseManagementPermissions.TestPlans.Manage)]
+    public virtual async Task DeleteAsync(Guid id)
+    {
+        var run = await _runRepository.GetAsync(id);
+
+        var itemIds = run.Items.Select(i => i.Id).ToList();
+        var hasAttempt = itemIds.Count > 0 && await _executionRepository.AnyAsync(e => itemIds.Contains(e.TestRunItemId));
+        if (hasAttempt || run.Items.Any(i => i.CurrentStatus != TestResultStatus.Untested))
+        {
+            throw new BusinessException(TestCaseManagementErrorCodes.TestRunHasResults).WithData("Title", run.Title);
+        }
+
+        // A run without a result has nothing to keep: removing it also removes its items (the database cascades), so that the
+        // test cases are free to go into another run.
+        await _runRepository.HardDeleteAsync(run, autoSave: true);
+    }
+
     protected virtual async Task<TestRunDto> BuildRunDtoAsync(TestRun run)
     {
         var dto = ObjectMapper.Map<TestRun, TestRunDto>(run);

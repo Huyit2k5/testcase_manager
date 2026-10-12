@@ -55,6 +55,12 @@ public interface ITestCaseAppService : IApplicationService
     Task<TestCaseVersionDto> GetVersionAsync(Guid id, int versionNumber);
 
     /// <summary>
+    /// What happened to the test case, newest first: made, edited (with the fields), status changes, versions published, tags,
+    /// shared steps. A test case that was made before the history was kept shows its creation and its versions.
+    /// </summary>
+    Task<List<TestCaseHistoryDto>> GetHistoryAsync(Guid id);
+
+    /// <summary>
     /// Every defect linked to any execution of this test case, across all runs and versions,
     /// ordered by execution time (oldest first).
     /// </summary>

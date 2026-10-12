@@ -6,7 +6,7 @@ import { Observable, map } from 'rxjs';
 import {
   StepSuggestionResult, StepSuggestionStatus, SuggestStepsInput, AddDefect, ApiKey, Attachment, SaveSharedStepGroup, SharedStepGroup, SharedStepGroupSummary, SharedStepUsage, TagSummary, UpdateSharedStepUsersResult, ApiKeyCreated, ApplyFlakyFlagsResult, CreateRun, Dashboard, FlakyTestList, DefectLink, EvaluateInput, ExecuteItem, PagedResult, QualityGate, QualityGateEvaluation,
   Requirement, RtmMatrix, RtmRequest, SavePlan, SaveQualityGate, SaveRequirement, SaveTestCase, SignOffReport, StartSignOff,
-  TestCase, TestCaseDefect, TestCaseListRequest, TestCaseVersion, TestExecution, TestPlan, TestRun, TestRunListRequest,
+  TestCase, TestCaseDefect, TestCaseHistory, TestCaseListRequest, TestCaseVersion, TestExecution, TestPlan, TestRun, TestRunListRequest,
   TestSuite, TestSuiteTree,
 } from './dtos';
 import { PlanStatus, SeverityLevel, SignOffStatus, TestCaseStatus } from './enums';
@@ -76,6 +76,7 @@ export class TestCaseService {
   setTags(id: string, tags: string[]): Observable<TestCase> { return this.http.put<TestCase>(`${this.root}/test-cases/${id}/tags`, { tags }); }
   tags(): Observable<TagSummary[]> { return this.http.get<TagSummary[]>(`${this.root}/test-cases/tags`, { params: query({ projectId: this.project.currentId() }) }); }
   versions(id: string): Observable<TestCaseVersion[]> { return this.http.get<TestCaseVersion[]>(`${this.root}/test-cases/${id}/versions`); }
+  history(id: string): Observable<TestCaseHistory[]> { return this.http.get<TestCaseHistory[]>(`${this.root}/test-cases/${id}/history`); }
   defects(id: string): Observable<TestCaseDefect[]> { return this.http.get<TestCaseDefect[]>(`${this.root}/test-cases/${id}/defects`); }
 }
 
@@ -114,6 +115,8 @@ export class TestRunService {
   assignTester(runId: string, itemId: string, assignedUserId: string | null): Observable<TestRun> {
     return this.http.put<TestRun>(`${this.root}/runs/${runId}/items/${itemId}/assignee`, { assignedUserId });
   }
+  /** Only a run that has no result yet; the server refuses one that has. */
+  delete(id: string): Observable<void> { return this.http.delete<void>(`${this.root}/runs/${id}`); }
   complete(id: string): Observable<TestRun> { return this.http.post<TestRun>(`${this.root}/runs/${id}/complete`, null); }
   execute(runId: string, itemId: string, input: ExecuteItem): Observable<TestExecution> {
     return this.http.post<TestExecution>(`${this.root}/runs/${runId}/items/${itemId}/executions`, input);

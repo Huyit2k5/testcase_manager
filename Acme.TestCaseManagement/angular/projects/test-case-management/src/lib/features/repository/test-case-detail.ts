@@ -14,10 +14,12 @@ import { SharedStepGroupService, TestCaseService } from '../../proxy/services';
 import { AttachmentsComponent } from '../attachments/attachments';
 import { TagInputComponent } from '../tags/tag-input';
 import { ConfirmService } from '../../core/confirm';
+import { TestCaseTimelineComponent } from './test-case-timeline';
+import { VersionCompareComponent } from './version-compare';
 
 @Component({
   selector: 'app-test-case-detail',
-  imports: [FormsModule, ModalComponent, FormatDatePipe, TranslatePipe, AttachmentsComponent, TagInputComponent],
+  imports: [FormsModule, ModalComponent, FormatDatePipe, TranslatePipe, AttachmentsComponent, TagInputComponent, VersionCompareComponent, TestCaseTimelineComponent],
   template: `
     <app-modal [side]="true" [title]="testCase().code + ' - ' + testCase().title" [wide]="true" (closed)="closed.emit()">
       <div class="row" style="margin-bottom:12px">
@@ -104,6 +106,12 @@ import { ConfirmService } from '../../core/confirm';
       } @else {
         <p class="muted">{{ 'detail.noVersion' | t }}</p>
       }
+
+      <h3>{{ 'compare.title' | t }}</h3>
+      <app-version-compare [versions]="versions()" />
+
+      <h3>{{ 'history.timeline' | t }}</h3>
+      <app-test-case-timeline [testCaseId]="testCase().id" [version]="testCase()" />
 
       <h3>{{ 'att.title' | t }}</h3>
       <app-attachments [ownerType]="ownerType" [ownerId]="testCase().id" [canWrite]="auth.can(perm.TestCases.Update)" />

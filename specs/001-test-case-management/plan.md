@@ -1215,6 +1215,16 @@ The review also pointed at things left as they are on purpose or for later (cros
 
 ---
 
+### 4.27. Phase 28: compare versions, the history of a test case, delete a run without results
+
+The three items the business analysis listed as not done.
+
+- **History** (`TcmTestCaseHistory`, `TestCaseHistoryEntry`). The module keeps its own lines rather than reading ABP's audit log (the Audit Logging module is not a dependency, and a host may not store entity changes). A line has a type (`Created`, `Edited`, `StatusChanged`, `VersionPublished`, `TagsChanged`, `StepsReordered`, `SharedStepsChanged`), two values (old and new status), the version number and a note (the fields of an edit, the tags, the change summary); who and when come from the creation audit of the entity. It is only added to, has no foreign key (it stays when the test case is deleted) and is read by `GET test-cases/{id}/history`, newest first. `TestCaseHistoryRecorder` writes the lines from `TestCaseAppService` and `SharedStepGroupAppService`; an edit compares `TestCaseContentSnapshot` taken before and after, and writes nothing when nothing changed. Import goes through the same service methods, so it is recorded too. A test case made before the history existed shows its creation and its versions, built from the test case and the versions when the history has no line for them. Hosts add `DbSet<TestCaseHistoryEntry>` and a migration.
+- **Compare** is done in the page (`version-diff.ts`): fields (words marked by a longest-common-subsequence diff of the words) and steps, matched by the step id kept in the snapshot, told apart as added, removed, changed or moved (the steps that are out of order among the common ones, by a longest increasing subsequence, so that inserting a step does not make the following ones "moved"). A classification is compared only when both versions have it. `TestCaseVersionDto` now carries the five classification fields.
+- **Delete a run** (`DELETE runs/{id}`, permission `TestPlans.Manage`): only a run with no attempt and no item that is not Untested; the run is deleted for good and its items go with it (the database cascades), so that the test cases can go into another run. A run with a result is completed, not deleted (`TestRunHasResults`). Archiving a run was not made: a completed run is already locked.
+
+---
+
 ## 5. Security, RBAC & Permissions
 
 Defined in `TestCaseManagementPermissions`:

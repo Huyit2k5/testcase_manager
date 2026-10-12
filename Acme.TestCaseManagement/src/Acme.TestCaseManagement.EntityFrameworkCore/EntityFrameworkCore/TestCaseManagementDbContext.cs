@@ -25,6 +25,8 @@ public class TestCaseManagementDbContext : AbpDbContext<TestCaseManagementDbCont
 
     public DbSet<TestCaseVersion> TestCaseVersions { get; set; } = null!;
 
+    public DbSet<TestCaseHistoryEntry> TestCaseHistory { get; set; } = null!;
+
     public DbSet<TestPlan> TestPlans { get; set; } = null!;
 
     public DbSet<TestRun> TestRuns { get; set; } = null!;
