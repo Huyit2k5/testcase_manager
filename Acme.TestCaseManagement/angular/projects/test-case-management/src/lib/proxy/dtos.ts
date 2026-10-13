@@ -265,6 +265,29 @@ export interface Dashboard {
   progress: DashboardProgress; velocity: Velocity; burnDown: BurnDown; defectDensity: DefectDensity; flaky: FlakySummary;
 }
 
+/** One test plan (a "sprint") in the trend. */
+export interface SprintTrendPoint {
+  planId: string; planName: string; status: number; milestoneId: string | null; startDate: string | null; endDate: string | null;
+  runCount: number; totalItems: number; passed: number; failed: number; blocked: number; skipped: number; untested: number;
+  completionPercentage: number; passRate: number | null; firstTimePassRate: number | null;
+  defects: number; openDefects: number; defectsPer100Executed: number | null;
+}
+/** The latest plans with run items, oldest first, and how the last one moved against the one before it (in points). */
+export interface SprintTrend {
+  generatedAt: string; points: SprintTrendPoint[];
+  passRateChange: number | null; firstTimePassRateChange: number | null; defectDensityChange: number | null; averagePassRate: number | null;
+}
+/** What one person has: the run items given to them now, and the attempts they made inside the window. userId is null for attempts of a pipeline. */
+export interface TesterWorkload {
+  userId: string | null; assignedItems: number; assignedDone: number; assignedPassed: number; assignedFailed: number;
+  attempts: number; passed: number; failed: number; blocked: number; skipped: number;
+  itemsExecuted: number; durationSeconds: number; activeDays: number; attemptsPerDay: number; passRate: number | null;
+}
+export interface Workload {
+  testPlanId: string | null; testPlanName: string | null; days: number; generatedAt: string; testers: TesterWorkload[];
+  unassignedItems: number; unassignedUntested: number; totalItems: number; totalAttempts: number;
+}
+
 // ---- Attachments ----------------------------------------------------------------------------------------------------
 
 export interface Attachment {

@@ -127,6 +127,117 @@
     <p class="muted">{{ 'common.loading' | t }}</p>
   }
 
+  <section class="card" data-test="trend">
+    <div class="page-head">
+      <h2>{{ 'dash.trendTitle' | t }}</h2>
+      <select name="sprints" [(ngModel)]="sprints" (ngModelChange)="reloadTrend()" [attr.aria-label]="'dash.sprints' | t" style="width: auto">
+        @for (option of sprintOptions; track option) { <option [ngValue]="option">{{ 'dash.lastSprints' | t: { n: option } }}</option> }
+      </select>
+    </div>
+    <p class="muted">{{ 'dash.trendIntro' | t }}</p>
+    @if (trend(); as tr) {
+      @if (tr.points.length === 0) {
+        <p class="muted" data-test="trend-empty">{{ 'dash.trendEmpty' | t }}</p>
+      } @else {
+        @if (trendLine(); as c) {
+          <svg class="chart" [attr.viewBox]="'0 0 ' + chart.width + ' ' + chart.height" role="img" [attr.aria-label]="'dash.trendTitle' | t" data-test="trend-chart">
+            @for (t of c.yTicks; track t.position) {
+              <line [attr.x1]="chart.left" [attr.x2]="chart.width - chart.right" [attr.y1]="t.position" [attr.y2]="t.position" class="grid" />
+              <text [attr.x]="chart.left - 6" [attr.y]="t.position + 4" text-anchor="end">{{ t.label }}</text>
+            }
+            @for (t of c.xTicks; track t.position) {
+              <text [attr.x]="t.position" [attr.y]="chart.height - 8" text-anchor="middle">{{ t.label }}</text>
+            }
+            <path [attr.d]="c.firstTime" class="ideal" />
+            <path [attr.d]="c.passRate" class="actual" />
+            @for (dot of c.dots; track dot.x) {
+              <circle [attr.cx]="dot.x" [attr.cy]="dot.y" r="3.5" class="dot"><title>{{ dot.planName }}: {{ dot.value }}%</title></circle>
+            }
+          </svg>
+          <div class="legend">
+            <span><i class="swatch actual"></i>{{ 'dash.passRate' | t }}</span>
+            <span><i class="swatch ideal"></i>{{ 'dash.firstPassRate' | t }}</span>
+          </div>
+        }
+        <p data-test="trend-summary">
+          @if (tr.passRateChange !== null) {
+            {{ 'dash.passRateMoved' | t }} <em [class]="changeClass(tr.passRateChange)">{{ points(tr.passRateChange) }}</em>
+          }
+          @if (tr.averagePassRate !== null) { <span class="muted"> · {{ 'dash.averagePassRate' | t: { rate: tr.averagePassRate } }}</span> }
+          @if (tr.defectDensityChange !== null) {
+            <span class="muted"> · {{ 'dash.densityMoved' | t }} </span><em [class]="changeClass(tr.defectDensityChange, true)">{{ points(tr.defectDensityChange) }}</em>
+          }
+        </p>
+        <table data-test="trend-table">
+          <thead>
+            <tr>
+              <th>{{ 'dash.colPlan' | t }}</th><th>{{ 'dash.colItems' | t }}</th><th>{{ 'dash.passRate' | t }}</th><th>{{ 'dash.firstPassRate' | t }}</th>
+              <th>{{ 'dash.completion' | t }}</th><th>{{ 'dash.defects' | t }}</th><th>{{ 'dash.densityCard' | t }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of tr.points; track p.planId) {
+              <tr>
+                <td>
+                  {{ p.planName }}
+                  <div class="muted">
+                    @if (p.startDate) { {{ p.startDate | fdate: 'mediumDate' }} } @else { - }
+                    · {{ 'dash.runsCount' | t: { n: p.runCount } }}
+                  </div>
+                </td>
+                <td class="nowrap">{{ p.totalItems }}</td>
+                <td class="nowrap"><b>{{ percent(p.passRate) }}</b></td>
+                <td class="nowrap">{{ percent(p.firstTimePassRate) }}</td>
+                <td class="nowrap">{{ percent(p.completionPercentage) }}</td>
+                <td class="nowrap">{{ p.defects }} <span class="muted">({{ p.openDefects }} {{ 'dash.openShort' | t }})</span></td>
+                <td class="nowrap">{{ p.defectsPer100Executed === null ? ('common.na' | t) : p.defectsPer100Executed }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    }
+  </section>
+
+  @if (canSeeWorkload) {
+    <section class="card" data-test="workload">
+      <h2>{{ 'dash.workloadTitle' | t }}</h2>
+      @if (workload(); as w) {
+        <p class="muted">{{ 'dash.workloadIntro' | t: { days: w.days } }}@if (w.testPlanName) { · {{ w.testPlanName }} }</p>
+        @if (w.testers.length === 0) {
+          <p class="muted" data-test="workload-empty">{{ 'dash.workloadEmpty' | t }}</p>
+        } @else {
+          <table data-test="workload-table">
+            <thead>
+              <tr>
+                <th>{{ 'dash.colTester' | t }}</th><th>{{ 'dash.colAssigned' | t }}</th><th>{{ 'dash.colAttempts' | t }}</th>
+                <th>{{ 'dash.passed' | t }}</th><th>{{ 'dash.failed' | t }}</th><th>{{ 'dash.otherResults' | t }}</th>
+                <th>{{ 'dash.passRate' | t }}</th><th>{{ 'dash.colItemsRun' | t }}</th><th>{{ 'dash.colTime' | t }}</th><th>{{ 'dash.colActiveDays' | t }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (t of w.testers; track t.userId ?? 'pipeline') {
+                <tr>
+                  <td>{{ testerName(t) }}</td>
+                  <td class="nowrap">@if (t.userId) { {{ t.assignedDone }} / {{ t.assignedItems }} } @else { - }</td>
+                  <td class="nowrap"><b>{{ t.attempts }}</b>&nbsp;<span class="muted">({{ t.attemptsPerDay }}{{ 'dash.perDay' | t }})</span></td>
+                  <td class="nowrap">{{ t.passed }}</td>
+                  <td class="nowrap">{{ t.failed }}</td>
+                  <td class="nowrap">{{ t.blocked + t.skipped }}</td>
+                  <td class="nowrap">{{ percent(t.passRate) }}</td>
+                  <td class="nowrap">{{ t.itemsExecuted }}</td>
+                  <td class="nowrap">{{ duration(t.durationSeconds) }}</td>
+                  <td class="nowrap">{{ t.activeDays }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+        <p class="muted" data-test="workload-unassigned">{{ 'dash.unassignedLine' | t: { items: w.unassignedItems, untested: w.unassignedUntested, total: w.totalItems } }}</p>
+      }
+    </section>
+  }
+
   @if (canSeeFlaky) {
   <section class="card" data-test="flaky">
     <div class="page-head">

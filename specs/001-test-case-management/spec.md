@@ -163,6 +163,8 @@ So that buggy releases are blocked from deploying to Production without document
 | **FR-030** | Generated test case codes | A test case created without a code gets the next code of its project (`KEY-001`, `KEY-002`, ...): the counter only goes up, a code typed by a person is skipped, and a typed code is used as it is. An update with an empty code keeps the code. | UC-04 |
 | **FR-031** | Duplicate a test case | A test case can be copied into a new Draft with the next code of the project: details, classification, tags and steps are copied; versions, runs, requirement links, attachments and the Automation ID are not. The copy may go to a suite of another project. | UC-04 |
 | **FR-032** | Results by step | An attempt can carry the result of single steps of the version being run (Passed, Failed, Blocked, Skipped, with what was seen). They are optional, belong to their attempt, are append-only, must name steps of that version once each, and an attempt cannot be Passed while one is Failed or Blocked. | UC-15, UC-16 |
+| **FR-033** | Trend across sprints | The dashboard shows how the quality moved over the latest test plans (each plan is a sprint): pass rate, first-time pass rate, completion and defects of each, oldest first, and the change of the last plan against the one before. | UC-25 |
+| **FR-034** | Workload of the testers | For each person: the run items given to them and how many are done, and the attempts they recorded in a window of days with their results, time and pass rate; the items given to nobody. Shown only to who may manage plans. | UC-25 |
 
 ---
 

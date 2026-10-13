@@ -390,6 +390,8 @@ public class HttpApiFlow_Tests
         (await qaLead.GetAsync<FlakyTestListDto>($"{Root}/flaky-tests")).Settings.WindowSize.ShouldBeGreaterThan(0);
         (await qaLead.PostAsync<ApplyFlakyFlagsResultDto>($"{Root}/flaky-tests/apply", new ApplyFlakyFlagsInput { ClearRecovered = true })).Flagged.ShouldBe(0);
         (await qaLead.GetAsync<DashboardDto>($"{Root}/dashboard?Days=7")).Velocity.Points.Count.ShouldBe(7);
+        (await qaLead.GetAsync<SprintTrendDto>($"{Root}/dashboard/trend?Sprints=5")).Points.Count.ShouldBeLessThanOrEqualTo(5);
+        (await qaLead.GetAsync<WorkloadDto>($"{Root}/dashboard/workload?Days=7")).Days.ShouldBe(7);
 
         // ---- Attachments: a file on the test case, listed, downloaded and deleted (see HttpApiAttachments_Tests) --------------
         var attached = await qaLead.UploadAsync<AttachmentDto>($"{Root}/attachments", "evidence.txt", Encoding.UTF8.GetBytes("evidence"), new Dictionary<string, string>

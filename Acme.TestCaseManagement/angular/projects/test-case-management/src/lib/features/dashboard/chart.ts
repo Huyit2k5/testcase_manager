@@ -1,4 +1,4 @@
-import { BurnDownPoint, VelocityPoint } from '../../proxy/dtos';
+import { BurnDownPoint, SprintTrendPoint, VelocityPoint } from '../../proxy/dtos';
 
 /** The drawing area of a chart, in SVG units. */
 export const CHART = { width: 640, height: 220, left: 36, right: 12, top: 12, bottom: 28 } as const;
@@ -122,4 +122,30 @@ export function velocityChart(points: VelocityPoint[], shortDate: (iso: string) 
   }
 
   return { max, bars, yTicks: yTicks(max), xTicks: ticks };
+}
+
+export interface TrendDot { x: number; y: number; planName: string; value: number }
+
+export interface TrendChart {
+  passRate: string;
+  firstTime: string;
+  dots: TrendDot[];
+  yTicks: Tick[];
+  xTicks: Tick[];
+}
+
+/** A name short enough to sit under a point of the chart. */
+function shortName(name: string): string { return name.length > 14 ? name.slice(0, 13) + '…' : name; }
+
+/** The pass rate and the first-time pass rate of each plan on a scale of 0 to 100; a plan without a rate leaves a gap in its line. */
+export function trendChart(points: SprintTrendPoint[]): TrendChart {
+  const max = 100;
+  const every = Math.max(1, Math.ceil(points.length / 8));
+  return {
+    passRate: linePath(points.map(p => p.passRate), max),
+    firstTime: linePath(points.map(p => p.firstTimePassRate), max),
+    dots: points.flatMap((p, i) => (p.passRate === null ? [] : [{ x: round(xAt(i, points.length)), y: round(yAt(p.passRate, max)), planName: p.planName, value: p.passRate }])),
+    yTicks: [0, 25, 50, 75, 100].map(value => ({ position: round(yAt(value, max)), label: `${value}%` })),
+    xTicks: xTicks(points.length, i => shortName(points[i].planName), every),
+  };
 }

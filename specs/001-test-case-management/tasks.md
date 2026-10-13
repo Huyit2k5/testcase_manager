@@ -393,3 +393,13 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 - [x] T162 Tests: Application 16 (8 codes and copies, 8 results by step), the contract and the flow over HTTP updated, Angular 14 (run page 8, copy and code 6).
 - [x] T163 Module tests on MySQL 8.4.11 (Domain 219, Application 442, HttpApi 84); the migration `AddStepResultsAndCodeCounter` on the sandbox (SQLite); tried in the browser; the documentation (business analysis 1.6, README, plan 4.31, spec FR-030 to FR-032).
 
+---
+
+## Phase 33: The trend across sprints and the workload of the testers
+
+- [x] T164 `SprintTrendCalculator` and `WorkloadCalculator` with their records, `IInsightsRepository.GetPlansDataAsync` and `GetWorkloadDataAsync` and their EF implementation (plan ids as a `List<Guid>`).
+- [x] T165 `GetTrendAsync` (`GET dashboard/trend`) and `GetWorkloadAsync` (`GET dashboard/workload`, `TestPlans.Manage`), their DTOs and the controller routes.
+- [x] T166 The page: the line chart of the trend with a summary and a table, the workload table with names from the host directory, hidden without the permission; the keys of the page (en, vi).
+- [x] T167 Tests: Domain 7, Application 7, the contract, the flow and the rules of access over HTTP, Angular 11.
+- [x] T168 Tried in the browser on the sandbox (three sprints, two testers, the tester denied); module tests on SQLite and MySQL 8.4.11 (Domain 226, Application 449, HttpApi 85) and Angular 244; the documentation (business analysis 1.7, README, plan 4.32, spec FR-033 and FR-034). No migration: the database is the same.
+

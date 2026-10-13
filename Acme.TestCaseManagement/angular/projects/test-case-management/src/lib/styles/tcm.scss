@@ -177,6 +177,7 @@
   .chart .today { stroke: var(--muted); stroke-dasharray: 3 3; stroke-width: 1; }
   .chart .ideal { fill: none; stroke: var(--muted); stroke-width: 2; stroke-dasharray: 6 4; }
   .chart .actual { fill: none; stroke: var(--primary); stroke-width: 2.5; }
+  .chart .dot { fill: var(--primary); stroke: var(--surface); stroke-width: 1.5; }
   .chart .passed { fill: var(--ok); }
   .chart .failed { fill: var(--bad); }
   .chart .other { fill: var(--warn); }
@@ -194,6 +195,9 @@
   .stat em { font-style: normal; font-weight: 600; margin-left: 4px; }
   .stat em.good { color: var(--ok); }
   .stat em.low { color: var(--bad); }
+  p em { font-style: normal; font-weight: 600; }
+  p em.good { color: var(--ok); }
+  p em.low { color: var(--bad); }
   label.inline { display: inline-flex; gap: 6px; align-items: center; font-size: .85rem; }
   label.inline input { width: auto; }
 

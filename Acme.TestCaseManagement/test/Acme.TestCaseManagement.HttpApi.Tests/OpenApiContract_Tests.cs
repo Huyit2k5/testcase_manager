@@ -118,6 +118,8 @@ public class OpenApiContract_Tests
         "FlakyTest_GetList GET /flaky-tests",
         "FlakyTest_Apply POST /flaky-tests/apply",
         "Dashboard_Get GET /dashboard",
+        "Dashboard_GetTrend GET /dashboard/trend",
+        "Dashboard_GetWorkload GET /dashboard/workload",
 
         "SharedStepGroup_GetList GET /shared-step-groups",
         "SharedStepGroup_Get GET /shared-step-groups/{id}",

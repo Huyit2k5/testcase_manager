@@ -15,4 +15,14 @@ public interface IInsightsRepository
         DateTime attemptsSince,
         Guid? projectId = null,
         CancellationToken cancellationToken = default);
+
+    /// <summary>The run items and the defects of the runs of each of the plans, for the trend over many plans.</summary>
+    Task<List<PlanInsightData>> GetPlansDataAsync(IReadOnlyCollection<Guid> planIds, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The run items of the scope (one plan, or every run; one project, or all) with who they are given to, and the attempts made
+    /// at or after <paramref name="attemptsSince"/> with who made them.
+    /// </summary>
+    Task<WorkloadScopeData> GetWorkloadDataAsync(
+        Guid? testPlanId, DateTime attemptsSince, Guid? projectId = null, CancellationToken cancellationToken = default);
 }

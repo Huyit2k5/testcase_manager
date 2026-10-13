@@ -15,6 +15,7 @@
 | Phiên bản | Ngày | Nội dung |
 | :--- | :--- | :--- |
 | 1.0 | 2026-10-12 | Bản đầu đủ nghiệp vụ và sơ đồ, đối chiếu với code |
+| 1.7 | 2026-10-13 | Xu hướng chất lượng qua nhiều sprint (UC-35, BR-DASH-01 đến 03, API `dashboard/trend`) và khối lượng công việc theo tester (UC-36, BR-DASH-04 đến 07, API `dashboard/workload`); bỏ mục này khỏi phần chưa làm; sửa lộ trình |
 | 1.6 | 2026-10-13 | Mã test case tự sinh theo dự án (BR-TC-12), nhân bản test case (UC-33, BR-TC-13), kết quả chạy theo từng bước (UC-34, BR-RUN-11 đến 13; bảng `TcmTestStepResults`); bỏ ba mục này khỏi phần chưa làm |
 | 1.5 | 2026-10-13 | Xuất biên bản nghiệm thu ra PDF và Excel (UC-32, BR-RPT-01 đến 04, API `sign-off/{id}/export`); bỏ mục này khỏi phần chưa làm |
 | 1.4 | 2026-10-13 | Duyệt hàng loạt test case; thành viên theo dự án (dự án có thể chỉ cho thành viên xem); test case giữ mã dự án; cập nhật quy tắc, use case, tích hợp và các mục giới hạn |
@@ -82,7 +83,7 @@
 | Kế hoạch và thực thi | Test plan; test run (trong hoặc ngoài plan); run item gắn đúng phiên bản; gán người test; ghi kết quả đơn lẻ hoặc hàng loạt; nhiều lần chạy; kết quả theo từng bước; xóa run chưa có kết quả |
 | Truy vết | Requirement; ma trận truy vết RTM |
 | Chất lượng | Quality Gate cấu hình được; nghiệm thu (Sign-off) nhiều người ký có băng SHA-256 |
-| Báo cáo | Dashboard (pass rate, tốc độ, burn-down, mật độ lỗi); phát hiện test chập chờn (flaky) |
+| Báo cáo | Dashboard (pass rate, tốc độ, burn-down, mật độ lỗi); xu hướng qua các sprint (mỗi test plan là một sprint); khối lượng công việc theo tester; phát hiện test chập chờn (flaky) |
 | Nhập / xuất | Test case và kết quả chạy ra Excel / CSV; nhập có chạy thử, tất cả hoặc không gì; biên bản nghiệm thu ra PDF (để in và ký) hoặc Excel |
 | Đính kèm | Ảnh, log, video cho test case và cho từng lần chạy |
 | AI | Gợi ý bước kiểm thử từ nội dung yêu cầu, người dùng duyệt trước khi thêm |
@@ -629,15 +630,17 @@ flowchart LR
         U12["Cấu hình Quality Gate"]
         U13["Nghiệm thu Sign-off"]
         U14["Xem dashboard, flaky"]
+        U22["Xem xu hướng qua các sprint"]
+        U23["Xem khối lượng theo tester"]
         U15["Nhập / xuất Excel, CSV"]
     end
     subgraph AUT["AI"]
         U16["Gợi ý bước bằng AI"]
     end
 
-    QL --> U1 & U2 & U4 & U5 & U6 & U7 & U10 & U12 & U13 & U14 & U17 & U18 & U19 & U20 & U21
-    QT --> U2 & U3 & U4 & U8 & U9 & U15 & U16 & U17
-    PO --> U11 & U13 & U14 & U21
+    QL --> U1 & U2 & U4 & U5 & U6 & U7 & U10 & U12 & U13 & U14 & U17 & U18 & U19 & U20 & U21 & U22 & U23
+    QT --> U2 & U3 & U4 & U8 & U9 & U15 & U16 & U17 & U22
+    PO --> U11 & U13 & U14 & U21 & U22
 ```
 
 ### 6.2. Danh sách Use Case
@@ -677,6 +680,8 @@ flowchart LR
 | UC-31 | Quản lý thành viên của dự án | QA Lead | Đặt dự án chỉ cho thành viên xem; thêm, bớt thành viên |
 | UC-32 | Xuất biên bản nghiệm thu ra PDF hoặc Excel | QA Lead, PO | PDF A4 để in và ký, hoặc Excel nhiều trang tính; nội dung là số liệu đã chốt lúc nghiệm thu |
 | UC-33 | Nhân bản test case | Tester | Tạo bản sao Nháp của test case, mã kế tiếp của dự án, chép nội dung, bước và tag |
+| UC-35 | Xem xu hướng chất lượng qua các sprint | QA Lead, PM, PO, Tester | Tỷ lệ đạt, tỷ lệ đạt ngay lần đầu, tiến độ và mật độ lỗi của các test plan gần nhất, so với sprint liền trước |
+| UC-36 | Xem khối lượng công việc theo tester | QA Lead | Mỗi người: số test được giao và đã xong, số lần chạy, kết quả, tỷ lệ đạt, thời gian, số ngày làm; số test chưa giao cho ai |
 | UC-34 | Ghi kết quả theo từng bước | Tester | Trong lúc ghi một lần chạy, chọn kết quả và ghi nhận thực tế cho từng bước của phiên bản; xem lại trong lịch sử các lần chạy |
 
 ---
@@ -724,6 +729,17 @@ flowchart LR
 | BR-RUN-08 | Gate không đạt thì không nghiệm thu; không có override | `QualityGateNotPassed` |
 | BR-RUN-09 | Sign-off phải có phạm vi hợp lệ và không rỗng; mỗi người ký một lần; người ký có id | `InvalidSignOffScope`, `SignOffScopeEmpty`, `DuplicateSignOffApproval`, `SignOffRequiresUser` |
 
+### 7.3b. Dashboard: xu hướng và khối lượng
+| Mã | Quy tắc | Khi vi phạm |
+| :--- | :--- | :--- |
+| BR-DASH-01 | Mỗi test plan là một sprint; chỉ plan có ít nhất một test trong run mới vào xu hướng | |
+| BR-DASH-02 | Số sprint từ 2 đến 20; số ngày của khối lượng từ 7 đến 90 | HTTP 400 |
+| BR-DASH-03 | Xu hướng theo thứ tự thời gian (ngày bắt đầu, nếu không có thì ngày tạo), cũ nhất trước; thay đổi chỉ tính giữa hai plan cuối và chỉ khi cả hai có giá trị | |
+| BR-DASH-04 | Khối lượng: test tính cho người được giao, lần chạy tính cho người đã ghi; lần chạy không rõ người ghi thuộc dòng riêng | |
+| BR-DASH-05 | Tỷ lệ đạt của tester = đạt ÷ (số lần chạy − bỏ qua); không có lần chạy thì không có tỷ lệ | |
+| BR-DASH-06 | Xem khối lượng cần quyền `TestPlans.Manage` (và quyền xem run) | HTTP 403 |
+| BR-DASH-07 | Plan không tồn tại hoặc ngoài tầm với của người gọi | HTTP 404 |
+
 ### 7.4. Suite và Dự án
 | Mã | Quy tắc | Khi vi phạm |
 | :--- | :--- | :--- |
@@ -764,14 +780,16 @@ Giới hạn cấu hình qua `TestCaseManagementAttachmentOptions`.
 | 8 | Độ phủ yêu cầu | requirement có ít nhất 1 test case so với tổng; kèm đã đạt | RTM |
 | 9 | P1 executed | số item có ưu tiên Urgent (P1) tại phiên bản đã chạy mà đã có Passed hoặc Failed | Quality Gate |
 | 10 | Lỗi mở theo severity | số issue còn liên kết chưa xử lý | Quality Gate |
+| 11 | Xu hướng qua các sprint | với mỗi test plan: các chỉ số 1, 3, 2 và 6 tính trên các run của riêng plan đó; thay đổi = giá trị của plan cuối trừ plan liền trước, tính bằng điểm phần trăm | Dashboard |
+| 12 | Khối lượng theo tester | số test đang giao cho một người (và đã có kết quả, đạt, không đạt); số lần chạy người đó đã ghi trong cửa sổ ngày (đạt, không đạt, bị chặn, bỏ qua), số test khác nhau đã chạy, tổng thời lượng, số ngày có chạy, số lần chạy mỗi ngày; tỷ lệ đạt = đạt ÷ (số lần chạy − bỏ qua) | Dashboard |
 
-Mọi chỉ số lọc được theo **dự án**; dashboard còn lọc theo plan và theo số ngày (`Days`). Ngưỡng và cửa sổ của flaky cấu hình qua `TestCaseManagementInsightsOptions`.
+Mọi chỉ số lọc được theo **dự án**; dashboard còn lọc theo plan và theo số ngày (`Days`). Xu hướng qua các sprint chỉ lọc theo dự án và theo số sprint; khối lượng theo tester lọc theo dự án, plan và số ngày. Ngưỡng và cửa sổ của flaky cấu hình qua `TestCaseManagementInsightsOptions`.
 
 ### 8.2. Màn hình và báo cáo
 
 | Báo cáo | Nội dung |
 | :--- | :--- |
-| Dashboard | Tiến độ, tốc độ, burn-down, mật độ lỗi, flaky của một plan hoặc của mọi run |
+| Dashboard | Tiến độ, tốc độ, burn-down, mật độ lỗi, flaky của một plan hoặc của mọi run; bên dưới là **xu hướng qua các sprint** (biểu đồ đường và bảng) và **khối lượng theo tester** (bảng; chỉ người có quyền quản lý plan) |
 | RTM | Requirement, test case liên kết, kết quả mới nhất, lỗi đang chặn |
 | Chi tiết run | Danh sách item, người được gán, lịch sử attempt, lỗi |
 | Quality Gate | Đánh giá từng tiêu chí |
@@ -812,6 +830,24 @@ flowchart LR
 | BR-RPT-04 | Biên bản mà số liệu không còn khớp mã băm vẫn xuất được và ghi rõ "số liệu KHÔNG khớp với mã băm" |
 
 **Kỹ thuật:** PDF tạo bằng PDFsharp và MigraDoc (giấy phép MIT), với **phông Noto Sans nhúng sẵn trong module** (giấy phép SIL OFL, đã cắt gọn còn chữ Latin và tiếng Việt, khoảng 330 KB) nên file giống nhau trên mọi máy chủ và có đủ dấu tiếng Việt. Excel tạo bằng Open XML. Tên file có dạng `signoff-<tên biên bản không dấu>-<ngày tạo>.pdf` hoặc `.xlsx`.
+
+### 8.5. Xu hướng qua các sprint và khối lượng theo tester
+
+**Sprint là gì.** Hệ thống chưa có thực thể Sprint riêng: **mỗi test plan là một sprint** (có tên, ngày bắt đầu, ngày kết thúc và có thể gắn milestone). Xu hướng so sánh các plan với nhau.
+
+**Xu hướng (`GET dashboard/trend`, tham số `ProjectId`, `Sprints` từ 2 đến 20, mặc định 8).**
+- Lấy các plan của dự án (hoặc của mọi dự án), xếp theo ngày bắt đầu (plan không có ngày bắt đầu thì theo ngày tạo), xét tối đa 60 plan mới nhất, bỏ plan chưa có test nào trong run, giữ `Sprints` plan mới nhất rồi hiển thị **cũ nhất bên trái**.
+- Mỗi plan hiện: số run, số test, kết quả theo từng loại, tiến độ, tỷ lệ đạt, tỷ lệ đạt ngay lần đầu, số lỗi (và số còn mở), số lỗi trên 100 test đã chạy. Các số này tính đúng như dashboard tính cho một plan, nên chỉ phản ánh **trạng thái hiện tại** của các run trong plan.
+- Phần tóm tắt: tỷ lệ đạt, tỷ lệ đạt ngay lần đầu và mật độ lỗi của plan cuối so với plan liền trước (điểm phần trăm; tăng tỷ lệ đạt là tốt, tăng mật độ lỗi là xấu); trung bình các tỷ lệ đạt có giá trị. Thiếu giá trị ở một trong hai plan thì không có phần thay đổi.
+- Run không thuộc plan nào (ví dụ run từ pipeline) **không** nằm trong xu hướng vì không thuộc sprint nào.
+- Quyền: như dashboard (`TestRuns`). Dự án hạn chế chỉ hiện với thành viên.
+
+**Khối lượng theo tester (`GET dashboard/workload`, tham số `ProjectId`, `TestPlanId`, `Days` từ 7 đến 90, mặc định 14).**
+- Hai nguồn: **người được giao** của từng test trong run (`AssignedUserId`, trạng thái hiện tại, không phụ thuộc cửa sổ ngày) và **người ghi** từng lần chạy (người tạo bản ghi, trong cửa sổ ngày gồm hôm nay và các ngày trước). Hai người này có thể khác nhau: lần chạy tính cho người đã chạy, test tính cho người được giao.
+- Mỗi người một dòng, người nhiều lần chạy nhất lên đầu. Lần chạy không có người tạo (kết quả pipeline gửi lên) nằm ở một dòng riêng "Pipeline hoặc không rõ", không có test được giao. Dưới bảng ghi số test chưa giao cho ai và số test trong đó chưa có kết quả.
+- Tên người lấy từ danh sách người dùng của host (`TCM_USER_DIRECTORY`); id không có trong danh sách hiện "Assigned" (như ở màn run).
+- Quyền: `TestPlans.Manage` (cùng quyền với việc giao người test), vì bảng nêu năng suất từng người; Tester và Product Owner mặc định không xem được và nhận HTTP 403, giao diện ẩn mục này.
+- Số liệu này **không** dùng để chấm điểm hay so sánh con người: số lần chạy phụ thuộc loại test, kết quả retest tính là lần chạy mới, và test chạy bằng pipeline không được tính cho ai.
 
 ---
 
@@ -855,12 +891,12 @@ Module đã được cắm vào một ứng dụng sinh từ template ABP (Angul
 
 | Loại | Kết quả gần nhất |
 | :--- | :--- |
-| Domain test | 219 test đạt |
-| Application test | 442 test đạt |
-| HttpApi test (gồm hợp đồng OpenAPI) | 84 test đạt |
-| Angular test | 233 test đạt (35 file) |
+| Domain test | 226 test đạt |
+| Application test | 449 test đạt |
+| HttpApi test (gồm hợp đồng OpenAPI) | 85 test đạt |
+| Angular test | 244 test đạt (36 file) |
 | Chạy trên SQLite | Đạt |
-| Chạy trên MySQL 8.4.11 | Đạt cả ba bộ test (Domain 219, Application 442, HttpApi 84), chạy tuần tự ngày 2026-10-13, sau khi thêm mã tự sinh, nhân bản và kết quả theo bước |
+| Chạy trên MySQL 8.4.11 | Đạt cả ba bộ test (Domain 226, Application 449, HttpApi 85), chạy tuần tự ngày 2026-10-13, sau khi thêm xu hướng và khối lượng theo tester |
 | Cắm vào ứng dụng ABP sinh từ template, chạy MySQL | Ở lần chạy trước khi có kết quả theo bước: migration tạo đủ 22 bảng `Tcm*`; máy chủ ABP chạy trên MySQL và các luồng chính qua API đều đạt (dự án, test case, phiên bản, lịch sử, run, kết quả, truy vết, cổng chất lượng, nhập/xuất, nghiệm thu, xóa run) |
 | Chạy thử trình duyệt trên ứng dụng ABP mẫu | Đã chạy các luồng chính, kể cả hai dự án |
 
@@ -900,7 +936,7 @@ Migration `AddStepResultsAndCodeCounter` (bảng `TcmTestStepResults` và cột 
 | Kết quả theo từng bước trong báo cáo | Đã ghi và xem được trong lịch sử các lần chạy; chưa có trong xuất Excel, CSV, nhập kết quả, tự động nạp kết quả, biên bản nghiệm thu, dashboard và RTM |
 | Nhân bản test case: chọn suite trên giao diện, nhân bản hàng loạt, giữ liên kết nhóm bước dùng chung | API có suite đích; giao diện chỉ hỏi tên; bước của bản sao là bước riêng |
 | Cập nhật dashboard realtime (SignalR) | Tải lại để cập nhật |
-| Báo cáo xu hướng qua nhiều Sprint, báo cáo khối lượng theo tester | Chưa có |
+| Xu hướng và khối lượng: lưu bản chụp theo thời gian, lọc theo milestone, thực thể Sprint riêng, xuất file | Xu hướng tính lại từ trạng thái hiện tại của các run trong từng plan; chưa lưu bản chụp theo từng ngày; chưa có xuất file; run không có plan không vào xu hướng |
 | AI sinh trọn bộ test case, phát hiện test trùng bằng vector embedding, đề xuất test ưu tiên chạy | Chỉ có gợi ý bước |
 | Giao diện MVC / Razor, Blazor; gói npm cho thư viện Angular | Chỉ có Angular, chia sẻ dạng thư mục mã nguồn |
 
@@ -909,8 +945,8 @@ Migration `AddStepResultsAndCodeCounter` (bảng `TcmTestStepResults` và cột 
 | Ưu tiên | Hạng mục | Lý do |
 | :---: | :--- | :--- |
 | Cao | Thử trên ứng dụng thật của công ty (MySQL đã chạy lại và đạt trên bản sao ứng dụng ABP mẫu) | Giảm rủi ro khi đưa vào sử dụng |
-| Trung bình | Thông báo; luồng requirement đổi; nhân bản test case | Tiện cho quy trình hằng ngày |
-| Trung bình | Xu hướng chất lượng qua nhiều Sprint | Báo cáo quản lý |
+| Trung bình | Thông báo; luồng requirement đổi | Tiện cho quy trình hằng ngày |
+| Trung bình | Vai trò theo từng dự án; chi tiết theo module trong biên bản nghiệm thu; kết quả theo bước trong xuất file và biên bản | Hoàn thiện phần đã có |
 | Thấp | SignalR; mở rộng AI; MVC / Blazor; gói npm | Tùy nhu cầu |
 
 ### 12.4. Các quyết định nghiệp vụ đã xác nhận (2026-10-13)
@@ -1026,6 +1062,8 @@ Mọi route bắt đầu bằng `api/test-case-management/`. Hầu hết các en
 | `sign-off/{id}/export` | Biên bản nghiệm thu thành file: `format=Pdf` (mặc định) hoặc `format=Xlsx` |
 | `sign-off` | Bắt đầu nghiệm thu, ký, xem báo cáo |
 | `dashboard`, `flaky-tests` | Chỉ số; chấm điểm flaky và `apply` để đánh cờ |
+| `dashboard/trend` | Xu hướng qua các sprint: `ProjectId`, `Sprints` (2–20) |
+| `dashboard/workload` | Khối lượng theo tester: `ProjectId`, `TestPlanId`, `Days` (7–90); cần `TestPlans.Manage` |
 | `attachments` | Tải lên (multipart), liệt kê, tải xuống, xóa |
 | `step-suggestions` | Trạng thái cấu hình AI; gợi ý bước |
 

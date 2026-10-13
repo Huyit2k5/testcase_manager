@@ -105,6 +105,41 @@ public class HttpApiInsights_Tests
     }
 
     [Fact]
+    public async Task The_Trend_Is_Read_Like_The_Dashboard_The_Workload_Needs_The_Right_To_Manage_Plans_And_Both_Validate_Their_Input()
+    {
+        var qaLead = await ApiClient.LoginAsync(_host, "qa.lead");
+        var productOwner = await ApiClient.LoginAsync(_host, "product.owner");
+        var tester = await ApiClient.LoginAsync(_host, "tester");
+        var anonymous = ApiClient.Anonymous(_host);
+
+        (await qaLead.GetAsync<SprintTrendDto>($"{Root}/dashboard/trend")).Points.ShouldNotBeNull();
+        (await qaLead.GetAsync<WorkloadDto>($"{Root}/dashboard/workload")).Days.ShouldBe(14);
+
+        // The trend is for everyone who reads the dashboard; the workload names people, so it is for those who assign the work.
+        (await productOwner.GetAsync<SprintTrendDto>($"{Root}/dashboard/trend")).ShouldNotBeNull();
+        (await tester.GetAsync<SprintTrendDto>($"{Root}/dashboard/trend")).ShouldNotBeNull();
+        (await productOwner.SendExpectingErrorAsync(HttpMethod.Get, $"{Root}/dashboard/workload")).Status.ShouldBe(HttpStatusCode.Forbidden);
+        (await tester.SendExpectingErrorAsync(HttpMethod.Get, $"{Root}/dashboard/workload")).Status.ShouldBe(HttpStatusCode.Forbidden);
+
+        foreach (var url in new[] { "/dashboard/trend", "/dashboard/workload" })
+        {
+            (await anonymous.SendExpectingErrorAsync(HttpMethod.Get, $"{Root}{url}")).Status.ShouldBe(HttpStatusCode.Unauthorized, url);
+        }
+
+        foreach (var sprints in new[] { 0, 1, 21 })
+        {
+            (await qaLead.SendExpectingErrorAsync(HttpMethod.Get, $"{Root}/dashboard/trend?Sprints={sprints}")).Status.ShouldBe(HttpStatusCode.BadRequest, $"Sprints={sprints}");
+        }
+
+        foreach (var days in new[] { 0, 6, 91 })
+        {
+            (await qaLead.SendExpectingErrorAsync(HttpMethod.Get, $"{Root}/dashboard/workload?Days={days}")).Status.ShouldBe(HttpStatusCode.BadRequest, $"Days={days}");
+        }
+
+        (await qaLead.SendExpectingErrorAsync(HttpMethod.Get, $"{Root}/dashboard/workload?TestPlanId={Guid.NewGuid()}")).Status.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
     public async Task Who_May_Read_And_Who_May_Write_The_Flags()
     {
         // product.owner reads everything but may not update test cases; tester may.

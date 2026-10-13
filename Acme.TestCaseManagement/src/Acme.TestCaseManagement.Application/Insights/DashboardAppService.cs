@@ -26,6 +26,107 @@ public class DashboardAppService : TestCaseManagementAppService, IDashboardAppSe
         _options = options.Value;
     }
 
+    /// <summary>The most plans looked at to find the latest ones that have run items.</summary>
+    private const int PlansExamined = 60;
+
+    [Authorize(TestCaseManagementPermissions.TestPlans.Manage)]
+    public virtual async Task<WorkloadDto> GetWorkloadAsync(GetWorkloadInput input)
+    {
+        var now = Clock.Now;
+        var plan = input.TestPlanId.HasValue ? await _plans.GetAsync(input.TestPlanId.Value) : null;
+
+        // The same window as the velocity chart: today and the days before it.
+        var since = now.Date.AddDays(-(input.Days - 1));
+        var data = await _insights.GetWorkloadDataAsync(input.TestPlanId, since, input.ProjectId);
+        var report = WorkloadCalculator.Calculate(data, input.Days);
+
+        return new WorkloadDto
+        {
+            TestPlanId = plan?.Id,
+            TestPlanName = plan?.Name,
+            Days = input.Days,
+            GeneratedAt = now,
+            UnassignedItems = report.UnassignedItems,
+            UnassignedUntested = report.UnassignedUntested,
+            TotalItems = report.TotalItems,
+            TotalAttempts = report.TotalAttempts,
+            Testers = report.Testers.Select(t => new TesterWorkloadDto
+            {
+                UserId = t.UserId,
+                AssignedItems = t.AssignedItems,
+                AssignedDone = t.AssignedDone,
+                AssignedPassed = t.AssignedPassed,
+                AssignedFailed = t.AssignedFailed,
+                Attempts = t.Attempts,
+                Passed = t.Passed,
+                Failed = t.Failed,
+                Blocked = t.Blocked,
+                Skipped = t.Skipped,
+                ItemsExecuted = t.ItemsExecuted,
+                DurationSeconds = t.DurationSeconds,
+                ActiveDays = t.ActiveDays,
+                AttemptsPerDay = t.AttemptsPerDay,
+                PassRate = t.PassRate,
+            }).ToList(),
+        };
+    }
+
+    public virtual async Task<SprintTrendDto> GetTrendAsync(GetSprintTrendInput input)
+    {
+        var plans = (await _plans.GetListAsync(p => input.ProjectId == null || p.ProjectId == input.ProjectId))
+            .OrderByDescending(p => p.StartDate ?? p.CreationTime)
+            .ThenByDescending(p => p.CreationTime)
+            .Take(PlansExamined)
+            .ToList();
+
+        var data = await _insights.GetPlansDataAsync(plans.Select(p => p.Id).ToList());
+        var figures = SprintTrendCalculator.Calculate(data).ToDictionary(f => f.PlanId);
+
+        // The latest plans that have something to count, shown oldest first so that the line reads from left to right.
+        var points = plans
+            .Where(p => figures[p.Id].Progress.TotalItems > 0)
+            .Take(input.Sprints)
+            .Reverse()
+            .Select(p =>
+            {
+                var f = figures[p.Id];
+                return new SprintTrendPointDto
+                {
+                    PlanId = p.Id,
+                    PlanName = p.Name,
+                    Status = p.Status,
+                    MilestoneId = p.MilestoneId,
+                    StartDate = p.StartDate,
+                    EndDate = p.EndDate,
+                    RunCount = f.RunCount,
+                    TotalItems = f.Progress.TotalItems,
+                    Passed = f.Progress.Passed,
+                    Failed = f.Progress.Failed,
+                    Blocked = f.Progress.Blocked,
+                    Skipped = f.Progress.Skipped,
+                    Untested = f.Progress.Untested,
+                    CompletionPercentage = f.Progress.CompletionPercentage,
+                    PassRate = f.Progress.PassRate,
+                    FirstTimePassRate = f.Progress.FirstTimePassRate,
+                    Defects = f.Defects.Defects,
+                    OpenDefects = f.Defects.OpenDefects,
+                    DefectsPer100Executed = f.Defects.DefectsPer100Executed,
+                };
+            })
+            .ToList();
+
+        var rates = points.Where(p => p.PassRate.HasValue).Select(p => p.PassRate!.Value).ToList();
+        return new SprintTrendDto
+        {
+            GeneratedAt = Clock.Now,
+            Points = points,
+            PassRateChange = SprintTrendCalculator.Change(points.Select(p => p.PassRate).ToList()),
+            FirstTimePassRateChange = SprintTrendCalculator.Change(points.Select(p => p.FirstTimePassRate).ToList()),
+            DefectDensityChange = SprintTrendCalculator.Change(points.Select(p => p.DefectsPer100Executed).ToList()),
+            AveragePassRate = rates.Count == 0 ? null : Math.Round(rates.Average(), 2),
+        };
+    }
+
     public virtual async Task<DashboardDto> GetAsync(GetDashboardInput input)
     {
         var now = Clock.Now;

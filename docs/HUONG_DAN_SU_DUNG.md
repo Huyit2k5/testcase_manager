@@ -1,6 +1,6 @@
 # Hướng dẫn sử dụng Test Case Management
 
-Tài liệu thực hành cho cả đội: tester, QA lead và product owner. Đọc phần khái niệm mất khoảng 10 phút; làm hết 15 bài tập mất khoảng 100 phút.
+Tài liệu thực hành cho cả đội: tester, QA lead và product owner. Đọc phần khái niệm mất khoảng 10 phút; làm hết 18 bài tập mất khoảng 120 phút.
 
 **Mọi bài tập trong tài liệu này đã được làm thật, từng bước, trên giao diện, bằng đúng tài khoản của vai trò đó**, và các ảnh chụp lấy từ chính lần làm đó (ô vàng là chỗ cần chú ý).
 
@@ -9,7 +9,7 @@ Tài liệu thực hành cho cả đội: tester, QA lead và product owner. Đ�
 - [3. Trước khi bắt đầu](#3-trước-khi-bắt-đầu)
 - [4. Thực hành](#4-thực-hành)
   - [Phần A: Tester (Bài 1 đến 4)](#phần-a-tester)
-  - [Phần B: QA Lead (Bài 5 đến 15)](#phần-b-qa-lead)
+  - [Phần B: QA Lead (Bài 5 đến 18)](#phần-b-qa-lead)
 - [5. Quy ước của đội](#5-quy-ước-của-đội)
 - [6. Hỏi đáp và xử lý sự cố](#6-hỏi-đáp-và-xử-lý-sự-cố)
 - [Phụ lục: quyền theo vai trò](#phụ-lục-quyền-theo-vai-trò)
@@ -532,11 +532,82 @@ Sau khi nghiệm thu (Bài 9), cần một **bản để in, ký tay và lưu h�
 > - Nếu số liệu của biên bản không còn khớp mã băm, file vẫn xuất và ghi rõ "số liệu KHÔNG khớp với mã băm" ở phần thông tin chung.
 > - Ai xem được biên bản đều xuất được; biên bản của dự án mình không thấy thì không xuất được.
 
+#### Bài 16: Tạo test case không cần nghĩ mã, và nhân bản một test case
+
+Mỗi dự án tự cấp mã cho test case, và một test case có thể được nhân bản thành bản nháp mới thay vì gõ lại từ đầu. Bài này làm bằng tài khoản có quyền tạo test case (ví dụ `lan.nguyen` hoặc `hoanganh.le`).
+
+1. Vào **Test repository**, chọn dự án và một bộ test, bấm **+ New test case**. Ô **Code** có gợi ý *"Leave empty: the project gives the next code"*: **để trống**, chỉ điền tiêu đề và các bước.
+
+   ![Để trống ô mã](images/guide/b16-01-ma-de-trong.png)
+
+2. Bấm **Save**. Test case nhận mã kế tiếp của dự án: khóa dự án, dấu gạch ngang và số ít nhất ba chữ số (ở đây dự án mẫu có khóa `DEFAULT` nên được `DEFAULT-002`; dự án có khóa `EINV` sẽ nhận `EINV-004`...).
+
+   ![Mã được cấp](images/guide/b16-02-ma-duoc-cap.png)
+
+3. Mở test case đó. Ở cuối cửa sổ có nút **Duplicate** (chỉ người có quyền tạo test case thấy).
+
+   ![Nút nhân bản](images/guide/b16-03-nut-nhan-ban.png)
+
+4. Bấm **Duplicate**, hệ thống hỏi **tên của bản sao**. Để trống thì dùng tên cũ kèm "(copy)".
+
+   ![Hỏi tên bản sao](images/guide/b16-04-hoi-ten-ban-sao.png)
+
+5. Bản sao mở ra ngay, ở trạng thái **Draft**, mang mã kế tiếp (`DEFAULT-003`), có các bước và tag của bản gốc. Chỉnh rồi gửi duyệt như một test case mới.
+
+   ![Bản sao ở trạng thái Draft](images/guide/b16-05-ban-sao.png)
+
+> **Lưu ý:**
+> - Mã **chỉ tăng**: số của test case đã xóa không được cấp lại. Mã bạn gõ tay vẫn dùng được như trước (vẫn phải duy nhất trong cả hệ thống) và được bỏ qua khi hệ thống đếm.
+> - Khi **sửa** test case mà xóa trống ô Code thì mã cũ được giữ.
+> - Bản sao **chép**: mô tả, điều kiện, ưu tiên, mức nghiêm trọng, loại, tầng, tag, các bước. Bản sao **không có**: các phiên bản, run, liên kết yêu cầu, file đính kèm và Automation ID của bản gốc.
+> - Hai người tạo cùng lúc trong một dự án có thể làm một người gặp lỗi xung đột; bấm **Save** lại là được.
+> - Giao diện chỉ hỏi tên bản sao. Muốn chép sang bộ test của dự án khác thì dùng API (`POST test-cases/{id}/duplicate` với `suiteId`).
+
+#### Bài 17: Ghi kết quả từng bước khi chạy test
+
+Khi chạy một test, bạn có thể ghi kết quả cho **từng bước**, không chỉ cho cả lần chạy. Bước nào hỏng thì lần sau nhìn lại biết ngay hỏng ở đâu. Làm bằng tài khoản có quyền chạy test.
+
+1. Mở một run, bấm **Execute** ở một test. Dưới phần kết quả chung có bảng **Steps of version N**: các bước của **đúng phiên bản đang chạy**, mỗi bước có ô chọn kết quả, mặc định **Not run**. Nút **All steps passed** đặt tất cả các bước là Passed.
+
+   ![Các bước khi chạy](images/guide/b17-01-cac-buoc-khi-chay.png)
+
+2. Chọn kết quả từng bước. Khi một bước **Failed** (hoặc **Blocked**), ô **Result** của cả lần chạy tự đổi theo (Failed hoặc Blocked) và hiện thêm ô để ghi **thực tế đã thấy** ở bước đó. Bước nào không chạy thì để **Not run**, không bắt buộc ghi hết.
+
+   ![Bước không đạt](images/guide/b17-02-buoc-khong-dat.png)
+
+3. Bấm **Record result**. Mở **History** của test sẽ thấy dưới mỗi lần chạy kết quả từng bước, kèm nội dung bước.
+
+   ![Lịch sử theo bước](images/guide/b17-03-lich-su-theo-buoc.png)
+
+> **Lưu ý:**
+> - Hệ thống **không cho lưu lần chạy Passed** khi có bước Failed hoặc Blocked (bước Skipped thì được). Chọn lại kết quả chung cho khớp.
+> - Mỗi lần chạy lại (**Retest**) có bộ kết quả bước riêng; lần cũ giữ nguyên.
+> - Số liệu của run, dashboard, truy vết và cổng chất lượng vẫn tính theo **kết quả cả lần chạy**. Kết quả theo bước chưa có trong file Excel, CSV và biên bản nghiệm thu.
+> - Nếu không tải được các bước của phiên bản, bạn vẫn ghi được kết quả cả lần chạy như trước.
+
+#### Bài 18: Xem xu hướng qua các sprint và khối lượng theo tester
+
+Dành cho QA Lead và người quản lý (`hoanganh.le`). Hai thẻ nằm dưới các biểu đồ của trang **Dashboard**. Hệ thống coi **mỗi test plan là một sprint**.
+
+1. Vào **Dashboard**, kéo xuống thẻ **Trend across sprints**. Biểu đồ đường cho thấy **tỷ lệ đạt** (đường liền) và **tỷ lệ đạt ngay lần đầu** (đường đứt) của các plan gần nhất có test trong run, **cũ nhất ở bên trái**. Ô chọn bên phải đổi số sprint (4, 8, 12, 20). Dòng tóm tắt cho biết tỷ lệ đạt của sprint cuối **hơn hoặc kém sprint trước bao nhiêu điểm**, trung bình, và mật độ lỗi thay đổi thế nào (xanh là tốt lên, đỏ là xấu đi). Bảng bên dưới liệt kê từng plan: số test, tỷ lệ đạt, đạt lần đầu, tiến độ, số lỗi và lỗi trên 100 test.
+
+   ![Xu hướng qua các sprint](images/guide/b18-01-xu-huong.png)
+
+2. Kéo xuống thẻ **Workload of the testers**. Mỗi người một dòng: số test **được giao** (xong / tất cả), số **lần chạy** trong khoảng ngày chọn ở đầu trang (kèm trung bình mỗi ngày), số đạt, không đạt, khác, tỷ lệ đạt, số test đã chạy, tổng thời gian và số ngày làm. Người chạy nhiều nhất ở trên. Chọn một plan ở đầu trang để chỉ xem trong plan đó. Dòng **Pipeline or unknown** là các kết quả do pipeline gửi lên (không có người ghi). Dòng cuối cho biết có bao nhiêu test **chưa giao cho ai**.
+
+   ![Khối lượng theo tester](images/guide/b18-02-khoi-luong.png)
+
+> **Lưu ý:**
+> - Xu hướng ai xem dashboard cũng xem được. **Khối lượng theo tester chỉ hiện với người có quyền quản lý plan** (quyền giao người test); Tester và Product Owner không thấy thẻ này, và gọi thẳng API sẽ bị từ chối.
+> - Test tính cho người **được giao**, lần chạy tính cho người **đã ghi kết quả**; hai người này có thể khác nhau.
+> - Số liệu của một sprint là **trạng thái hiện tại** của các run trong plan, không phải ảnh chụp lúc sprint kết thúc. Run không thuộc plan nào không nằm trong xu hướng.
+> - Đừng dùng bảng khối lượng để chấm điểm từng người: số lần chạy phụ thuộc loại test, mỗi retest là một lần chạy, và kết quả của pipeline không tính cho ai.
+
 ## 5. Quy ước của đội
 
 > Đây là **đề xuất khởi đầu**. Cả đội thống nhất và chỉnh sửa trong buổi đầu, rồi cập nhật ngay vào mục này.
 
-**Đặt mã test case:** `<DỰ ÁN>-<NHÓM>-<SỐ>`, ví dụ `EINV-INV-001`. Mã là duy nhất trong cả hệ thống, nên dự án nào cũng phải có tiền tố riêng.
+**Đặt mã test case:** để trống ô mã thì hệ thống cấp `<KHÓA DỰ ÁN>-<SỐ>` (ví dụ `EINV-004`, xem Bài 16). Muốn mã có tên nhóm thì tự đặt `<DỰ ÁN>-<NHÓM>-<SỐ>`, ví dụ `EINV-INV-001`. Mã là duy nhất trong cả hệ thống, nên dự án nào cũng phải có tiền tố riêng.
 
 **Tên test case:** viết như một câu nói được điều cần kiểm tra: *"Hủy hóa đơn đã phát hành và gửi thông báo sai sót"*, không viết *"Test hủy"*.
 
@@ -610,6 +681,7 @@ Bảng dưới là bộ quyền của **ba vai trò dùng trong các bài tập*
 | Việc | Tester | QA Lead | Product Owner |
 |---|:---:|:---:|:---:|
 | Xem test case, plan, run, dashboard, truy vết | ✔ | ✔ | ✔ |
+| Xem khối lượng theo tester trên dashboard (`TestPlans.Manage`) | | ✔ | |
 | Viết và sửa test case | ✔ | ✔ | |
 | Gợi ý bước bằng AI | ✔ | ✔ | |
 | Duyệt, xóa test case | | ✔ | |

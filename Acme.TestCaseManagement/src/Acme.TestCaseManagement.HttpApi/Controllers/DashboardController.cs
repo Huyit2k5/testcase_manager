@@ -23,4 +23,18 @@ public class DashboardController : TestCaseManagementController, IDashboardAppSe
     {
         return _dashboardAppService.GetAsync(input);
     }
+
+    /// <inheritdoc />
+    [HttpGet("trend")]
+    public virtual Task<SprintTrendDto> GetTrendAsync([FromQuery] GetSprintTrendInput input)
+    {
+        return _dashboardAppService.GetTrendAsync(input);
+    }
+
+    /// <inheritdoc />
+    [HttpGet("workload")]
+    public virtual Task<WorkloadDto> GetWorkloadAsync([FromQuery] GetWorkloadInput input)
+    {
+        return _dashboardAppService.GetWorkloadAsync(input);
+    }
 }

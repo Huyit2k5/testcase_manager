@@ -176,6 +176,7 @@ All routes start with `api/test-case-management/`.
 | `sign-off/{id}/export` | `GET` the report as a file: `format=Pdf` (default, A4, with places to sign) or `format=Xlsx` (a sheet for the report and one each for the criteria, the open defects and the approvals), written from what was frozen and in the language of the caller |
 | `api-keys` | list, create (secret shown once) and revoke API keys |
 | `dashboard` | `GET`: pass rate, execution velocity, burn-down and defect density of a plan or of every run |
+| `dashboard/trend`, `dashboard/workload` | `GET` the figures of the latest plans (sprints) and how the last one moved; `GET` the workload of each tester (needs `TestPlans.Manage`) |
 | `flaky-tests` | `GET` the flakiness score of test cases, `POST flaky-tests/apply` to flag them in the library |
 | `shared-step-groups` | the library of reusable groups of steps: list, get, create, update, delete, usage, and a bulk update of the test cases that are behind |
 | `test-cases/{id}/shared-steps` | `POST` copies a group into a test case, `.../{groupId}/refresh` brings the copy up to date, `DELETE .../{groupId}` detaches it |
@@ -286,6 +287,12 @@ added (`addMissingToRun`). The same test case twice in a request counts as retri
 A request holds at most 2000 results. Send an `Idempotency-Key` so that retrying a request does not record twice. A host that embeds
 the module's model in its own DbContext needs the new `DbSet`s (`ApiKey`, `AutomationPublication`, `Attachment`, `SharedStepGroup`).
 
+## Trend across sprints and the workload of the testers
+
+A test plan is a sprint. `GET dashboard/trend?ProjectId=&Sprints=8` (2 to 20) returns the latest plans that have run items, oldest first, each with its runs, its items by result, completion, pass rate, first-time pass rate and defects (also per 100 executed tests), worked out as the dashboard works out a plan from the current state of its runs, and how the last plan moved against the one before it in points. Runs without a plan (CI runs) are not in it. It needs what the dashboard needs.
+
+`GET dashboard/workload?ProjectId=&TestPlanId=&Days=14` (7 to 90) returns for each person the run items given to them now (and how many are done, passed or failed) and the attempts they made in the last days (by result, items run, time, days worked, per day, pass rate), the busiest first. An attempt belongs to whoever recorded it and an item to whoever it is given to, which can be two people; attempts with no known creator, such as results sent by a pipeline, are one row of their own. It also tells how many items are given to nobody. It needs `TestPlans.Manage` (the permission that assigns the work), because it shows what each person did; the page hides it without it. Neither call changes the database.
+
 ## Flaky tests and the dashboard
 
 `GET dashboard?TestPlanId=&Days=14` returns the pass rate, the execution velocity, the burn-down and the defect density of one plan,
@@ -365,7 +372,7 @@ the requirement text. Details: plan.md, section 4.15.
 ## Running on MySQL
 
 The module has been run against MySQL 8.4 with `Volo.Abp.EntityFrameworkCore.MySQL` (the package of the ABP application template): the model creates, and every test of the module passes (plan.md,
-section 4.17). It was run again on MySQL 8.4.11 after the projects, the version snapshot and the history were added (all three test projects pass; once more after the generated codes, the copies and the results by step), and an application made from ABP's own template, switched to MySQL, created its schema with a migration (22 `Tcm` tables) and ran the main flows through the API (plan.md, section 4.28). To repeat it, start a MySQL server and run the tests with `TCM_TEST_MYSQL` set and the settings file that turns parallel runs off:
+section 4.17). It was run again on MySQL 8.4.11 after the projects, the version snapshot and the history were added (all three test projects pass; once more after the generated codes, the copies, the results by step, and the trend and the workload), and an application made from ABP's own template, switched to MySQL, created its schema with a migration (22 `Tcm` tables) and ran the main flows through the API (plan.md, section 4.28). To repeat it, start a MySQL server and run the tests with `TCM_TEST_MYSQL` set and the settings file that turns parallel runs off:
 
 ```text
 docker run -d --name tcm-mysql -e MYSQL_ROOT_PASSWORD=secret -p 3307:3306 mysql:8.4

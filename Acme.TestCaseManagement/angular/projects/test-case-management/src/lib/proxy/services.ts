@@ -6,7 +6,7 @@ import { Observable, map } from 'rxjs';
 import { DownloadedFile, fileNameOf } from './transfer';
 import {
   StepSuggestionResult, StepSuggestionStatus, SuggestStepsInput, AddDefect, ApiKey, Attachment, SaveSharedStepGroup, SharedStepGroup, SharedStepGroupSummary, SharedStepUsage, TagSummary, UpdateSharedStepUsersResult, ApiKeyCreated, ApplyFlakyFlagsResult, CreateRun, Dashboard, FlakyTestList, DefectLink, EvaluateInput, ExecuteItem, PagedResult, QualityGate, QualityGateEvaluation,
-  Requirement, RtmMatrix, RtmRequest, SavePlan, SaveQualityGate, SaveRequirement, SaveTestCase, SignOffReport, StartSignOff,
+  Requirement, RtmMatrix, RtmRequest, SavePlan, SaveQualityGate, SaveRequirement, SaveTestCase, SignOffReport, SprintTrend, Workload, StartSignOff,
   ApproveTestCasesResult, DuplicateTestCase, TestCase, TestCaseDefect, TestCaseHistory, TestCaseListRequest, TestCaseVersion, TestExecution, TestPlan, TestRun, TestRunListRequest,
   TestSuite, TestSuiteTree,
 } from './dtos';
@@ -232,6 +232,16 @@ export class DashboardService {
 
   get(request: { testPlanId?: string | null; days: number }): Observable<Dashboard> {
     return this.http.get<Dashboard>(`${this.root}/dashboard`, { params: query({ ProjectId: this.project.currentId(), TestPlanId: request.testPlanId, Days: request.days }) });
+  }
+
+  /** The latest plans that have run items, oldest first, each with its figures. */
+  trend(sprints: number): Observable<SprintTrend> {
+    return this.http.get<SprintTrend>(`${this.root}/dashboard/trend`, { params: query({ ProjectId: this.project.currentId(), Sprints: sprints }) });
+  }
+
+  /** Who has which items and who made the attempts of the last days; needs the right to manage plans. */
+  workload(request: { testPlanId?: string | null; days: number }): Observable<Workload> {
+    return this.http.get<Workload>(`${this.root}/dashboard/workload`, { params: query({ ProjectId: this.project.currentId(), TestPlanId: request.testPlanId, Days: request.days }) });
   }
 }
 
