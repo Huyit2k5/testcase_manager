@@ -11,6 +11,7 @@ public static class ProjectConsts
     /// <summary>The key of the project that holds what was there before projects existed, and what is created without naming one.</summary>
     public const string DefaultKey = "DEFAULT";
     public const string DefaultName = "Default project";
+    public const int MaxMembers = 500;
 }
 
 public static class TestSuiteConsts
@@ -26,6 +27,7 @@ public static class TestCaseConsts
     public const int MaxTextLength = 4000;
     public const int MaxAutomationIdLength = 256;
     public const int MaxChangeSummaryLength = 1000;
+    public const int MaxBulkApprove = 200;
 }
 
 public static class TestStepConsts

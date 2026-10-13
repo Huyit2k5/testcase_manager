@@ -37,6 +37,7 @@ public class HostDbContext : AbpDbContext<HostDbContext>, ITestCaseManagementDbC
     public DbSet<TestCase> TestCases { get; set; } = null!;
     public DbSet<TestCaseVersion> TestCaseVersions { get; set; } = null!;
     public DbSet<TestCaseHistoryEntry> TestCaseHistory { get; set; } = null!;
+    public DbSet<ProjectMember> ProjectMembers { get; set; } = null!;
     public DbSet<TestPlan> TestPlans { get; set; } = null!;
     public DbSet<TestRun> TestRuns { get; set; } = null!;
     public DbSet<TestRunItem> TestRunItems { get; set; } = null!;
@@ -80,6 +81,6 @@ public class HostDbContext : AbpDbContext<HostDbContext>, ITestCaseManagementDbC
 
         builder.ConfigureIdentity();
         builder.ConfigurePermissionManagement();
-        builder.ConfigureTestCaseManagement();
+        builder.ConfigureTestCaseManagement(this);
     }
 }

@@ -1,4 +1,5 @@
 using Acme.TestCaseManagement.Automation;
+using Acme.TestCaseManagement.Projects;
 using Acme.TestCaseManagement.StepSuggestions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +17,18 @@ namespace Acme.TestCaseManagement;
     typeof(TestCaseManagementApplicationContractsModule))]
 public class TestCaseManagementApplicationModule : AbpModule
 {
+    public override void PreConfigureServices(ServiceConfigurationContext context)
+    {
+        // Every application service of the module runs inside the project scope of its caller.
+        context.Services.OnRegistered(registration =>
+        {
+            if (typeof(TestCaseManagementAppService).IsAssignableFrom(registration.ImplementationType))
+            {
+                registration.Interceptors.TryAdd<ProjectAccessInterceptor>();
+            }
+        });
+    }
+
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         context.Services.AddAutoMapperObjectMapper<TestCaseManagementApplicationModule>();

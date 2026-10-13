@@ -231,13 +231,73 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
         }
 
         var testCase = await _testCaseRepository.GetAsync(id);
-        var from = testCase.Status;
-
-        var published = await _testCaseManager.ChangeStatusAsync(testCase, input.TargetStatus, input.ChangeSummary);
-        await _testCaseRepository.UpdateAsync(testCase, autoSave: true);
-        await _history.RecordStatusChangeAsync(testCase, from, published, input.ChangeSummary);
+        await ChangeStatusAndRecordAsync(testCase, input.TargetStatus, input.ChangeSummary);
 
         return await MapAsync(testCase);
+    }
+
+    [Authorize(TestCaseManagementPermissions.TestCases.Update)]
+    public virtual async Task<ApproveTestCasesResultDto> ApproveManyAsync(ApproveTestCasesInput input)
+    {
+        await AuthorizationService.CheckAsync(TestCaseManagementPermissions.TestCases.Approve);
+
+        var result = new ApproveTestCasesResultDto();
+        foreach (var id in input.TestCaseIds.Distinct())
+        {
+            var testCase = await _testCaseRepository.FindAsync(id);
+            if (testCase == null)
+            {
+                result.Failed.Add(new ApproveTestCaseFailureDto
+                {
+                    TestCaseId = id,
+                    ErrorCode = TestCaseManagementErrorCodes.TestCaseNotFound,
+                    Message = Describe(new BusinessException(TestCaseManagementErrorCodes.TestCaseNotFound).WithData("Id", id)),
+                });
+                continue;
+            }
+
+            try
+            {
+                await ChangeStatusAndRecordAsync(testCase, TestCaseStatus.Approved, input.ChangeSummary);
+                result.ApprovedCodes.Add(testCase.Code);
+            }
+            catch (BusinessException exception)
+            {
+                // The checks of a status change come before anything is changed, so a refused test case is left as it was.
+                result.Failed.Add(new ApproveTestCaseFailureDto
+                {
+                    TestCaseId = id,
+                    Code = testCase.Code,
+                    ErrorCode = exception.Code ?? string.Empty,
+                    Message = Describe(exception),
+                });
+            }
+        }
+
+        result.Approved = result.ApprovedCodes.Count;
+        return result;
+    }
+
+    /// <summary>The message of a business error in the language of the caller, with the values it carries put in.</summary>
+    protected virtual string Describe(BusinessException exception)
+    {
+        var text = exception.Code == null ? exception.Message : L[exception.Code].Value;
+        foreach (System.Collections.DictionaryEntry data in exception.Data)
+        {
+            text = text.Replace("{" + data.Key + "}", data.Value?.ToString() ?? string.Empty);
+        }
+
+        return text;
+    }
+
+    /// <summary>One change of status as it is done for a single test case: the change, the version it publishes, and the history.</summary>
+    protected virtual async Task ChangeStatusAndRecordAsync(TestCase testCase, TestCaseStatus target, string? changeSummary)
+    {
+        var from = testCase.Status;
+
+        var published = await _testCaseManager.ChangeStatusAsync(testCase, target, changeSummary);
+        await _testCaseRepository.UpdateAsync(testCase, autoSave: true);
+        await _history.RecordStatusChangeAsync(testCase, from, published, changeSummary);
     }
 
     public virtual async Task<List<TestCaseVersionDto>> GetVersionsAsync(Guid id)

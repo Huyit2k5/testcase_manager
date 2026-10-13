@@ -22,6 +22,8 @@ public class AttachmentAppService : TestCaseManagementAppService, IAttachmentApp
     private readonly IRepository<Attachment, Guid> _repository;
     private readonly IRepository<TestCase, Guid> _testCases;
     private readonly IRepository<TestExecution, Guid> _executions;
+    private readonly IRepository<TestRunItem, Guid> _runItems;
+    private readonly IRepository<TestRun, Guid> _runs;
     private readonly IBlobContainer<AttachmentContainer> _container;
     private readonly AttachmentManager _manager;
     private readonly TestCaseManagementAttachmentOptions _options;
@@ -30,6 +32,8 @@ public class AttachmentAppService : TestCaseManagementAppService, IAttachmentApp
         IRepository<Attachment, Guid> repository,
         IRepository<TestCase, Guid> testCases,
         IRepository<TestExecution, Guid> executions,
+        IRepository<TestRunItem, Guid> runItems,
+        IRepository<TestRun, Guid> runs,
         IBlobContainer<AttachmentContainer> container,
         AttachmentManager manager,
         IOptions<TestCaseManagementAttachmentOptions> options)
@@ -37,6 +41,8 @@ public class AttachmentAppService : TestCaseManagementAppService, IAttachmentApp
         _repository = repository;
         _testCases = testCases;
         _executions = executions;
+        _runItems = runItems;
+        _runs = runs;
         _container = container;
         _manager = manager;
         _options = options.Value;
@@ -46,7 +52,8 @@ public class AttachmentAppService : TestCaseManagementAppService, IAttachmentApp
     {
         await CheckAsync(input.OwnerType, write: false);
 
-        var ownerIds = input.OwnerIds.Distinct().ToList();
+        // Only the files of owners that the caller may see: a test case or an attempt of a project out of reach is not found.
+        var ownerIds = (await VisibleOwnersAsync(input.OwnerType, input.OwnerIds.Distinct().ToList())).ToList();
         var attachments = await _repository.GetListAsync(x => x.OwnerType == input.OwnerType && ownerIds.Contains(x.OwnerId));
 
         return attachments.OrderBy(x => x.CreationTime).ThenBy(x => x.FileName).Select(ToDto).ToList();
@@ -88,6 +95,7 @@ public class AttachmentAppService : TestCaseManagementAppService, IAttachmentApp
     {
         var attachment = await _repository.GetAsync(id);
         await CheckAsync(attachment.OwnerType, write: false);
+        await EnsureOwnerExistsAsync(attachment.OwnerType, attachment.OwnerId);
 
         var stream = await _container.GetOrNullAsync(attachment.BlobName);
         if (stream == null)
@@ -102,6 +110,7 @@ public class AttachmentAppService : TestCaseManagementAppService, IAttachmentApp
     {
         var attachment = await _repository.GetAsync(id);
         await CheckAsync(attachment.OwnerType, write: true);
+        await EnsureOwnerExistsAsync(attachment.OwnerType, attachment.OwnerId);
 
         await _repository.DeleteAsync(attachment);
 
@@ -134,16 +143,31 @@ public class AttachmentAppService : TestCaseManagementAppService, IAttachmentApp
 
     private async Task EnsureOwnerExistsAsync(AttachmentOwnerType ownerType, Guid ownerId)
     {
-        var exists = ownerType switch
-        {
-            AttachmentOwnerType.TestCase => await _testCases.AnyAsync(x => x.Id == ownerId),
-            AttachmentOwnerType.TestExecution => await _executions.AnyAsync(x => x.Id == ownerId),
-            _ => false,
-        };
-
-        if (!exists)
+        if (!(await VisibleOwnersAsync(ownerType, new[] { ownerId })).Any())
         {
             throw new BusinessException(TestCaseManagementErrorCodes.AttachmentOwnerNotFound);
+        }
+    }
+
+    /// <summary>Which of the owners exist and are in a project the caller may see.</summary>
+    private async Task<IReadOnlyCollection<Guid>> VisibleOwnersAsync(AttachmentOwnerType ownerType, IReadOnlyCollection<Guid> ownerIds)
+    {
+        switch (ownerType)
+        {
+            case AttachmentOwnerType.TestCase:
+                return (await _testCases.GetListAsync(x => ownerIds.Contains(x.Id))).Select(x => x.Id).ToList();
+            case AttachmentOwnerType.TestExecution:
+                var executions = await _executions.GetQueryableAsync();
+                var items = await _runItems.GetQueryableAsync();
+                var runs = await _runs.GetQueryableAsync();
+                return await AsyncExecuter.ToListAsync(
+                    from e in executions
+                    join i in items on e.TestRunItemId equals i.Id
+                    join r in runs on i.TestRunId equals r.Id
+                    where ownerIds.Contains(e.Id)
+                    select e.Id);
+            default:
+                return Array.Empty<Guid>();
         }
     }
 

@@ -16,6 +16,12 @@ public class TestCase : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public virtual Guid SuiteId { get; protected set; }
 
+    /// <summary>
+    /// The project of the suite, kept here so that the test cases of a project that is out of reach can be left out of a query. A test
+    /// case that was made before this existed has <see cref="Guid.Empty"/> until <c>ProjectManager</c> fills it in from its suite.
+    /// </summary>
+    public virtual Guid ProjectId { get; protected set; }
+
     /// <summary>Unique within a tenant, e.g. <c>TC-AUTH-001</c>.</summary>
     public virtual string Code { get; protected set; }
 
@@ -103,6 +109,11 @@ public class TestCase : FullAuditedAggregateRoot<Guid>, IMultiTenant
     private static string NormalizeTitle(string title)
     {
         return Check.NotNullOrWhiteSpace(title, nameof(title), TestCaseConsts.MaxTitleLength).Trim();
+    }
+
+    public virtual void SetProject(Guid projectId)
+    {
+        ProjectId = projectId;
     }
 
     public virtual void SetSuite(Guid suiteId)

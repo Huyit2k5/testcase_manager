@@ -19,6 +19,8 @@ public class TestCaseManagementDbContext : AbpDbContext<TestCaseManagementDbCont
 {
     public DbSet<Project> Projects { get; set; } = null!;
 
+    public DbSet<ProjectMember> ProjectMembers { get; set; } = null!;
+
     public DbSet<TestSuite> TestSuites { get; set; } = null!;
 
     public DbSet<TestCase> TestCases { get; set; } = null!;
@@ -62,6 +64,6 @@ public class TestCaseManagementDbContext : AbpDbContext<TestCaseManagementDbCont
     {
         base.OnModelCreating(builder);
 
-        builder.ConfigureTestCaseManagement();
+        builder.ConfigureTestCaseManagement(this);
     }
 }

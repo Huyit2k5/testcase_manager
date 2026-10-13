@@ -158,7 +158,7 @@ So that buggy releases are blocked from deploying to Production without document
 | **FR-025** | Dashboard Metrics | Real-time calculation of Pass Rate, Execution Velocity, Burn-down, and Defect Density. | UC-25 |
 | **FR-026** | Bulk Execution | Batch update capabilities for marking multiple test items in automated or regression runs. | UC-26 |
 | **FR-027** | AI Assistance | Integration hook for AI-powered test step generation from requirements text. | UC-27 |
-| **FR-028** | Projects | A project is the top level of the library: suites (so test cases), plans, requirements and runs belong to one project and are not mixed with those of another. Lists, dashboard and quality views follow the project in use; things made without naming a project go to a default project; nothing is added to an archived project. | UC-28 |
+| **FR-028** | Projects | A project is the top level of the library: suites (so test cases), plans, requirements and runs belong to one project and are not mixed with those of another. Lists, dashboard and quality views follow the project in use; things made without naming a project go to a default project; nothing is added to an archived project. A project can be restricted to its members, and then only they and the people who manage projects see it and what is in it. | UC-28 |
 
 ---
 

@@ -56,6 +56,7 @@
     "TestCaseManagement:TestPlanHasRuns": "Test plan '{Name}' still has test runs and cannot be deleted.",
     "TestCaseManagement:InvalidExecutionStatus": "An execution attempt must be Passed, Failed, Blocked or Skipped.",
     "TestCaseManagement:TestRunAlreadyCompleted": "Test run '{Title}' is already completed.",
+    "TestCaseManagement:TestCaseNotFound": "No test case has the id '{Id}'.",
     "TestCaseManagement:TestRunHasResults": "Test run '{Title}' already has results and cannot be deleted. Complete it instead.",
     "TestCaseManagement:TestRunItemNotFound": "Test run item '{ItemId}' was not found.",
     "TestCaseManagement:DuplicateTestRunItem": "Test case version '{VersionId}' is already part of this test run.",

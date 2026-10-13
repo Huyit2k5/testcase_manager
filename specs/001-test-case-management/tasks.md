@@ -363,3 +363,12 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 
 - [x] T148 The three test projects on MySQL 8.4.11 (Docker): Domain 215, Application 408, HttpApi 82 pass.
 - [x] T149 A copy of the sandbox application on MySQL: migration `Initial` (22 `Tcm` tables), the host started, and a script through the API for the main flows, all passed (plan.md 4.28).
+
+---
+
+## Phase 30: Approving together, and members of a project
+
+- [x] T150 Approve many test cases at once: `ApproveManyAsync` and `POST test-cases/approve`, each as a single approval, failures reported with the reason; the page ticks rows and shows the result; tests (Application 3, page 3, HTTP flow).
+- [x] T151 Members of a project: `Project.IsRestricted`, `ProjectMember`, `TestCase.ProjectId` with its backfill, `ProjectAccessScope`, `ProjectAccessProvider`, the interceptor, the query filters on seven entities, `projects/{id}/access`; checks of attempts, defect links and attachments through their run or test case.
+- [x] T152 Tests of the members: Application 9 (the scope, the provider, the filters across lists, ids, changes, dashboard and matrix, the default project, the project kept on the test case), Domain 4 (the scope), HTTP with real users and permissions 2, page 4 (the Access dialog).
+- [x] T153 Hosts: `ConfigureTestCaseManagement(this)`, `DbSet<ProjectMember>`, migration `AddProjectMembers` in the sandbox; tried in the browser with an admin and a tester; the documentation (business analysis 1.4, README, plan 4.29, spec FR-028).

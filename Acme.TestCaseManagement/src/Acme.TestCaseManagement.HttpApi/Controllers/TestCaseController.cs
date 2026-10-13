@@ -103,6 +103,13 @@ public class TestCaseController : TestCaseManagementController, ITestCaseAppServ
     }
 
     /// <inheritdoc />
+    [HttpPost("approve")]
+    public virtual Task<ApproveTestCasesResultDto> ApproveManyAsync(ApproveTestCasesInput input)
+    {
+        return _testCaseAppService.ApproveManyAsync(input);
+    }
+
+    /// <inheritdoc />
     [HttpGet("{id:guid}/versions")]
     public virtual Task<List<TestCaseVersionDto>> GetVersionsAsync(Guid id)
     {

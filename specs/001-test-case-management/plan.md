@@ -1235,6 +1235,23 @@ Not done: Pomelo, MariaDB, MySQL 5.7, the measurement of 100,000 run items again
 
 ---
 
+### 4.29. Phase 30: approving many test cases together, and members of a project
+
+Both come from the business rules the user confirmed (`business-decisions`): the rest of the review (cross-checking approvers, overriding the gate, sign-off by role, codes per project) was kept as it is.
+
+**Approve together** (`POST test-cases/approve`, `ITestCaseAppService.ApproveManyAsync`). The call takes up to 200 ids and a change summary. Each test case goes through the same code as a single approval (`ChangeStatusAndRecordAsync`: the checks of the status change, the version, the history), in one unit of work; the checks come before anything is changed, so one that is refused (no steps, already approved, deprecated, or no test case with that id) is left as it was, reported with its code and a message in the caller's language, and the others are still approved. The permission is the one of a single approval (`Update` and `Approve`). The page ticks rows (drafts and those waiting for review only), shows a bar with the count, asks for one optional note, and lists what was left as it was.
+
+**Members of a project.**
+- *Model.* `Project.IsRestricted` (false by default, so every project that exists keeps its behaviour) and `ProjectMember(ProjectId, UserId)` (unique, no foreign key; it counts only while the project is restricted). `TestCase.ProjectId` is kept on the test case, copied from its suite when it is made, so that it can be filtered; test cases made before get it from their suite the first time the projects are listed (`ProjectManager.BackfillTestCaseProjectsAsync`).
+- *Who sees what.* `ProjectAccessProvider`: someone who holds `Projects.Manage`, and a caller that is not a user (an API key), see everything; anyone else sees the projects that are not restricted, the ones they are a member of, and what has no project yet.
+- *How it is enforced.* A global query filter on `Project` (by id), `TestSuite`, `TestCase`, `TestPlan`, `Requirement`, `TestRun` and `SignOffReport` (by `ProjectId`) leaves out what is out of reach, so lists, dashboard, matrix, flaky list, export and every read by id are covered with no check to remember in each service. ABP puts one anonymous filter on an entity (soft delete, tenant), so the project filter is joined to it (`AddProjectFilter`). EF re-reads only the members of the DbContext for each query, so the filter reads two members of it (`IsAllProjectsInReach`, `ProjectsInReach`, with defaults on `ITestCaseManagementDbContext` that read `ProjectAccessScope`); a static member, tried first, was read once and kept. For that the model is configured with `builder.ConfigureTestCaseManagement(this)`. `ProjectAccessInterceptor`, added to every application service of the module, sets the scope of the caller for the call (a scope that is already set is kept, so it is worked out once for a request). Things that are reached only through another and have no project (an attempt, a defect link, an attachment) are checked through their run or test case.
+- *Managing.* `GET` and `PUT projects/{id}/access` (permission `Projects.Manage`): the flag and the whole list of members. The page has an Access dialog in the list of projects (the users come from `TCM_USER_DIRECTORY`; without a directory a project can still be restricted but people cannot be chosen).
+- *Left out on purpose.* Roles per project (a member keeps the permissions of the role in the whole application), and the ids a user is known by are the host's.
+- *Found on MySQL.* The provider of Oracle (`Volo.Abp.EntityFrameworkCore.MySQL`) fails with a null reference when a query holds a parameterized **array** (`Guid[].Contains`), while a `List<Guid>` works; the projects in reach are therefore a `List<Guid>` and the filter calls `List<Guid>.Contains`. The tests of the members found it, because the other queries of the module pass lists.
+- *Found while doing it.* Reading whether any project exists must be done with every project in reach, or a caller that sees none would make a second `DEFAULT` project (the bootstrap of the list of projects now does).
+
+---
+
 ## 5. Security, RBAC & Permissions
 
 Defined in `TestCaseManagementPermissions`:

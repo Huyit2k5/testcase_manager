@@ -226,6 +226,7 @@ public class TestRunAppService : TestCaseManagementAppService, ITestRunAppServic
     [Authorize(TestCaseManagementPermissions.TestRuns.Execute)]
     public virtual async Task<DefectLinkDto> AddDefectLinkAsync(Guid executionId, AddDefectLinkDto input)
     {
+        await EnsureExecutionInReachAsync(executionId);
         var execution = await _executionRepository.GetAsync(executionId);
         var link = await _defectManager.AddAsync(
             execution, input.ExternalSystem, input.IssueKey, input.IssueUrl, input.Severity);
@@ -236,6 +237,7 @@ public class TestRunAppService : TestCaseManagementAppService, ITestRunAppServic
     [Authorize(TestCaseManagementPermissions.TestRuns.Execute)]
     public virtual async Task<DefectLinkDto> UpdateDefectLinkAsync(Guid executionId, Guid defectLinkId, UpdateDefectLinkDto input)
     {
+        await EnsureExecutionInReachAsync(executionId);
         var link = await _defectRepository.FindAsync(x => x.Id == defectLinkId && x.TestExecutionId == executionId);
         if (link == null)
         {
@@ -249,6 +251,7 @@ public class TestRunAppService : TestCaseManagementAppService, ITestRunAppServic
 
     public virtual async Task<List<DefectLinkDto>> GetDefectLinksAsync(Guid executionId)
     {
+        await EnsureExecutionInReachAsync(executionId);
         await _executionRepository.GetAsync(executionId);
 
         var links = (await _defectRepository.GetListAsync(x => x.TestExecutionId == executionId))
@@ -261,6 +264,7 @@ public class TestRunAppService : TestCaseManagementAppService, ITestRunAppServic
     [Authorize(TestCaseManagementPermissions.TestRuns.Execute)]
     public virtual async Task RemoveDefectLinkAsync(Guid executionId, Guid defectLinkId)
     {
+        await EnsureExecutionInReachAsync(executionId);
         var link = await _defectRepository.FindAsync(x => x.Id == defectLinkId && x.TestExecutionId == executionId);
         if (link == null)
         {
@@ -280,6 +284,24 @@ public class TestRunAppService : TestCaseManagementAppService, ITestRunAppServic
         await _runRepository.UpdateAsync(run, autoSave: true);
 
         return await BuildRunDtoAsync(run);
+    }
+
+    /// <summary>An attempt is in the run of an item; if that run is in a project the caller may not see, the attempt is not found either.</summary>
+    protected virtual async Task EnsureExecutionInReachAsync(Guid executionId)
+    {
+        var executions = await _executionRepository.GetQueryableAsync();
+        var items = await _itemRepository.GetQueryableAsync();
+        var runs = await _runRepository.GetQueryableAsync();
+        var found = await AsyncExecuter.AnyAsync(
+            from e in executions
+            join i in items on e.TestRunItemId equals i.Id
+            join r in runs on i.TestRunId equals r.Id
+            where e.Id == executionId
+            select e.Id);
+        if (!found)
+        {
+            throw new EntityNotFoundException(typeof(TestExecution), executionId);
+        }
     }
 
     [Authorize(TestCaseManagementPermissions.TestPlans.Manage)]

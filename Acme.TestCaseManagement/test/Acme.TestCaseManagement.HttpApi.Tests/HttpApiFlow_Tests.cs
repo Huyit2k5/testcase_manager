@@ -58,6 +58,9 @@ public class HttpApiFlow_Tests
         (await qaLead.GetAsync<List<ProjectDto>>($"{Root}/projects")).Select(p => p.Key).ShouldContain("WEB");
         (await qaLead.PutAsync<ProjectDto>($"{Root}/projects/{project.Id}", new UpdateProjectDto { Name = "Web shop 2" })).Name.ShouldBe("Web shop 2");
         (await qaLead.GetAsync<ProjectDto>($"{Root}/projects/{project.Id}")).Name.ShouldBe("Web shop 2");
+        (await qaLead.GetAsync<ProjectAccessDto>($"{Root}/projects/{project.Id}/access")).IsRestricted.ShouldBeFalse();
+        (await qaLead.PutAsync<ProjectAccessDto>($"{Root}/projects/{project.Id}/access", new ProjectAccessDto { IsRestricted = false, UserIds = { productOwnerId } }))
+            .UserIds.ShouldBe(new[] { productOwnerId });
         (await qaLead.PostAsync<ProjectDto>($"{Root}/projects/{project.Id}/archive")).IsArchived.ShouldBeTrue();
         (await qaLead.GetAsync<List<ProjectDto>>($"{Root}/projects")).Select(p => p.Key).ShouldNotContain("WEB");
         (await qaLead.PostAsync<ProjectDto>($"{Root}/projects/{project.Id}/restore")).IsArchived.ShouldBeFalse();
@@ -113,6 +116,12 @@ public class HttpApiFlow_Tests
         (await qaLead.GetAsync<List<TestCaseVersionDto>>($"{Root}/test-cases/{caseA.Id}/versions"))
             .Select(version => version.VersionNumber).ShouldBe(new[] { 1, 2 }, ignoreOrder: true);
         (await qaLead.GetAsync<TestCaseVersionDto>($"{Root}/test-cases/{caseA.Id}/versions/1")).Title.ShouldBe("Pay with a valid card");
+        var drafted = await qaLead.PostAsync<TestCaseDto>($"{Root}/test-cases", new CreateUpdateTestCaseDto
+        {
+            SuiteId = caseA.SuiteId, Code = "PAY-BULK", Title = "To approve with the others", Steps = { new TestStepDto { Action = "Pay", ExpectedResult = "Paid" } },
+        });
+        var bulk = await qaLead.PostAsync<ApproveTestCasesResultDto>($"{Root}/test-cases/approve", new ApproveTestCasesInput { TestCaseIds = { drafted.Id }, ChangeSummary = "Bulk" });
+        bulk.ApprovedCodes.ShouldBe(new[] { "PAY-BULK" });
         var history = await qaLead.GetAsync<List<TestCaseHistoryDto>>($"{Root}/test-cases/{caseA.Id}/history");
         history.Select(line => line.Type).ShouldContain(TestCaseHistoryType.Created);
         history.Single(line => line.Type == TestCaseHistoryType.VersionPublished && line.VersionNumber == 2).Note.ShouldBe("Added 3-D Secure");

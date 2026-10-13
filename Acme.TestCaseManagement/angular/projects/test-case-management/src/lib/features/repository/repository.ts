@@ -5,7 +5,7 @@ import { AuthService, Permissions } from '../../core/auth';
 import { I18nService, TranslatePipe } from '../../core/i18n/i18n';
 import { ToastService } from '../../core/core';
 import { badge } from '../../core/ui';
-import { TagSummary, TestCase, TestSuiteTree } from '../../proxy/dtos';
+import { ApproveTestCasesResult, TagSummary, TestCase, TestSuiteTree } from '../../proxy/dtos';
 import { PriorityLevel, SeverityLevel, TestCaseStatus, TransferFormat, enumOptions } from '../../proxy/enums';
 import { TestCaseService, TestSuiteService } from '../../proxy/services';
 import { TransferService, saveFile } from '../../proxy/transfer';
@@ -66,6 +66,13 @@ export class RepositoryComponent implements OnInit {
   protected readonly form = signal<{ existing: TestCase | null } | null>(null);
   protected readonly suiteDialog = signal<{ name: string; description: string } | null>(null);
   protected readonly importOpen = signal(false);
+  protected readonly emptySelection: ReadonlySet<string> = new Set();
+
+  /** The test cases ticked in the list, for approving together. */
+  protected readonly selected = signal<ReadonlySet<string>>(new Set());
+  protected readonly approving = signal(false);
+  /** The test cases that could not be approved together, with the reason, shown after the others were approved. */
+  protected readonly approveReport = signal<ApproveTestCasesResult | null>(null);
   protected readonly formats = TransferFormat;
 
   ngOnInit(): void {
@@ -75,6 +82,53 @@ export class RepositoryComponent implements OnInit {
   }
 
   protected label(type: object, value: number): string { return this.i18n.enumText(type, value); }
+
+  // ---- approving together
+  /** A draft or one waiting for review can be approved; an approved or a deprecated one cannot. */
+  protected approvable(testCase: TestCase): boolean {
+    return testCase.status === TestCaseStatus.Draft || testCase.status === TestCaseStatus.UnderReview;
+  }
+
+  protected isSelected(id: string): boolean { return this.selected().has(id); }
+
+  protected toggleSelected(id: string): void {
+    this.selected.update(current => {
+      const next = new Set(current);
+      if (!next.delete(id)) { next.add(id); }
+      return next;
+    });
+  }
+
+  protected allSelected(): boolean {
+    const rows = this.cases().filter(tc => this.approvable(tc));
+    return rows.length > 0 && rows.every(tc => this.selected().has(tc.id));
+  }
+
+  protected toggleAll(): void {
+    this.selected.set(this.allSelected() ? new Set() : new Set(this.cases().filter(tc => this.approvable(tc)).map(tc => tc.id)));
+  }
+
+  protected approveSelected(): void {
+    const ids = [...this.selected()];
+    if (!ids.length || this.approving()) { return; }
+    this.confirmer.askText({
+      title: this.i18n.t('repo.approveManyTitle'), message: this.i18n.t('repo.approveManyMessage', { n: ids.length }),
+      placeholder: this.i18n.t('detail.changeNoteHint'), confirmText: this.i18n.t('detail.approve'), optional: true,
+    }).subscribe(note => {
+      if (note === null) { return; }
+      this.approving.set(true);
+      this.caseService.approveMany(ids, note).subscribe({
+        next: result => {
+          this.approving.set(false);
+          this.selected.set(new Set());
+          if (result.approved) { this.toast.success(this.i18n.t('repo.approvedMany', { n: result.approved })); }
+          if (result.failed.length) { this.approveReport.set(result); }
+          this.refresh();
+        },
+        error: () => this.approving.set(false),
+      });
+    });
+  }
 
   protected selectSuite(id: string | null): void {
     this.selectedSuite.set(id);
@@ -148,6 +202,9 @@ export class RepositoryComponent implements OnInit {
           return;
         }
         this.cases.set(result.items);
+        // Keep the ticks only for rows that are still on the page.
+        const onPage = new Set((result.items ?? []).map(tc => tc.id));
+        this.selected.update(current => new Set([...current].filter(id => onPage.has(id))));
         this.total.set(result.totalCount);
         this.loading.set(false);
       },

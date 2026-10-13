@@ -12,7 +12,11 @@ export interface PagedRequest { skipCount?: number; maxResultCount?: number; sor
 export interface Project {
   id: string; key: string; name: string; description: string | null; isArchived: boolean;
   suiteCount: number; testCaseCount: number; planCount: number; requirementCount: number; runCount: number;
+  /** True: only the members and the people who manage projects see it. */
+  isRestricted: boolean; memberCount: number;
 }
+/** Who may see a project: everyone, or only the members (the ids the host knows its users by). */
+export interface ProjectAccess { isRestricted: boolean; userIds: string[] }
 export interface SaveProject { name: string; description?: string | null }
 
 export interface TestSuite { projectId: string; id: string; parentId: string | null; name: string; description: string | null; order: number }
@@ -48,6 +52,12 @@ export interface TestCaseVersion {
   postconditions: string | null; changeSummary: string | null; steps: TestStep[]; creationTime: string;
   /** The classification when the version was published; missing on a version published before it was kept. */
   priority?: PriorityLevel | null; severity?: SeverityLevel | null; kind?: TestKind | null; layer?: TestLayer | null; executionType?: ExecutionType | null;
+}
+
+/** What happened when many test cases were approved together. */
+export interface ApproveTestCasesResult {
+  approved: number; approvedCodes: string[];
+  failed: { testCaseId: string; code: string; errorCode: string; message: string }[];
 }
 
 /** One line of the history of a test case. */

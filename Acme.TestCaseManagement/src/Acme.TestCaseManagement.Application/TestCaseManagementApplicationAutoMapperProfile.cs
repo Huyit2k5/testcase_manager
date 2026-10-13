@@ -28,7 +28,8 @@ public class TestCaseManagementApplicationAutoMapperProfile : Profile
             .ForMember(d => d.TestCaseCount, o => o.Ignore())
             .ForMember(d => d.PlanCount, o => o.Ignore())
             .ForMember(d => d.RequirementCount, o => o.Ignore())
-            .ForMember(d => d.RunCount, o => o.Ignore());
+            .ForMember(d => d.RunCount, o => o.Ignore())
+            .ForMember(d => d.MemberCount, o => o.Ignore());
 
         // The name of the group and whether the copy is behind are filled in by the application service, which looks the groups up.
         CreateMap<TestStep, TestStepDto>()

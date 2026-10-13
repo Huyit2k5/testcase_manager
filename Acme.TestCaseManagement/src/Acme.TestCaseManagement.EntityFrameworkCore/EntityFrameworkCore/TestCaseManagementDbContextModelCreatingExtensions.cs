@@ -26,14 +26,18 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
     /// entities it maps the audit and <c>IsDeleted</c> columns. Table names use
     /// <see cref="TestCaseManagementDbProperties.DbTablePrefix"/> (e.g. <c>TcmTestCases</c>).
     /// </remarks>
-    public static void ConfigureTestCaseManagement(this ModelBuilder builder)
+    public static void ConfigureTestCaseManagement(this ModelBuilder builder, ITestCaseManagementDbContext context)
     {
         Check.NotNull(builder, nameof(builder));
+        Check.NotNull(context, nameof(context));
 
         builder.Entity<Project>(b =>
         {
             b.ToTable(TableName("Projects"), TestCaseManagementDbProperties.DbSchema);
             b.ConfigureByConvention();
+
+            // Leaves out what is in a project that the caller may not see (see ProjectAccessScope); ABP joins it with its own filters.
+            AddProjectFilter(b, context, x => x.Id);
 
             b.Property(x => x.Key).IsRequired().HasMaxLength(ProjectConsts.MaxKeyLength);
             b.Property(x => x.Name).IsRequired().HasMaxLength(ProjectConsts.MaxNameLength);
@@ -43,10 +47,23 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
             b.HasIndex(x => new { x.TenantId, x.Key });
         });
 
+        builder.Entity<ProjectMember>(b =>
+        {
+            b.ToTable(TableName("ProjectMembers"), TestCaseManagementDbProperties.DbSchema);
+            b.ConfigureByConvention();
+
+            // No foreign keys: the user belongs to the host, and a project is only soft-deleted.
+            b.HasIndex(x => new { x.ProjectId, x.UserId }).IsUnique();
+            b.HasIndex(x => x.UserId);
+        });
+
         builder.Entity<TestSuite>(b =>
         {
             b.ToTable(TableName("Suites"), TestCaseManagementDbProperties.DbSchema);
             b.ConfigureByConvention();
+
+            // Leaves out what is in a project that the caller may not see (see ProjectAccessScope); ABP joins it with its own filters.
+            AddProjectFilter(b, context, x => x.ProjectId);
 
             b.Property(x => x.Name).IsRequired().HasMaxLength(TestSuiteConsts.MaxNameLength);
             b.Property(x => x.Description).HasMaxLength(TestSuiteConsts.MaxDescriptionLength);
@@ -64,6 +81,9 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
             b.ToTable(TableName("TestCases"), TestCaseManagementDbProperties.DbSchema);
             b.ConfigureByConvention();
 
+            // Leaves out what is in a project that the caller may not see (see ProjectAccessScope); ABP joins it with its own filters.
+            AddProjectFilter(b, context, x => x.ProjectId);
+
             b.Property(x => x.Code).IsRequired().HasMaxLength(TestCaseConsts.MaxCodeLength);
             b.Property(x => x.Title).IsRequired().HasMaxLength(TestCaseConsts.MaxTitleLength);
             b.Property(x => x.Description).HasMaxLength(TestCaseConsts.MaxTextLength);
@@ -77,6 +97,7 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
             // by TestCaseManager against non-deleted rows.
             b.HasIndex(x => new { x.TenantId, x.Code });
             b.HasIndex(x => x.SuiteId);
+            b.HasIndex(x => x.ProjectId);
             b.HasIndex(x => x.Status);
             b.HasIndex(x => x.AutomationId);
 
@@ -168,9 +189,9 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
             b.HasIndex(x => new { x.TestCaseId, x.VersionNumber }).IsUnique();
         });
 
-        ConfigureExecutionCycle(builder);
-        ConfigureTraceability(builder);
-        ConfigureQuality(builder);
+        ConfigureExecutionCycle(builder, context);
+        ConfigureTraceability(builder, context);
+        ConfigureQuality(builder, context);
         ConfigureAutomation(builder);
     }
 
@@ -219,12 +240,15 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
         });
     }
 
-    private static void ConfigureTraceability(ModelBuilder builder)
+    private static void ConfigureTraceability(ModelBuilder builder, ITestCaseManagementDbContext context)
     {
         builder.Entity<Requirement>(b =>
         {
             b.ToTable(TableName("Requirements"), TestCaseManagementDbProperties.DbSchema);
             b.ConfigureByConvention();
+
+            // Leaves out what is in a project that the caller may not see (see ProjectAccessScope); ABP joins it with its own filters.
+            AddProjectFilter(b, context, x => x.ProjectId);
 
             b.Property(x => x.Code).IsRequired().HasMaxLength(RequirementConsts.MaxCodeLength);
             b.Property(x => x.Title).IsRequired().HasMaxLength(RequirementConsts.MaxTitleLength);
@@ -252,7 +276,7 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
         });
     }
 
-    private static void ConfigureQuality(ModelBuilder builder)
+    private static void ConfigureQuality(ModelBuilder builder, ITestCaseManagementDbContext context)
     {
         builder.Entity<DefectLink>(b =>
         {
@@ -293,6 +317,9 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
             b.ToTable(TableName("SignOffReports"), TestCaseManagementDbProperties.DbSchema);
             b.ConfigureByConvention();
 
+            // Leaves out what is in a project that the caller may not see (see ProjectAccessScope); ABP joins it with its own filters.
+            AddProjectFilter(b, context, x => x.ProjectId);
+
             b.Property(x => x.Title).IsRequired().HasMaxLength(SignOffConsts.MaxTitleLength);
             b.Property(x => x.QualityGateName).IsRequired().HasMaxLength(QualityGateConsts.MaxNameLength);
             b.Property(x => x.MinPassRate).HasPrecision(5, 2);
@@ -324,12 +351,15 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
         });
     }
 
-    private static void ConfigureExecutionCycle(ModelBuilder builder)
+    private static void ConfigureExecutionCycle(ModelBuilder builder, ITestCaseManagementDbContext context)
     {
         builder.Entity<TestPlan>(b =>
         {
             b.ToTable(TableName("TestPlans"), TestCaseManagementDbProperties.DbSchema);
             b.ConfigureByConvention();
+
+            // Leaves out what is in a project that the caller may not see (see ProjectAccessScope); ABP joins it with its own filters.
+            AddProjectFilter(b, context, x => x.ProjectId);
 
             b.Property(x => x.Name).IsRequired().HasMaxLength(TestPlanConsts.MaxNameLength);
             b.Property(x => x.Description).HasMaxLength(TestPlanConsts.MaxDescriptionLength);
@@ -343,6 +373,9 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
         {
             b.ToTable(TableName("TestRuns"), TestCaseManagementDbProperties.DbSchema);
             b.ConfigureByConvention();
+
+            // Leaves out what is in a project that the caller may not see (see ProjectAccessScope); ABP joins it with its own filters.
+            AddProjectFilter(b, context, x => x.ProjectId);
 
             b.Property(x => x.Title).IsRequired().HasMaxLength(TestRunConsts.MaxTitleLength);
             b.Property(x => x.Environment).IsRequired().HasMaxLength(TestRunConsts.MaxEnvironmentLength);
@@ -384,6 +417,55 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
             // Attempt numbers are allocated once per item, so concurrent testers cannot create a duplicate attempt.
             b.HasIndex(x => new { x.TestRunItemId, x.AttemptNumber }).IsUnique();
         });
+    }
+
+    /// <summary>
+    /// Adds the project filter to the filter that ABP already put on the entity (soft delete, tenant): EF takes one such filter per
+    /// entity, so the two are joined with "and". ABP sets its filters when the context is built, before this runs.
+    /// <para>
+    /// The filter reads two members of the <paramref name="context"/> itself, because EF re-reads only the members of the context
+    /// for every query (the way ABP's own filters read <c>CurrentTenantId</c>); a static member would be read once and kept.
+    /// </para>
+    /// </summary>
+    private static void AddProjectFilter<T>(
+        Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<T> builder,
+        ITestCaseManagementDbContext context,
+        System.Linq.Expressions.Expression<Func<T, Guid>> projectOf)
+        where T : class
+    {
+        var parameter = projectOf.Parameters[0];
+        var self = System.Linq.Expressions.Expression.Constant(context, context.GetType());
+        var asInterface = System.Linq.Expressions.Expression.Convert(self, typeof(ITestCaseManagementDbContext));
+        var unrestricted = System.Linq.Expressions.Expression.Property(asInterface, nameof(ITestCaseManagementDbContext.IsAllProjectsInReach));
+        var visible = System.Linq.Expressions.Expression.Property(asInterface, nameof(ITestCaseManagementDbContext.ProjectsInReach));
+        var contains = System.Linq.Expressions.Expression.Call(visible, typeof(List<Guid>).GetMethod(nameof(List<Guid>.Contains), new[] { typeof(Guid) })!, projectOf.Body);
+        var projectFilter = System.Linq.Expressions.Expression.Lambda<Func<T, bool>>(System.Linq.Expressions.Expression.OrElse(unrestricted, contains), parameter);
+
+        var existing = builder.Metadata.GetDeclaredQueryFilters().FirstOrDefault(filter => filter.Key == null)?.Expression;
+        if (existing == null)
+        {
+            builder.HasQueryFilter(projectFilter);
+            return;
+        }
+
+        var shared = System.Linq.Expressions.Expression.Parameter(typeof(T), "x");
+        var left = new ReplaceParameter(existing.Parameters[0], shared).Visit(existing.Body)!;
+        var right = new ReplaceParameter(parameter, shared).Visit(projectFilter.Body)!;
+        builder.HasQueryFilter(System.Linq.Expressions.Expression.Lambda<Func<T, bool>>(System.Linq.Expressions.Expression.AndAlso(left, right), shared));
+    }
+
+    private sealed class ReplaceParameter : System.Linq.Expressions.ExpressionVisitor
+    {
+        private readonly System.Linq.Expressions.ParameterExpression _from;
+        private readonly System.Linq.Expressions.ParameterExpression _to;
+
+        public ReplaceParameter(System.Linq.Expressions.ParameterExpression from, System.Linq.Expressions.ParameterExpression to)
+        {
+            _from = from;
+            _to = to;
+        }
+
+        protected override System.Linq.Expressions.Expression VisitParameter(System.Linq.Expressions.ParameterExpression node) => node == _from ? _to : node;
     }
 
     public static string TableName(string name) => TestCaseManagementDbProperties.DbTablePrefix + name;

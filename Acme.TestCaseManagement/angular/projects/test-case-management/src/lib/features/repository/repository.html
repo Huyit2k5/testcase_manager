@@ -57,14 +57,29 @@
         </form>
       </div>
 
+      @if (auth.can(perm.TestCases.Approve) && selected().size > 0) {
+        <div class="card row" data-test="bulk-bar" style="justify-content: space-between">
+          <span>{{ 'repo.selectedCount' | t: { n: selected().size } }}</span>
+          <div class="row">
+            <button type="button" class="btn sm" (click)="selected.set(emptySelection)">{{ 'picker.clear' | t }}</button>
+            <button type="button" class="btn primary sm" data-test="approve-selected" [disabled]="approving()" (click)="approveSelected()">{{ 'repo.approveSelected' | t: { n: selected().size } }}</button>
+          </div>
+        </div>
+      }
+
       <div class="card flush">
         <table>
           <thead>
-            <tr><th>{{ 'common.code' | t }}</th><th>{{ 'common.title' | t }}</th><th>{{ 'common.priority' | t }}</th><th>{{ 'common.severity' | t }}</th><th>{{ 'common.status' | t }}</th><th>{{ 'common.version' | t }}</th></tr>
+            <tr>@if (auth.can(perm.TestCases.Approve)) { <th style="width: 32px"><input type="checkbox" data-test="select-all" [checked]="allSelected()" (change)="toggleAll()" [attr.aria-label]="'repo.selectAll' | t" /></th> }<th>{{ 'common.code' | t }}</th><th>{{ 'common.title' | t }}</th><th>{{ 'common.priority' | t }}</th><th>{{ 'common.severity' | t }}</th><th>{{ 'common.status' | t }}</th><th>{{ 'common.version' | t }}</th></tr>
           </thead>
           <tbody>
             @for (tc of cases(); track tc.id) {
               <tr class="clickable" tabindex="0" (click)="open(tc)" (keydown.enter)="open(tc)">
+                @if (auth.can(perm.TestCases.Approve)) {
+                  <td (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()">
+                    <input type="checkbox" data-test="select-row" [disabled]="!approvable(tc)" [checked]="isSelected(tc.id)" (change)="toggleSelected(tc.id)" [attr.aria-label]="'repo.selectRow' | t: { code: tc.code }" />
+                  </td>
+                }
                 <td class="mono nowrap">{{ tc.code }}</td>
                 <td>{{ tc.title }}@if (tc.tags.length) { <div class="chips">@for (t of tc.tags; track t) { <span class="chip small">{{ t }}</span> }</div> }</td>
                 <td><span class="badge" [class]="badgeOf('priority', tc.priority)">{{ label(priorityEnum, tc.priority) }}</span></td>
@@ -107,6 +122,21 @@
     <ng-container slot="footer">
       <button type="button" class="btn" (click)="suiteDialog.set(null)">{{ 'common.cancel' | t }}</button>
       <button type="submit" form="suite-form" class="btn primary" [disabled]="suiteBusy()">{{ 'common.create' | t }}</button>
+    </ng-container>
+  </app-modal>
+}
+
+@if (approveReport(); as report) {
+  <app-modal [title]="'repo.approveFailedTitle' | t" (closed)="approveReport.set(null)">
+    <p>{{ 'repo.approveFailedIntro' | t: { approved: report.approved, failed: report.failed.length } }}</p>
+    <table data-test="approve-failures">
+      <thead><tr><th>{{ 'common.code' | t }}</th><th>{{ 'repo.reason' | t }}</th></tr></thead>
+      <tbody>
+        @for (f of report.failed; track f.testCaseId) { <tr><td class="mono nowrap">{{ f.code || '-' }}</td><td>{{ f.message }}</td></tr> }
+      </tbody>
+    </table>
+    <ng-container slot="footer">
+      <button type="button" class="btn primary" (click)="approveReport.set(null)">{{ 'common.close' | t }}</button>
     </ng-container>
   </app-modal>
 }

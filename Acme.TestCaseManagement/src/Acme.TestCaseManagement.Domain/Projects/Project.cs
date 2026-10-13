@@ -21,6 +21,12 @@ public class Project : FullAuditedAggregateRoot<Guid>, IMultiTenant
     /// <summary>An archived project is kept for reading, and nothing can be added to it.</summary>
     public virtual bool IsArchived { get; protected set; }
 
+    /// <summary>
+    /// False (the default, and what every project made before members existed is): everyone who may use the module sees the project.
+    /// True: only its members, and the people who manage projects, see it and what is in it.
+    /// </summary>
+    public virtual bool IsRestricted { get; protected set; }
+
     protected Project()
     {
         Key = default!;
@@ -49,6 +55,11 @@ public class Project : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public virtual void SetDescription(string? description)
     {
         Description = Check.Length(description, nameof(description), ProjectConsts.MaxDescriptionLength);
+    }
+
+    public virtual void SetRestricted(bool restricted)
+    {
+        IsRestricted = restricted;
     }
 
     public virtual void Archive()

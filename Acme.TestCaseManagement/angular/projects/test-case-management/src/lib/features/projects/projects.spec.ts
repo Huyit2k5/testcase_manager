@@ -15,7 +15,7 @@ const ROOT = '/api/test-case-management';
 
 const project = (patch: Partial<Project> = {}): Project => ({
   id: 'p1', key: 'EINV', name: 'EasyInvoice', description: null, isArchived: false,
-  suiteCount: 2, testCaseCount: 10, planCount: 1, requirementCount: 3, runCount: 1, ...patch,
+  suiteCount: 2, testCaseCount: 10, planCount: 1, requirementCount: 3, runCount: 1, isRestricted: false, memberCount: 0, ...patch,
 });
 
 describe('the project the user works in', () => {

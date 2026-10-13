@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { apiRoot } from '../core/host';
-import { Project, SaveProject } from './dtos';
+import { Project, ProjectAccess, SaveProject } from './dtos';
 
 @Injectable({ providedIn: 'root' })
 export class ProjectService {
@@ -21,4 +21,7 @@ export class ProjectService {
   archive(id: string): Observable<Project> { return this.http.post<Project>(`${this.root}/projects/${id}/archive`, null); }
   restore(id: string): Observable<Project> { return this.http.post<Project>(`${this.root}/projects/${id}/restore`, null); }
   delete(id: string): Observable<void> { return this.http.delete<void>(`${this.root}/projects/${id}`); }
+  getAccess(id: string): Observable<ProjectAccess> { return this.http.get<ProjectAccess>(`${this.root}/projects/${id}/access`); }
+  /** Replaces the list of members and says whether the project is restricted to them. */
+  updateAccess(id: string, access: ProjectAccess): Observable<ProjectAccess> { return this.http.put<ProjectAccess>(`${this.root}/projects/${id}/access`, access); }
 }

@@ -71,7 +71,7 @@ public class MyHostDbContext : AbpDbContext<MyHostDbContext>, ITestCaseManagemen
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
-        builder.ConfigureTestCaseManagement();
+        builder.ConfigureTestCaseManagement(this);
     }
 }
 ```
@@ -156,10 +156,12 @@ All routes start with `api/test-case-management/`.
 | Route | Purpose |
 |---|---|
 | `projects` | list (archived ones on request), get, create, update, archive, restore, delete (only while empty) |
+| `projects/{id}/access` | `GET` and `PUT`: whether the project is for its members only, and who they are (permission `Projects.Manage`) |
 | `suites` | suite tree (`projectId` limits it to one project), create, update, move, delete |
 | `test-cases` | test cases, step ordering, status changes, versions, linked defects; `GET` filters by text, suite, status, priority, severity, kind, layer, execution type, `Tags` (all of them) and `HasAutomationId` |
 | `test-cases/{id}/history` | what happened to a test case, newest first: made, edited (the fields), status, versions published, tags, step order, shared steps |
 | `test-cases/{id}/tags`, `test-cases/tags` | replace the tags of a test case (no new version), and list the tags in use with their counts |
+| `test-cases/approve` | `POST` approves many test cases at once, each as if alone; the ones that cannot be approved come back with the reason |
 | `test-cases/export`, `test-cases/import` | Excel or CSV export (with the list filters) and import of test cases |
 | `runs/{runId}/results/export`, `.../import` | Excel or CSV export of every attempt of a run, and import of results |
 | `plans` | test plans and plan status |
@@ -204,6 +206,7 @@ gate and the export take an optional `ProjectId`; leaving it out answers for eve
 - **No mixing.** A suite below another is in its parent's project; a suite or a test case cannot be moved into another project; a test case cannot be put in a run of another project, nor linked to a requirement of another project. A run of a plan is in the plan's project.
 - **Archive.** Nothing can be added to an archived project; it is still read. A project is deleted only while it has no suites, plans, requirements or runs.
 - **Old data.** The first call of `GET projects` on a library that has no project makes the default project and gives it everything that was made before (once). The host adds the migration for the new table and columns.
+- **Members.** A project can be made "for its members only" (`PUT projects/{id}/access`). Then only its members and the people who hold `Projects.Manage` see it and what is in it (suites, test cases, plans, runs, requirements, sign-offs, attachments, defect links): to anyone else that data does not exist, so a list leaves it out and a call by id answers "not found". A project that is not restricted (the default, and every project made before this existed) is seen by everyone who may use the module. Members keep the limits of their roles; the list of members counts only while the project is restricted. A caller that is not a user, such as an API key, is not limited. How it works: each application service of the module runs inside a `ProjectAccessScope` of its caller, and global query filters on the entities that have a project read it.
 - **Shared on purpose.** Shared-step groups, the codes of test cases and of requirements (unique in the whole library: use a prefix such as `EINV-`), the quality gates and the permissions are not per project.
 
 ## Shared steps
@@ -212,7 +215,7 @@ A group of steps ("Log in as a customer") is written once in the library and cop
 link to the group and the revision copied, so changing a group never changes an approved test case, a version or a run by itself: the test cases that
 copied an older revision show as behind, and `POST shared-step-groups/{id}/update-test-cases` (or the refresh of one test case) brings them up to date, with
 the approved ones going back to review. Editing a copied step inside a test case, or detaching, makes it the test case's own. A group in use cannot be deleted.
-A host that embeds the model in its own DbContext also needs `DbSet<SharedStepGroup>`. The reasoning is in `specs/001-test-case-management/plan.md`, section 4.13.
+A host that embeds the model in its own DbContext also needs `DbSet<SharedStepGroup>`, and, for the history of a test case and for the members of a project, `DbSet<TestCaseHistoryEntry>` and `DbSet<ProjectMember>`; it calls `builder.ConfigureTestCaseManagement(this)` with its own context (the project filters read two members of it, which `ITestCaseManagementDbContext` gives a default, so nothing else is written). The new columns are `TcmProjects.IsRestricted` and `TcmTestCases.ProjectId` (filled in from the suite the first time the projects are listed after the upgrade). The reasoning is in `specs/001-test-case-management/plan.md`, section 4.13.
 
 ## Tags
 
@@ -381,7 +384,7 @@ symbol packages. Requires the .NET SDK 10 (see `global.json`).
   reaches host applications through ABP itself.
 - Sign-off approvals carry a SHA-256 integrity digest that detects tampering; they are not asymmetric digital
   signatures and do not give non-repudiation.
-- A project has no permissions of its own: whoever may read test cases reads them in every project. Codes of test cases and requirements are unique in the whole library, and shared-step groups and gates are shared between projects.
+- A project has no roles of its own: it only decides who sees it (its members, and whoever manages projects); the permissions are those of the role in the whole application. Codes of test cases and requirements are unique in the whole library, and shared-step groups and gates are shared between projects.
 - The module contains no EF Core migrations. Its UI is Angular only, shared as a source folder (not an npm package), tried with an ABP host on
   Angular 22.0 and the LeptonX Lite side menu; it keeps its own light palette instead of following the host's theme.
 - Deleting a test case does not delete its attachments; a pipeline cannot attach files yet; files are held in memory while stored (25 MB limit).

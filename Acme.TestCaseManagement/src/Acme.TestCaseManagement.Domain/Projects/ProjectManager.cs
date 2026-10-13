@@ -20,6 +20,7 @@ public class ProjectManager : DomainService
     private readonly IRepository<Requirement, Guid> _requirements;
     private readonly IRepository<TestRun, Guid> _runs;
     private readonly IRepository<SignOffReport, Guid> _reports;
+    private readonly IRepository<TestCases.TestCase, Guid> _testCases;
 
     public ProjectManager(
         IRepository<Project, Guid> projects,
@@ -27,7 +28,8 @@ public class ProjectManager : DomainService
         IRepository<TestPlan, Guid> plans,
         IRepository<Requirement, Guid> requirements,
         IRepository<TestRun, Guid> runs,
-        IRepository<SignOffReport, Guid> reports)
+        IRepository<SignOffReport, Guid> reports,
+        IRepository<TestCases.TestCase, Guid> testCases)
     {
         _projects = projects;
         _suites = suites;
@@ -35,6 +37,7 @@ public class ProjectManager : DomainService
         _requirements = requirements;
         _runs = runs;
         _reports = reports;
+        _testCases = testCases;
     }
 
     /// <summary>A key as it is kept: capitals, no spaces. Throws when it is not 2 to 10 capital letters or digits starting with a letter.</summary>
@@ -155,6 +158,40 @@ public class ProjectManager : DomainService
     /// Gives what was made before projects existed (no project, Guid.Empty) to the default project. Safe to run again: it does nothing when
     /// everything has a project. Returns how many rows it assigned.
     /// </summary>
+    /// <summary>
+    /// Gives the test cases that have no project yet the project of their suite (once, for what was made before test cases kept it).
+    /// Done with every project in reach, whoever asks, so that nothing is left out.
+    /// </summary>
+    public virtual async Task<int> BackfillTestCaseProjectsAsync()
+    {
+        using var _ = ProjectAccessScope.Unrestrict();
+
+        var pending = await _testCases.GetListAsync(x => x.ProjectId == Guid.Empty);
+        if (pending.Count == 0)
+        {
+            return 0;
+        }
+
+        var suiteIds = pending.Select(x => x.SuiteId).Distinct().ToList();
+        var projectOf = (await _suites.GetListAsync(x => suiteIds.Contains(x.Id))).ToDictionary(x => x.Id, x => x.ProjectId);
+        var changed = new List<TestCases.TestCase>();
+        foreach (var testCase in pending)
+        {
+            if (projectOf.TryGetValue(testCase.SuiteId, out var projectId) && projectId != Guid.Empty)
+            {
+                testCase.SetProject(projectId);
+                changed.Add(testCase);
+            }
+        }
+
+        if (changed.Count > 0)
+        {
+            await _testCases.UpdateManyAsync(changed, autoSave: true);
+        }
+
+        return changed.Count;
+    }
+
     public virtual async Task<int> AssignUnassignedToDefaultAsync()
     {
         var unassigned = Guid.Empty;

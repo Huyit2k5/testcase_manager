@@ -6,9 +6,12 @@ import { I18nService, TranslatePipe } from '../../core/i18n/i18n';
 import { IconButtonComponent } from '../../core/icon-button';
 import { ModalComponent } from '../../core/modal';
 import { ProjectContext } from '../../core/project-context';
+import { AuthService, Permissions } from '../../core/auth';
+import { UserNames } from '../../core/users';
 import { Project } from '../../proxy/dtos';
 import { ProjectService } from '../../proxy/projects';
 
+interface AccessForm { project: Project; isRestricted: boolean; userIds: string[]; pick: string }
 interface ProjectForm { id: string | null; key: string; name: string; description: string }
 
 /** The page that manages the projects: who works on what is chosen in the bar above; here they are made, renamed, archived and removed. */
@@ -41,6 +44,7 @@ interface ProjectForm { id: string | null; key: string; name: string; descriptio
                 <td>
                   {{ project.name }}
                   @if (project.isArchived) { <span class="badge">{{ 'project.archived' | t }}</span> }
+                  @if (project.isRestricted) { <span class="badge warn" data-test="restricted-badge">{{ 'project.restricted' | t }} · {{ 'project.membersCount' | t: { n: project.memberCount } }}</span> }
                   @if (project.description) { <div class="muted">{{ project.description }}</div> }
                 </td>
                 <td class="muted">
@@ -56,6 +60,7 @@ interface ProjectForm { id: string | null; key: string; name: string; descriptio
                   @if (isEmpty(project)) {
                     <button type="button" tcmIcon="trash" [attr.aria-label]="'common.delete' | t" [attr.title]="'common.delete' | t" (click)="remove(project)"></button>
                   }
+                  @if (auth.can(perm.Projects.Manage)) { <button type="button" class="btn sm" data-test="project-access" (click)="openAccess(project)">{{ 'project.access' | t }}</button> }
                 </td>
               </tr>
             }
@@ -64,6 +69,43 @@ interface ProjectForm { id: string | null; key: string; name: string; descriptio
         </table>
       </div>
     </div>
+
+    @if (access(); as a) {
+      <app-modal [title]="'project.accessTitle' | t: { name: a.project.name }" (closed)="access.set(null)">
+        <label class="row" style="margin-bottom: 8px">
+          <input type="checkbox" name="restricted" data-test="restrict" [checked]="a.isRestricted" (change)="a.isRestricted = !a.isRestricted" />
+          {{ 'project.restrictedLabel' | t }}
+        </label>
+        <p class="muted">{{ 'project.restrictedHelp' | t }}</p>
+
+        <h3>{{ 'project.members' | t }}</h3>
+        @if (a.userIds.length) {
+          <ul class="member-list" data-test="members">
+            @for (id of a.userIds; track id) {
+              <li><span>{{ names.nameOf(id) ?? id }}</span> <button type="button" class="btn sm" (click)="removeMember(a, id)" [attr.aria-label]="'common.remove' | t">{{ 'common.remove' | t }}</button></li>
+            }
+          </ul>
+        } @else {
+          <p class="muted">{{ 'project.noMembers' | t }}</p>
+        }
+
+        @if (names.available()) {
+          <div class="row">
+            <select name="member-pick" data-test="member-pick" [(ngModel)]="a.pick" [attr.aria-label]="'project.pickUser' | t" style="width: auto; min-width: 240px">
+              <option value="">{{ 'project.pickUser' | t }}</option>
+              @for (u of candidates(a); track u.id) { <option [value]="u.id">{{ u.displayName }}</option> }
+            </select>
+            <button type="button" class="btn" data-test="member-add" [disabled]="!a.pick" (click)="addMember(a)">{{ 'common.add' | t }}</button>
+          </div>
+        } @else {
+          <p class="muted">{{ 'project.noDirectory' | t }}</p>
+        }
+        <ng-container slot="footer">
+          <button type="button" class="btn" (click)="access.set(null)">{{ 'common.cancel' | t }}</button>
+          <button type="button" class="btn primary" data-test="access-save" [disabled]="busy()" (click)="saveAccess()">{{ 'common.save' | t }}</button>
+        </ng-container>
+      </app-modal>
+    }
 
     @if (form(); as f) {
       <app-modal [title]="(f.id ? 'project.editTitle' : 'project.new') | t" [narrow]="true" (closed)="form.set(null)">
@@ -97,12 +139,50 @@ export class ProjectsComponent implements OnInit {
   private readonly i18n = inject(I18nService);
   private readonly confirmer = inject(ConfirmService);
 
+  protected readonly auth = inject(AuthService);
+  protected readonly names = inject(UserNames);
+  protected readonly perm = Permissions;
+
+  protected readonly access = signal<AccessForm | null>(null);
   protected readonly projects = signal<Project[]>([]);
   protected readonly form = signal<ProjectForm | null>(null);
   protected readonly busy = signal(false);
   protected showArchived = false;
 
   ngOnInit(): void { this.load(); }
+
+  // ---- who may see a project
+  protected openAccess(project: Project): void {
+    this.names.load();
+    this.service.getAccess(project.id).subscribe(current => this.access.set({ project, isRestricted: current.isRestricted, userIds: [...current.userIds], pick: '' }));
+  }
+
+  /** The users of the host who are not members yet. */
+  protected candidates(form: AccessForm) {
+    return this.names.users().filter(u => !form.userIds.includes(u.id));
+  }
+
+  protected addMember(form: AccessForm): void {
+    if (form.pick && !form.userIds.includes(form.pick)) { form.userIds = [...form.userIds, form.pick]; }
+    form.pick = '';
+  }
+
+  protected removeMember(form: AccessForm, id: string): void { form.userIds = form.userIds.filter(x => x !== id); }
+
+  protected saveAccess(): void {
+    const form = this.access();
+    if (!form || this.busy()) { return; }
+    this.busy.set(true);
+    this.service.updateAccess(form.project.id, { isRestricted: form.isRestricted, userIds: form.userIds }).subscribe({
+      next: () => {
+        this.busy.set(false);
+        this.toast.success(this.i18n.t('project.accessSaved'));
+        this.access.set(null);
+        this.changed(null);
+      },
+      error: () => this.busy.set(false),
+    });
+  }
 
   protected toggleArchived(value: boolean): void {
     this.showArchived = value;

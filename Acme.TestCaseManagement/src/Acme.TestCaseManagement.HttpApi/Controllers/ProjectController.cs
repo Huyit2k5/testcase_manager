@@ -45,6 +45,20 @@ public class ProjectController : TestCaseManagementController, IProjectAppServic
     }
 
     /// <inheritdoc />
+    [HttpGet("{id:guid}/access")]
+    public virtual Task<ProjectAccessDto> GetAccessAsync(Guid id)
+    {
+        return _projectAppService.GetAccessAsync(id);
+    }
+
+    /// <inheritdoc />
+    [HttpPut("{id:guid}/access")]
+    public virtual Task<ProjectAccessDto> UpdateAccessAsync(Guid id, ProjectAccessDto input)
+    {
+        return _projectAppService.UpdateAccessAsync(id, input);
+    }
+
+    /// <inheritdoc />
     [HttpPost("{id:guid}/archive")]
     public virtual Task<ProjectDto> ArchiveAsync(Guid id)
     {

@@ -50,6 +50,13 @@ public interface ITestCaseAppService : IApplicationService
     /// </summary>
     Task<TestCaseDto> ChangeStatusAsync(Guid id, ChangeTestCaseStatusDto input);
 
+    /// <summary>
+    /// Approves many test cases at once, for example after an import. Each test case is approved exactly as if it were approved on
+    /// its own (it needs the Approve permission, has at least one step, and gets its own version); one that cannot be approved is
+    /// left as it is and reported, and the others still are.
+    /// </summary>
+    Task<ApproveTestCasesResultDto> ApproveManyAsync(ApproveTestCasesInput input);
+
     Task<List<TestCaseVersionDto>> GetVersionsAsync(Guid id);
 
     Task<TestCaseVersionDto> GetVersionAsync(Guid id, int versionNumber);

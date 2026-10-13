@@ -20,6 +20,7 @@ public class ProjectAppService : TestCaseManagementAppService, IProjectAppServic
     private readonly IRepository<TestRun, Guid> _runs;
     private readonly ITestCaseRepository _testCases;
     private readonly ProjectManager _manager;
+    private readonly IRepository<ProjectMember, Guid> _members;
 
     public ProjectAppService(
         IRepository<Project, Guid> projects,
@@ -28,7 +29,8 @@ public class ProjectAppService : TestCaseManagementAppService, IProjectAppServic
         IRepository<Requirement, Guid> requirements,
         IRepository<TestRun, Guid> runs,
         ITestCaseRepository testCases,
-        ProjectManager manager)
+        ProjectManager manager,
+        IRepository<ProjectMember, Guid> members)
     {
         _projects = projects;
         _suites = suites;
@@ -37,19 +39,27 @@ public class ProjectAppService : TestCaseManagementAppService, IProjectAppServic
         _runs = runs;
         _testCases = testCases;
         _manager = manager;
+        _members = members;
     }
 
     public virtual async Task<List<ProjectDto>> GetListAsync(GetProjectListInput input)
     {
-        if (!await _projects.AnyAsync())
+        // Seen with every project in reach, whoever asks: whether there is a project at all is not a question about what the caller may see.
+        using (ProjectAccessScope.Unrestrict())
         {
-            // A library that was used before projects existed: its data goes to the default project, once.
-            await LockUntilTheRequestEndsAsync("projects-bootstrap");
             if (!await _projects.AnyAsync())
             {
-                await _manager.GetOrCreateDefaultAsync();
-                await _manager.AssignUnassignedToDefaultAsync();
+                // A library that was used before projects existed: its data goes to the default project, once.
+                await LockUntilTheRequestEndsAsync("projects-bootstrap");
+                if (!await _projects.AnyAsync())
+                {
+                    await _manager.GetOrCreateDefaultAsync();
+                    await _manager.AssignUnassignedToDefaultAsync();
+                }
             }
+
+            // Test cases made before they kept their project take it from their suite, once.
+            await _manager.BackfillTestCaseProjectsAsync();
         }
 
         var projects = (await _projects.GetListAsync(x => input.IncludeArchived || !x.IsArchived))
@@ -114,8 +124,49 @@ public class ProjectAppService : TestCaseManagementAppService, IProjectAppServic
     }
 
     /// <summary>Adds what is in each project: one query per kind, however many projects there are.</summary>
+    [Authorize(TestCaseManagementPermissions.Projects.Manage)]
+    public virtual async Task<ProjectAccessDto> GetAccessAsync(Guid id)
+    {
+        var project = await _manager.GetAsync(id);
+        return await AccessOfAsync(project);
+    }
+
+    [Authorize(TestCaseManagementPermissions.Projects.Manage)]
+    public virtual async Task<ProjectAccessDto> UpdateAccessAsync(Guid id, ProjectAccessDto input)
+    {
+        var project = await _manager.GetAsync(id);
+        var wanted = input.UserIds.Where(u => u != Guid.Empty).Distinct().ToHashSet();
+
+        var current = await _members.GetListAsync(m => m.ProjectId == id);
+        var removed = current.Where(m => !wanted.Contains(m.UserId)).ToList();
+        if (removed.Count > 0)
+        {
+            await _members.DeleteManyAsync(removed);
+        }
+
+        var known = current.Select(m => m.UserId).ToHashSet();
+        var added = wanted.Where(u => !known.Contains(u))
+            .Select(u => new ProjectMember(GuidGenerator.Create(), CurrentTenant.Id, id, u))
+            .ToList();
+        if (added.Count > 0)
+        {
+            await _members.InsertManyAsync(added);
+        }
+
+        project.SetRestricted(input.IsRestricted);
+        await _projects.UpdateAsync(project, autoSave: true);
+        return await AccessOfAsync(project);
+    }
+
+    private async Task<ProjectAccessDto> AccessOfAsync(Project project)
+    {
+        var members = await _members.GetListAsync(m => m.ProjectId == project.Id);
+        return new ProjectAccessDto { IsRestricted = project.IsRestricted, UserIds = members.Select(m => m.UserId).OrderBy(u => u).ToList() };
+    }
+
     private async Task<List<ProjectDto>> ToDtosAsync(List<Project> projects)
     {
+        var memberCounts = (await _members.GetListAsync()).GroupBy(m => m.ProjectId).ToDictionary(g => g.Key, g => g.Count());
         var suiteQuery = await _suites.GetQueryableAsync();
         var suiteProject = (await AsyncExecuter.ToListAsync(suiteQuery.Select(s => new { s.Id, s.ProjectId })))
             .ToDictionary(s => s.Id, s => s.ProjectId);
@@ -146,6 +197,7 @@ public class ProjectAppService : TestCaseManagementAppService, IProjectAppServic
                 dto.PlanCount = planCounts.GetValueOrDefault(project.Id);
                 dto.RequirementCount = requirementCounts.GetValueOrDefault(project.Id);
                 dto.RunCount = runCounts.GetValueOrDefault(project.Id);
+                dto.MemberCount = memberCounts.GetValueOrDefault(project.Id);
                 return dto;
             })
             .ToList();

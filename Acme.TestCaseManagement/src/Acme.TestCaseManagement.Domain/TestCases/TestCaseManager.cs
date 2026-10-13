@@ -43,7 +43,9 @@ public class TestCaseManager : DomainService
         await _projectManager.EnsureSuiteIsOpenAsync(suiteId);
         await EnsureCodeIsUniqueAsync(code, exceptTestCaseId: null);
 
-        return new TestCase(GuidGenerator.Create(), CurrentTenant.Id, suiteId, code, title);
+        var testCase = new TestCase(GuidGenerator.Create(), CurrentTenant.Id, suiteId, code, title);
+        testCase.SetProject(await _projectManager.GetProjectOfSuiteAsync(suiteId));
+        return testCase;
     }
 
     public virtual async Task ChangeCodeAsync(TestCase testCase, string newCode)

@@ -17,7 +17,18 @@ namespace Acme.TestCaseManagement.EntityFrameworkCore;
 [ConnectionStringName(TestCaseManagementDbProperties.ConnectionStringName)]
 public interface ITestCaseManagementDbContext : IEfCoreDbContext
 {
+    /// <summary>
+    /// True when every project is in reach of the code that is running (see <see cref="ProjectAccessScope"/>). Read by the query filters
+    /// for every query. A host that embeds the model needs to write nothing: this has a default.
+    /// </summary>
+    bool IsAllProjectsInReach => ProjectAccessScope.Unrestricted;
+
+    /// <summary>The projects in reach when <see cref="IsAllProjectsInReach"/> is false. Read by the query filters for every query.</summary>
+    List<Guid> ProjectsInReach => ProjectAccessScope.VisibleProjectIds;
+
     DbSet<Project> Projects { get; }
+
+    DbSet<ProjectMember> ProjectMembers { get; }
 
     // Master library (design time)
     DbSet<TestSuite> TestSuites { get; }

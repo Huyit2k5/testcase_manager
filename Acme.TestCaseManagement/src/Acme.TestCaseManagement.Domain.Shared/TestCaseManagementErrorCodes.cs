@@ -4,6 +4,7 @@ public static class TestCaseManagementErrorCodes
 {
     // Suites
     public const string CircularSuiteDependency = "TestCaseManagement:CircularSuiteDependency";
+    public const string TestCaseNotFound = "TestCaseManagement:TestCaseNotFound";
     public const string SuiteNotFound = "TestCaseManagement:SuiteNotFound";
     public const string SuiteNotEmpty = "TestCaseManagement:SuiteNotEmpty";
 

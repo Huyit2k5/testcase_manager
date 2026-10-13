@@ -15,6 +15,8 @@
 | Phiên bản | Ngày | Nội dung |
 | :--- | :--- | :--- |
 | 1.0 | 2026-10-12 | Bản đầu đủ nghiệp vụ và sơ đồ, đối chiếu với code |
+| 1.4 | 2026-10-13 | Duyệt hàng loạt test case; thành viên theo dự án (dự án có thể chỉ cho thành viên xem); test case giữ mã dự án; cập nhật quy tắc, use case, tích hợp và các mục giới hạn |
+| 1.3 | 2026-10-13 | Ghi các quyết định nghiệp vụ đã xác nhận (mục 12.4); chạy lại MySQL 8.4.11; bỏ trường người phụ trách cấp run khỏi mô tả thực thể |
 | 1.2 | 2026-10-12 | Thêm so sánh hai phiên bản, lịch sử thay đổi của từng test case (bảng `TcmTestCaseHistory`), xóa run chưa có kết quả; bỏ ba hạng mục này khỏi phần chưa làm |
 | 1.1 | 2026-10-12 | Sau review: phiên bản test case chụp thêm Priority, Severity, Kind, Layer, ExecutionType; Quality Gate đọc priority từ phiên bản đã chạy; test case chờ duyệt lại vẫn đưa vào run được; bổ sung quy tắc Superseded, mã băm, phạm vi nghiệm thu, flaky, mục 13 chuyển đổi và triển khai |
 
@@ -73,8 +75,8 @@
 
 | Nhóm | Chức năng |
 | :--- | :--- |
-| Dự án | Tạo, sửa, lưu trữ, xóa khi trống; dự án mặc định; chọn dự án đang làm việc |
-| Thư viện test | Cây suite lồng nhau, test case có bước, tag, bộ lọc; vòng duyệt; phiên bản bất biến và so sánh hai phiên bản; lịch sử thay đổi từng test case; nhóm bước dùng chung |
+| Dự án | Tạo, sửa, lưu trữ, xóa khi trống; dự án mặc định; chọn dự án đang làm việc; dự án chỉ cho thành viên xem |
+| Thư viện test | Cây suite lồng nhau, test case có bước, tag, bộ lọc; vòng duyệt; phiên bản bất biến và so sánh hai phiên bản; lịch sử thay đổi từng test case; duyệt hàng loạt; nhóm bước dùng chung |
 | Kế hoạch và thực thi | Test plan; test run (trong hoặc ngoài plan); run item gắn đúng phiên bản; gán người test; ghi kết quả đơn lẻ hoặc hàng loạt; nhiều lần chạy; xóa run chưa có kết quả |
 | Truy vết | Requirement; ma trận truy vết RTM |
 | Chất lượng | Quality Gate cấu hình được; nghiệm thu (Sign-off) nhiều người ký có băng SHA-256 |
@@ -139,7 +141,7 @@ Quyền `Default` cho phép **đọc**; quyền con cho phép **thay đổi**. Q
 | `TestCases` | `Create`, `Update`, `Delete` | Tạo, sửa, xóa test case |
 | | `Approve` | Gửi duyệt, duyệt, đưa về nháp, ngừng dùng |
 | | `SuggestSteps` | Hỏi AI gợi ý bước (tách riêng vì nội dung rời hệ thống) |
-| `Projects` | `Manage` | Tạo, sửa, lưu trữ, xóa dự án. Mọi người dùng đăng nhập đều **đọc** được danh sách dự án |
+| `Projects` | `Manage` | Tạo, sửa, lưu trữ, xóa dự án; đặt dự án chỉ cho thành viên xem và chọn thành viên. Người có quyền này **thấy mọi dự án**. Người dùng khác thấy các dự án không hạn chế và các dự án mình là thành viên |
 | `TestSuites` | `Manage` | Tạo, sửa, di chuyển, xóa suite |
 | `TestPlans` | `Manage` | Quản lý plan; tạo run, thêm test, gán người, hoàn tất run |
 | `TestRuns` | `Execute` | Ghi kết quả; quản lý liên kết lỗi |
@@ -148,7 +150,7 @@ Quyền `Default` cho phép **đọc**; quyền con cho phép **thay đổi**. Q
 | `SignOff` | `Approve` | Bắt đầu và ký nghiệm thu |
 | `SharedSteps` | `Manage` | Quản lý nhóm bước dùng chung, cập nhật hàng loạt |
 
-Phân quyền hiện áp dụng **toàn hệ thống**, chưa có quyền riêng theo từng dự án (xem mục 12).
+Các quyền ở trên áp dụng **toàn hệ thống** (cấp theo vai trò trong ứng dụng của công ty). Việc **ai thấy dự án nào** do thành viên của dự án quyết định (xem 5.1).
 
 ---
 
@@ -214,7 +216,7 @@ Ngoài ra có **host mẫu** (`host/Acme.TestCaseManagement.HttpApi.Host`: SQLit
 | Cách | Mô tả |
 | :--- | :--- |
 | Dùng `TestCaseManagementDbContext` của module | Đọc chuỗi kết nối `TestCaseManagement`, lùi về `Default`; host chọn nhà cung cấp |
-| **Nhúng model vào DbContext của host** (khuyến nghị) | `[ReplaceDbContext(typeof(ITestCaseManagementDbContext))]`, khai báo đủ `DbSet`, gọi `builder.ConfigureTestCaseManagement()` |
+| **Nhúng model vào DbContext của host** (khuyến nghị) | `[ReplaceDbContext(typeof(ITestCaseManagementDbContext))]`, khai báo đủ `DbSet`, gọi `builder.ConfigureTestCaseManagement(this)` (truyền chính DbContext để bộ lọc theo dự án đọc được phạm vi của người gọi) |
 
 Bảng có tiền tố `Tcm` (`TcmTestCases`, `TcmTestRuns`…), đổi được bằng `TestCaseManagementDbProperties`. Module **không kèm migration** vì nhà cung cấp CSDL thuộc về host.
 
@@ -252,6 +254,7 @@ erDiagram
     PROJECT ||--o{ REQUIREMENT : "chứa"
     PROJECT ||--o{ TEST_RUN : "chứa"
     PROJECT ||--o{ SIGN_OFF_REPORT : "chứa"
+    PROJECT ||--o{ PROJECT_MEMBER : "thành viên"
 
     TEST_SUITE ||--o{ TEST_SUITE : "cha - con"
     TEST_SUITE ||--o{ TEST_CASE : "chứa"
@@ -282,15 +285,16 @@ Người dùng được lưu dưới dạng `Guid` (id) và audit của ABP; mod
 
 | Thực thể | Trường chính | Ghi chú |
 | :--- | :--- | :--- |
-| **Project** (`TcmProjects`) | `Key`, `Name`, `Description`, `IsArchived` | `Key` 2–10 ký tự chữ hoa / số, bắt đầu bằng chữ, duy nhất, không đổi |
+| **Project** (`TcmProjects`) | `Key`, `Name`, `Description`, `IsArchived`, `IsRestricted` | `Key` 2–10 ký tự chữ hoa / số, bắt đầu bằng chữ, duy nhất, không đổi |
+| **ProjectMember** (`TcmProjectMembers`) | `ProjectId`, `UserId`, thời điểm và người thêm (audit tạo của ABP) | Người được xem một dự án hạn chế; duy nhất theo (dự án, người); không khóa ngoại tới người dùng |
 | **TestSuite** | `ProjectId`, `ParentId?`, `Name`, `Description`, `Order` | Cây không giới hạn cấp |
-| **TestCase** | `SuiteId`, `Code`, `Title`, `Description`, `Preconditions`, `Postconditions`, `Priority`, `Severity`, `Status`, `ExecutionType`, `Kind`, `Layer`, `IsFlaky`, `CurrentVersion`, `Steps`, `Tags` | Thuộc dự án thông qua suite; `Code` duy nhất toàn thư viện |
+| **TestCase** | `SuiteId`, `ProjectId`, `Code`, `Title`, `Description`, `Preconditions`, `Postconditions`, `Priority`, `Severity`, `Status`, `ExecutionType`, `Kind`, `Layer`, `IsFlaky`, `CurrentVersion`, `Steps`, `Tags` | Thuộc dự án của suite; `ProjectId` được chép từ suite để lọc theo dự án; `Code` duy nhất toàn thư viện |
 | **TestStep** | thứ tự, hành động, dữ liệu test, kết quả mong đợi, liên kết nhóm bước chung | |
 | **TestCaseVersion** | `TestCaseId`, `VersionNumber`, `Title`, `Preconditions`, `Postconditions`, `StepsJson`, `ChangeSummary?`, `Priority?`, `Severity?`, `Kind?`, `Layer?`, `ExecutionType?` | Bản chụp bất biến lúc duyệt, gồm cả phân loại của test case. Năm trường phân loại để trống ở phiên bản tạo trước khi có snapshot này; khi đó hệ thống lấy giá trị hiện tại của test case |
 | **TestCaseHistoryEntry** (`TcmTestCaseHistory`) | `TestCaseId`, `Type`, `FromValue?`, `ToValue?`, `VersionNumber?`, `Note?`, thời điểm và người ghi (audit tạo của ABP) | Một dòng của lịch sử test case; chỉ thêm, không khóa ngoại tới test case |
 | **SharedStepGroup / SharedStep** | tên, các bước, số hiệu chỉnh sửa (revision) | Test case giữ **bản sao riêng** kèm liên kết |
 | **TestPlan** | `ProjectId`, `Name`, `Description`, `MilestoneId?`, `StartDate`, `EndDate`, `Status` | |
-| **TestRun** | `ProjectId`, `TestPlanId?`, `Title`, `Environment`, `AssignedToUserId?`, `Status` | Có thể đứng ngoài plan. `AssignedToUserId` là người phụ trách chung của run (tùy chọn, đặt qua API); người thực hiện từng test được gán ở `TestRunItem.AssignedUserId` và giao diện chỉ gán theo từng item |
+| **TestRun** | `ProjectId`, `TestPlanId?`, `Title`, `Environment`, `Status` | Có thể đứng ngoài plan. Người thực hiện từng test được gán ở `TestRunItem.AssignedUserId` |
 | **TestRunItem** | `TestRunId`, `TestCaseVersionId`, `Sequence`, `AssignedUserId?`, `CurrentStatus` | Bắt buộc gắn phiên bản |
 | **TestExecution** | `TestRunItemId`, `AttemptNumber`, `Status`, `ActualResult`, `DurationSeconds` | Chỉ thêm, không sửa |
 | **DefectLink** | `TestExecutionId`, `ExternalSystem`, `IssueKey`, `IssueUrl?`, `Severity`, `IsResolved`, `ResolvedTime?` | Chỉ gắn vào attempt Failed |
@@ -341,6 +345,7 @@ flowchart TD
 - **Lưu trữ:** dự án lưu trữ vẫn đọc được nhưng không thêm được gì. **Xóa** chỉ khi dự án không còn suite, plan, requirement, run.
 - **Dữ liệu cũ:** lần đầu gọi danh sách dự án trên thư viện chưa có dự án, hệ thống tạo `DEFAULT` và gán toàn bộ dữ liệu cũ vào (một lần).
 - **Dùng chung có chủ đích:** nhóm bước dùng chung, mã test case và mã requirement (nên đặt tiền tố như `EINV-`), Quality Gate, phân quyền.
+- **Thành viên và quyền xem:** mỗi dự án có cờ **"chỉ thành viên"**. Tắt (mặc định, và là trạng thái của mọi dự án có từ trước): ai được dùng module cũng thấy dự án. Bật: chỉ **thành viên** của dự án và những người có quyền `Projects.Manage` thấy dự án **và mọi thứ trong đó** (suite, test case, plan, run, requirement, nghiệm thu, tệp đính kèm, lỗi liên kết). Với người ngoài, dữ liệu đó **không tồn tại**: không có trong danh sách, dashboard, ma trận truy vết, xuất dữ liệu, và gọi theo id thì "không tìm thấy". Danh sách thành viên giữ nguyên khi tắt cờ nhưng không có tác dụng. Thành viên vẫn bị giới hạn bởi quyền theo vai trò (ví dụ chỉ đọc thì không sửa được). Người gọi không phải người dùng (API key) không bị giới hạn.
 - Giao diện: thanh chọn dự án ở đầu trang (nhớ lựa chọn lần sau), mọi danh sách, dashboard, RTM, xuất dữ liệu theo dự án đang chọn; dự án `DEFAULT` hiển thị chỉ tên.
 
 ### 5.2. Vòng đời test case và phiên bản
@@ -384,7 +389,8 @@ sequenceDiagram
 6. **Tag** là nhãn, không thuộc phiên bản: đổi tag không sinh phiên bản (tối đa 20 tag, mỗi tag tối đa 50 ký tự, không chứa dấu phẩy hay chấm phẩy, không phân biệt hoa thường).
 7. **Cờ Flaky** do hệ thống đánh (xem 8.1).
 8. **So sánh hai phiên bản:** trong màn chi tiết test case, chọn hai phiên bản bất kỳ (mặc định bản mới nhất và bản liền trước) để xem khác biệt. Hệ thống chỉ ra: các trường văn bản đã đổi (tiêu đề, điều kiện trước, điều kiện sau) với **từng từ thêm hoặc bỏ** được tô màu; các trường phân loại đã đổi (ưu tiên, mức nghiêm trọng, loại, tầng, cách chạy) chỉ khi cả hai phiên bản đều có giá trị; và từng bước thuộc loại **Thêm mới, Đã xóa, Đã sửa, Đổi vị trí** hay **Giữ nguyên**. Các bước được ghép theo mã của bước nên chèn một bước không làm các bước sau bị tính là đổi vị trí. Bước làm lại từ nhóm bước dùng chung có thể hiện là một bước xóa và một bước thêm.
-9. **Lịch sử thay đổi:** mỗi test case có dòng thời gian, mới nhất ở trên, mỗi dòng ghi thời điểm, người thực hiện và nội dung: tạo test case; sửa (kèm **tên các trường đã đổi**, ví dụ "Tiêu đề, Các bước"); đổi trạng thái (trạng thái cũ → mới, kèm ghi chú "sửa sau khi đã duyệt" khi bản đã duyệt bị đưa về xem xét lại); phát hành phiên bản (kèm ghi chú thay đổi nếu có); đổi tag; đổi thứ tự bước; chèn, làm mới hoặc gỡ nhóm bước dùng chung. Một lần lưu mà không đổi gì thì không ghi dòng nào; đổi tag mà tập tag vẫn như cũ thì cũng không. Lịch sử chỉ thêm, không sửa, và còn lại khi test case bị xóa. Test case được tạo trước khi có lịch sử vẫn hiện dòng "tạo" và các dòng phiên bản đã phát hành (dựng từ chính dữ liệu của test case và các phiên bản) nhưng không có các dòng sửa trước đó. Lịch sử do module tự ghi nên không phụ thuộc vào việc host có dùng module Audit Logging của ABP hay không.
+9. **Duyệt hàng loạt:** trong danh sách test case, người có quyền `Approve` tích chọn nhiều test case (chỉ chọn được Draft và UnderReview) rồi bấm "Duyệt các test case đã chọn", có thể ghi một ghi chú chung cho các phiên bản. Mỗi test case được duyệt **đúng như khi duyệt riêng**: cần ít nhất một bước, ra phiên bản riêng, có dòng trong lịch sử. Test case không duyệt được (không có bước, đã duyệt, đã ngừng dùng, không còn tồn tại) được **giữ nguyên và liệt kê kèm lý do**, các test case còn lại vẫn được duyệt. Tối đa 200 test case mỗi lần; cùng một mã chọn hai lần chỉ tính một.
+10. **Lịch sử thay đổi:** mỗi test case có dòng thời gian, mới nhất ở trên, mỗi dòng ghi thời điểm, người thực hiện và nội dung: tạo test case; sửa (kèm **tên các trường đã đổi**, ví dụ "Tiêu đề, Các bước"); đổi trạng thái (trạng thái cũ → mới, kèm ghi chú "sửa sau khi đã duyệt" khi bản đã duyệt bị đưa về xem xét lại); phát hành phiên bản (kèm ghi chú thay đổi nếu có); đổi tag; đổi thứ tự bước; chèn, làm mới hoặc gỡ nhóm bước dùng chung. Một lần lưu mà không đổi gì thì không ghi dòng nào; đổi tag mà tập tag vẫn như cũ thì cũng không. Lịch sử chỉ thêm, không sửa, và còn lại khi test case bị xóa. Test case được tạo trước khi có lịch sử vẫn hiện dòng "tạo" và các dòng phiên bản đã phát hành (dựng từ chính dữ liệu của test case và các phiên bản) nhưng không có các dòng sửa trước đó. Lịch sử do module tự ghi nên không phụ thuộc vào việc host có dùng module Audit Logging của ABP hay không.
 
 ### 5.3. Nhóm bước dùng chung (Shared Steps)
 
@@ -594,11 +600,13 @@ flowchart LR
 
     subgraph PRJ["Dự án và thư viện"]
         U1["Quản lý dự án"]
+        U20["Quản lý thành viên của dự án"]
         U2["Quản lý cây suite"]
         U3["Soạn test case, tag, bước"]
         U4["Nhóm bước dùng chung"]
         U5["Duyệt / đưa về nháp / ngừng dùng"]
         U17["Xem lịch sử, so sánh phiên bản"]
+        U19["Duyệt hàng loạt"]
     end
     subgraph EXE["Kế hoạch và thực thi"]
         U6["Lập plan, tạo run"]
@@ -619,7 +627,7 @@ flowchart LR
         U16["Gợi ý bước bằng AI"]
     end
 
-    QL --> U1 & U2 & U4 & U5 & U6 & U7 & U10 & U12 & U13 & U14 & U17 & U18
+    QL --> U1 & U2 & U4 & U5 & U6 & U7 & U10 & U12 & U13 & U14 & U17 & U18 & U19 & U20
     QT --> U2 & U3 & U4 & U8 & U9 & U15 & U16 & U17
     PO --> U11 & U13 & U14
 ```
@@ -657,6 +665,8 @@ flowchart LR
 | UC-27 | Gợi ý bước bằng AI | Tester | Đề xuất, xem, chọn thêm |
 | UC-28 | Xem lịch sử thay đổi của test case | Tester, QA Lead | Dòng thời gian: tạo, sửa (các trường), trạng thái, phiên bản, tag, bước, nhóm bước dùng chung |
 | UC-29 | Xóa run chưa có kết quả | QA Lead | Xóa run tạo nhầm; không xóa run đã có kết quả |
+| UC-30 | Duyệt hàng loạt test case | QA Lead | Chọn nhiều test case và duyệt một lần; báo cáo các test case không duyệt được kèm lý do |
+| UC-31 | Quản lý thành viên của dự án | QA Lead | Đặt dự án chỉ cho thành viên xem; thêm, bớt thành viên |
 
 ---
 
@@ -675,6 +685,7 @@ flowchart LR
 | BR-TC-08 | Thứ tự bước phải hợp lệ khi sắp xếp lại | `InvalidStepOrder` |
 | BR-TC-09 | Cây thư viện không chứa Sprint hay Milestone | |
 | BR-TC-10 | Xóa test case là xóa mềm | |
+| BR-TC-11 | Duyệt hàng loạt: từng test case theo đúng quy tắc duyệt riêng; test case không duyệt được giữ nguyên và được báo lý do; tối đa 200 test case mỗi lần | `TestCaseHasNoSteps`, `InvalidTestCaseStatusTransition`, `TestCaseNotFound` (báo trong kết quả, không dừng cả lượt) |
 
 ### 7.2. Phiên bản
 | Mã | Quy tắc |
@@ -705,6 +716,9 @@ flowchart LR
 | BR-PRJ-01 | `Key` 2–10 ký tự chữ hoa hoặc số, bắt đầu bằng chữ, duy nhất, không đổi | `InvalidProjectKey`, `DuplicateProjectKey` |
 | BR-PRJ-02 | Không trộn dự án giữa suite, test case, run, plan, requirement | `DifferentProject` |
 | BR-PRJ-03 | Dự án lưu trữ không thêm được gì; chỉ xóa dự án khi trống | `ProjectArchived`, `ProjectNotEmpty` |
+| BR-PRJ-04 | Dự án "chỉ thành viên": chỉ thành viên và người có quyền `Projects.Manage` thấy dự án và dữ liệu trong đó; với người khác dữ liệu đó là "không tìm thấy" | HTTP 404 khi gọi theo id; không có trong danh sách |
+| BR-PRJ-05 | Chỉ người có quyền `Projects.Manage` đọc hoặc đổi danh sách thành viên và cờ hạn chế | HTTP 403 |
+| BR-PRJ-06 | Danh sách thành viên bị thay bằng danh sách gửi lên (tối đa 500 người, bỏ trùng); danh sách còn lại khi tắt cờ nhưng không có tác dụng | |
 
 ### 7.5. Đính kèm
 | Mã | Quy tắc | Khi vi phạm |
@@ -774,8 +788,8 @@ Tên sign-off; phạm vi (plan hoặc milestone); tên và ngưỡng của Quali
 ### 10.1. Phía máy chủ
 1. Host dùng ABP từ 10.6.1 trở lên.
 2. Tham chiếu 6 dự án (hoặc gói) và thêm từng module vào `[DependsOn]` đúng tầng.
-3. Nhúng model vào DbContext của host (`[ReplaceDbContext]`, đủ `DbSet`, `builder.ConfigureTestCaseManagement()`), tạo migration, chạy migrator. Vai trò admin của template được cấp quyền của module khi seed.
-4. Cần các `DbSet`: `Project`, `TestSuite`, `TestCase`, `SharedStepGroup`, `TestPlan`, `TestRun`, `Requirement`, `QualityGate`, `SignOffReport`, `Attachment`, `TestCaseHistoryEntry` cùng các bảng con của module.
+3. Nhúng model vào DbContext của host (`[ReplaceDbContext]`, đủ `DbSet`, `builder.ConfigureTestCaseManagement(this)`), tạo migration, chạy migrator. Vai trò admin của template được cấp quyền của module khi seed.
+4. Cần các `DbSet`: `Project`, `TestSuite`, `TestCase`, `SharedStepGroup`, `TestPlan`, `TestRun`, `Requirement`, `QualityGate`, `SignOffReport`, `Attachment`, `TestCaseHistoryEntry`, `ProjectMember` cùng các bảng con của module.
 5. Cấu hình provider BlobStoring cho file đính kèm.
 6. Thêm `vi` vào `AbpLocalizationOptions.Languages` nếu cần tiếng Việt.
 
@@ -793,12 +807,12 @@ Module đã được cắm vào một ứng dụng sinh từ template ABP (Angul
 
 | Loại | Kết quả gần nhất |
 | :--- | :--- |
-| Domain test | Đạt |
-| Application test | 395 test đạt |
-| HttpApi test (gồm hợp đồng OpenAPI) | 82 test đạt |
-| Angular test | 193 test đạt |
+| Domain test | 219 test đạt |
+| Application test | 420 test đạt |
+| HttpApi test (gồm hợp đồng OpenAPI) | 84 test đạt |
+| Angular test | 217 test đạt (32 file) |
 | Chạy trên SQLite | Đạt |
-| Chạy trên MySQL 8.4.11 | Đạt cả ba bộ test (Domain 215, Application 408, HttpApi 82), chạy tuần tự ngày 2026-10-13 |
+| Chạy trên MySQL 8.4.11 | Đạt cả ba bộ test (Domain 219, Application 420, HttpApi 84), chạy tuần tự ngày 2026-10-13, sau khi thêm thành viên theo dự án |
 | Cắm vào ứng dụng ABP sinh từ template, chạy MySQL | Migration tạo đủ 22 bảng `Tcm*`; máy chủ ABP chạy trên MySQL và các luồng chính qua API đều đạt (dự án, test case, phiên bản, lịch sử, run, kết quả, truy vết, cổng chất lượng, nhập/xuất, nghiệm thu, xóa run) |
 | Chạy thử trình duyệt trên ứng dụng ABP mẫu | Đã chạy các luồng chính, kể cả hai dự án |
 
@@ -809,14 +823,17 @@ Chưa thử trên ứng dụng thật của công ty, chưa thử với nhiều 
 ## 12. GIỚI HẠN, NGOÀI PHẠM VI VÀ HƯỚNG PHÁT TRIỂN
 
 ### 12.1. Giới hạn đã biết
-- **Quyền chưa theo dự án:** ai đọc được test case thì đọc được ở mọi dự án. Mã test case và requirement duy nhất toàn thư viện; nhóm bước dùng chung và Quality Gate dùng chung.
+- **Quyền theo dự án chỉ quyết định ai *thấy* dự án**, không có vai trò riêng trong từng dự án: người là thành viên vẫn bị giới hạn bởi quyền theo vai trò chung (ví dụ cùng một người là QA Lead ở mọi dự án mình thấy). Mã test case và requirement duy nhất toàn thư viện; nhóm bước dùng chung và Quality Gate dùng chung, không theo dự án.
+- Người có quyền `Projects.Manage` thấy mọi dự án, kể cả dự án hạn chế mà mình không là thành viên.
+- Mỗi lần gọi, hệ thống tra thành viên của người gọi (hai truy vấn nhỏ); dữ liệu lớn chưa đo ảnh hưởng này.
+- Test case tạo trước khi có mã dự án trên test case được gán mã dự án từ suite ở lần đầu đọc danh sách dự án sau khi nâng cấp; trong khoảnh khắc đó chúng hiện với mọi người.
 - **Run đã có kết quả không xóa được** (chỉ hoàn tất); chưa có lưu trữ run; nhóm run theo plan hiển thị tối đa 100 run mỗi nhóm (có thông báo và chế độ danh sách để lọc).
 - Chữ ký nghiệm thu là mã băm SHA-256 lưu cùng dữ liệu, không phải chữ ký số (xem 5.7).
 - Nghiệm thu không theo vai trò (chỉ đếm số người ký) và không bắt buộc run phải hoàn tất.
 - Vòng duyệt chưa có kiểm soát chéo: duyệt thẳng từ Draft được, người duyệt có thể là tác giả, trả về nháp không cần lý do.
 - Ghi kết quả đồng thời: số lần chạy tăng dần có chỉ mục duy nhất `(run item, số lần chạy)` nên không bao giờ trùng, nhưng chưa có cơ chế tự thử lại; người ghi sau có thể nhận lỗi và phải thao tác lại.
 - Dự án mặc định `DEFAULT` được tạo ở lần đọc danh sách dự án đầu tiên trên thư viện chưa có dự án (một thao tác đọc có ghi), dùng khóa trong tiến trình. Nên khởi tạo bằng bước seed khi triển khai.
-- Nhập dữ liệu chế độ cập nhật đưa các test case đã duyệt về UnderReview và chưa có thao tác duyệt hàng loạt; nhập nhiều test case thì phải duyệt từng cái.
+- Nhập dữ liệu chế độ cập nhật đưa các test case đã duyệt về UnderReview; có thể duyệt lại hàng loạt từ danh sách (tối đa 200 mỗi lần).
 - Chưa có kiểm tra virus cho file đính kèm.
 - Khóa xử lý song song (nghiệm thu, gate mặc định) nằm trong tiến trình.
 - Dashboard và flaky dùng giờ máy chủ và đọc dữ liệu phạm vi vào bộ nhớ.
@@ -845,12 +862,22 @@ Chưa thử trên ứng dụng thật của công ty, chưa thử với nhiều 
 
 | Ưu tiên | Hạng mục | Lý do |
 | :---: | :--- | :--- |
-| Cao | Quyền theo dự án; mã test case tự tăng theo khóa dự án | Tách hẳn dữ liệu và trách nhiệm giữa các dự án |
-| Cao | Các lựa chọn cần quyết định: cho phép bỏ qua Quality Gate có lý do bắt buộc và lưu audit; bắt buộc người duyệt khác tác giả và lý do khi trả về nháp; nghiệm thu theo vai trò; duyệt hàng loạt khi nhập nhiều test case | Cân bằng giữa kiểm soát chặt và tính linh hoạt khi release gấp; hiện đang chọn cách đơn giản |
 | Cao | Thử trên ứng dụng thật của công ty (MySQL đã chạy lại và đạt trên bản sao ứng dụng ABP mẫu) | Giảm rủi ro khi đưa vào sử dụng |
 | Trung bình | Thông báo; luồng requirement đổi; xuất PDF biên bản; nhân bản test case; so sánh phiên bản | Tiện cho quy trình hằng ngày |
 | Trung bình | Xu hướng chất lượng qua nhiều Sprint | Báo cáo quản lý |
 | Thấp | SignalR; mở rộng AI; MVC / Blazor; gói npm | Tùy nhu cầu |
+
+### 12.4. Các quyết định nghiệp vụ đã xác nhận (2026-10-13)
+
+| Chủ đề | Quyết định | Hệ quả |
+| :--- | :--- | :--- |
+| Kiểm soát chéo khi duyệt | **Giữ nguyên**: duyệt thẳng từ Draft được, tác giả được tự duyệt, trả về nháp không cần lý do | Ai duyệt, khi nào vẫn có trong lịch sử thay đổi |
+| Bỏ qua Quality Gate | **Giữ chặn cứng**, không có override | Release gấp thì tạo gate khác với ngưỡng thấp hơn |
+| Nghiệm thu | **Giữ nguyên**: chỉ đếm số người ký, không theo vai trò, không bắt buộc run đã hoàn tất | Ai được cấp quyền Sign-off tự chịu trách nhiệm |
+| Mã test case | **Giữ duy nhất toàn thư viện**, dùng tiền tố theo khóa dự án (ví dụ `EINV-001`) | Nhập/xuất và nhập kết quả vẫn ghép theo mã |
+| Trường người phụ trách cấp run | Bỏ khỏi mô tả; giữ trong code cho API | Tài liệu chỉ nói gán theo từng test |
+| Duyệt hàng loạt | **Đã làm** (xem 5.2, mục 9) | Mỗi test case vẫn cần quyền `Approve` và ra phiên bản riêng |
+| Quyền theo dự án | **Đã làm** theo hướng thành viên theo dự án (xem 5.1) | Dự án mặc định mở cho mọi người; chỉ khi bật "chỉ thành viên" mới hạn chế |
 
 ---
 
@@ -934,7 +961,9 @@ Mọi route bắt đầu bằng `api/test-case-management/`. Hầu hết các en
 | Route | Chức năng |
 | :--- | :--- |
 | `projects` | Liệt kê (có thể kèm dự án đã lưu trữ), xem, tạo, sửa, lưu trữ, khôi phục, xóa khi trống |
+| `projects/{id}/access` | Xem và đặt ai được xem dự án: cờ "chỉ thành viên" và danh sách thành viên (cần `Projects.Manage`) |
 | `suites` | Cây suite, tạo, sửa, di chuyển, xóa |
+| `test-cases/approve` | Duyệt nhiều test case một lần; trả về các test case đã duyệt và các test case không duyệt được kèm lý do |
 | `test-cases/{id}/history` | Lịch sử thay đổi của test case, mới nhất trước |
 | `test-cases` | Danh sách (lọc theo từ khóa, suite, trạng thái, ưu tiên, severity, loại, tầng, cách chạy, tag), chi tiết, tạo, sửa, sắp xếp bước, đổi trạng thái, phiên bản, lỗi liên quan |
 | `test-cases/{id}/tags`, `test-cases/tags` | Thay tag của test case; liệt kê tag đang dùng kèm số lượng |
@@ -962,7 +991,7 @@ Tiền tố `TestCaseManagement:`. Thông báo hiển thị theo ngôn ngữ c�
 | :--- | :--- |
 | Dự án | `ProjectNotFound`, `ProjectArchived`, `InvalidProjectKey`, `DuplicateProjectKey`, `ProjectNotEmpty`, `DifferentProject` |
 | Suite | `SuiteNotFound`, `SuiteNotEmpty`, `CircularSuiteDependency` |
-| Test case | `DuplicateTestCaseCode`, `InvalidTestCaseStatusTransition`, `TestCaseHasNoSteps`, `TestCaseNotApproved`, `InvalidStepOrder`, `InvalidTag`, `TooManyTags` |
+| Test case | `TestCaseNotFound`, `DuplicateTestCaseCode`, `InvalidTestCaseStatusTransition`, `TestCaseHasNoSteps`, `TestCaseNotApproved`, `InvalidStepOrder`, `InvalidTag`, `TooManyTags` |
 | Nhóm bước dùng chung | `DuplicateSharedStepGroupName`, `SharedStepGroupHasNoSteps`, `SharedStepGroupTooLarge`, `SharedStepGroupInUse`, `SharedStepsNotLinked`, `SharedStepGroupAlreadyUsed` |
 | Plan và run | `TestPlanNotFound`, `InvalidTestPlanStatusTransition`, `InvalidTestPlanDates`, `TestPlanHasRuns`, `TestPlanArchived`, `TestRunAlreadyCompleted`, `TestRunHasResults`, `TestCaseAlreadyInRun`, `TestRunItemNotFound`, `DuplicateTestRunItem`, `InvalidExecutionStatus` |
 | Lỗi (defect) | `DefectRequiresFailedExecution`, `DuplicateDefectLink`, `InvalidDefectUrl` |

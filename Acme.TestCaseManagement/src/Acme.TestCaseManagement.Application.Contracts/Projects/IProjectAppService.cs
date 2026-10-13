@@ -24,4 +24,13 @@ public interface IProjectAppService : IApplicationService
 
     /// <summary>Soft-deletes a project that has nothing in it; otherwise archive it.</summary>
     Task DeleteAsync(Guid id);
+
+    /// <summary>Who may see the project. Needs the permission to manage projects.</summary>
+    Task<ProjectAccessDto> GetAccessAsync(Guid id);
+
+    /// <summary>
+    /// Sets who may see the project: everyone, or only the members in the list (which replaces the one there was). People who
+    /// manage projects always see every project. Needs the permission to manage projects.
+    /// </summary>
+    Task<ProjectAccessDto> UpdateAccessAsync(Guid id, ProjectAccessDto input);
 }
