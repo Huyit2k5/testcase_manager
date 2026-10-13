@@ -356,3 +356,10 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 - [x] T145 Comparison of two versions in the page: pure `diffVersions` and `wordDiff`, the component, the five classification fields in `TestCaseVersionDto`; tests (7 for the logic, 3 for the component).
 - [x] T146 `DELETE runs/{id}` for a run without results (back end with 3 tests and the contract; button in the list of runs with 2 tests); the timeline in the detail dialog (3 tests).
 - [x] T147 The documentation (business analysis, plan 4.27) and the migration `AddTestCaseHistory` of the sandbox; tried in the browser on the sandbox.
+
+---
+
+## Phase 29: MySQL again
+
+- [x] T148 The three test projects on MySQL 8.4.11 (Docker): Domain 215, Application 408, HttpApi 82 pass.
+- [x] T149 A copy of the sandbox application on MySQL: migration `Initial` (22 `Tcm` tables), the host started, and a script through the API for the main flows, all passed (plan.md 4.28).

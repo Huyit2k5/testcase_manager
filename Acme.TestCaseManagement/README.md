@@ -352,7 +352,7 @@ the requirement text. Details: plan.md, section 4.15.
 ## Running on MySQL
 
 The module has been run against MySQL 8.4 with `Volo.Abp.EntityFrameworkCore.MySQL` (the package of the ABP application template): the model creates, and every test of the module passes (plan.md,
-section 4.17). To repeat it, start a MySQL server and run the tests with `TCM_TEST_MYSQL` set and the settings file that turns parallel runs off:
+section 4.17). It was run again on MySQL 8.4.11 after the projects, the version snapshot and the history were added (all three test projects pass), and an application made from ABP's own template, switched to MySQL, created its schema with a migration (22 `Tcm` tables) and ran the main flows through the API (plan.md, section 4.28). To repeat it, start a MySQL server and run the tests with `TCM_TEST_MYSQL` set and the settings file that turns parallel runs off:
 
 ```text
 docker run -d --name tcm-mysql -e MYSQL_ROOT_PASSWORD=secret -p 3307:3306 mysql:8.4

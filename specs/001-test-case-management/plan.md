@@ -1225,6 +1225,16 @@ The three items the business analysis listed as not done.
 
 ---
 
+### 4.28. Phase 29: the module on MySQL again
+
+After projects (Phase 25), the version snapshot (27) and the history, deleting a run (28), MySQL 8.4.11 in Docker (`docker run -d -e MYSQL_ROOT_PASSWORD=secret -p 3307:3306 mysql:8.4`) ran the three test projects with `TCM_TEST_MYSQL` and `test/mysql.runsettings`: Domain 215, Application 408, HttpApi 82, all passed.
+
+The second check is the one the tests cannot make, because they build the schema from the model: a copy of the sandbox application with its provider switched to `Volo.Abp.EntityFrameworkCore.MySQL` (`UseMySQL()`, the connection string of the container, a new `Initial` migration made with `dotnet ef`, the DbMigrator) created 22 `Tcm` tables, and a script through the HTTP API of the host did: the default project, a project, a suite, test cases, a refused duplicate code, approve, edit and approve again (each version keeping its own priority), the history with the fields of the edit, a run holding a test case that waits for review (it runs version 1), deleting a run without a result and the refusal for one with a result, pass, fail with a defect and retest (attempts kept), a requirement and the matrix, dashboard, flaky list, gate evaluation, export and an import dry run, a sign-off (refused while a Critical defect is open, accepted after it is resolved), and the refusal to delete a project that holds data. Every step passed.
+
+Not done: Pomelo, MariaDB, MySQL 5.7, the measurement of 100,000 run items again, a real company database.
+
+---
+
 ## 5. Security, RBAC & Permissions
 
 Defined in `TestCaseManagementPermissions`:

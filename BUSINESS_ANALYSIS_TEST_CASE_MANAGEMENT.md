@@ -763,7 +763,7 @@ Tên sign-off; phạm vi (plan hoặc milestone); tên và ngưỡng của Quali
 | **Toàn vẹn dữ liệu** | Phiên bản và attempt bất biến; nhập dữ liệu tất cả hoặc không gì; sign-off có băng SHA-256; khóa tuần tự cho nghiệm thu, gate mặc định (trong tiến trình; nhiều máy chủ cần distributed lock) |
 | **Hiệu năng** | Danh sách test case phân trang, dưới 1 giây; dashboard và flaky đọc dữ liệu phạm vi vào bộ nhớ, khoảng 6 giây ở 100.000 run item trên MySQL |
 | **Đa ngôn ngữ** | Tiếng Anh và tiếng Việt cho giao diện, thông báo lỗi nghiệp vụ và báo cáo nhập dữ liệu |
-| **Khả năng chạy trên nhiều CSDL** | Đã chạy trên SQLite và MySQL 8.4 |
+| **Khả năng chạy trên nhiều CSDL** | Đã chạy trên SQLite và MySQL 8.4 (bản 8.4.11, bộ test chạy lại đầy đủ ngày 2026-10-13) |
 | **Khả năng mở rộng** | Thay nhà cung cấp AI bằng `IStepSuggestionProvider`; thay nguồn danh sách người dùng bằng `TCM_USER_DIRECTORY` |
 | **Đóng gói** | `build/build.ps1` restore, build, test, pack `.nupkg` và `.snupkg` (Windows PowerShell 5.1 và PowerShell 7, .NET SDK 10) |
 
@@ -798,10 +798,11 @@ Module đã được cắm vào một ứng dụng sinh từ template ABP (Angul
 | HttpApi test (gồm hợp đồng OpenAPI) | 82 test đạt |
 | Angular test | 193 test đạt |
 | Chạy trên SQLite | Đạt |
-| Chạy trên MySQL 8.4 | Đạt ở đợt kiểm tra trước khi thêm phần Dự án; **chưa chạy lại** sau đó |
+| Chạy trên MySQL 8.4.11 | Đạt cả ba bộ test (Domain 215, Application 408, HttpApi 82), chạy tuần tự ngày 2026-10-13 |
+| Cắm vào ứng dụng ABP sinh từ template, chạy MySQL | Migration tạo đủ 22 bảng `Tcm*`; máy chủ ABP chạy trên MySQL và các luồng chính qua API đều đạt (dự án, test case, phiên bản, lịch sử, run, kết quả, truy vết, cổng chất lượng, nhập/xuất, nghiệm thu, xóa run) |
 | Chạy thử trình duyệt trên ứng dụng ABP mẫu | Đã chạy các luồng chính, kể cả hai dự án |
 
-Chưa thử trên ứng dụng thật của công ty, chưa thử với nhiều tenant thực, chưa thử trên Pomelo, MariaDB hay MySQL 5.7.
+Chưa thử trên ứng dụng thật của công ty, chưa thử với nhiều tenant thực, chưa thử trên Pomelo, MariaDB hay MySQL 5.7, và chưa đo lại hiệu năng ở dữ liệu lớn trên MySQL.
 
 ---
 
@@ -846,7 +847,7 @@ Chưa thử trên ứng dụng thật của công ty, chưa thử với nhiều 
 | :---: | :--- | :--- |
 | Cao | Quyền theo dự án; mã test case tự tăng theo khóa dự án | Tách hẳn dữ liệu và trách nhiệm giữa các dự án |
 | Cao | Các lựa chọn cần quyết định: cho phép bỏ qua Quality Gate có lý do bắt buộc và lưu audit; bắt buộc người duyệt khác tác giả và lý do khi trả về nháp; nghiệm thu theo vai trò; duyệt hàng loạt khi nhập nhiều test case | Cân bằng giữa kiểm soát chặt và tính linh hoạt khi release gấp; hiện đang chọn cách đơn giản |
-| Cao | Chạy lại toàn bộ test trên MySQL và thử trên ứng dụng thật | Giảm rủi ro khi đưa vào sử dụng |
+| Cao | Thử trên ứng dụng thật của công ty (MySQL đã chạy lại và đạt trên bản sao ứng dụng ABP mẫu) | Giảm rủi ro khi đưa vào sử dụng |
 | Trung bình | Thông báo; luồng requirement đổi; xuất PDF biên bản; nhân bản test case; so sánh phiên bản | Tiện cho quy trình hằng ngày |
 | Trung bình | Xu hướng chất lượng qua nhiều Sprint | Báo cáo quản lý |
 | Thấp | SignalR; mở rộng AI; MVC / Blazor; gói npm | Tùy nhu cầu |
@@ -892,7 +893,7 @@ Tỷ lệ test case đã nhập và đã duyệt; số run ghi nhận trên hệ
 
 | Rủi ro | Hướng xử lý |
 | :--- | :--- |
-| Chưa thử trên ứng dụng thật và trên MySQL của công ty | Chạy bộ test trên MySQL và thử ở môi trường thử trước khi pilot |
+| Chưa thử trên ứng dụng thật và trên máy chủ MySQL của công ty (đã thử trên MySQL 8.4.11 dùng Docker) | Thử ở môi trường thử của công ty, với đúng phiên bản và nhà cung cấp MySQL đang dùng, trước khi pilot |
 | Chưa có thông báo và kết nối công cụ quản lý lỗi | Chấp nhận nhập tay ở giai đoạn đầu; đưa vào lộ trình (12.3) |
 | Quyền chưa tách theo dự án | Dùng chung một đội QA cho các dự án trong giai đoạn đầu |
 | Dashboard chậm khi dữ liệu rất lớn | Theo dõi; tối ưu bằng tổng hợp ở tầng cơ sở dữ liệu nếu vượt ngưỡng |
