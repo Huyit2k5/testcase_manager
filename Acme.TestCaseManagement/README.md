@@ -18,6 +18,7 @@ particular host application: users, tenants and auditing come from ABP abstracti
 - **Import and export** – the test library and the results of a run as Excel (.xlsx) or CSV, one row per step or per attempt;
   imports are checked completely first (dry run) and are all or nothing.
 - **AI assistance** – proposed steps from a requirement text through a configured OpenAI-compatible model (or a provider of the host's own); a person reviews before anything is added.
+- **Sign-off report as a file** – a PDF to print and sign, or an Excel workbook; the PDF carries its own font (Noto Sans, SIL OFL, cut down to Latin and Vietnamese) and is drawn with PDFsharp and MigraDoc (MIT). PDFsharp reads fonts through one resolver for the process: the module sets its own only for its own family and passes any other family to the resolver that was set before.
 - **Quality gate and sign-off** – configurable gates (minimum pass rate, all P1 executed, no open Critical or
   High defect) evaluated per plan or milestone; sign-off is refused while the gate fails, freezes the evaluated
   figures with a SHA-256 hash, and completes when enough distinct approvers have signed.
@@ -171,6 +172,7 @@ All routes start with `api/test-case-management/`.
 | `rtm` | requirements traceability matrix |
 | `quality-gates` | gate CRUD and `POST quality-gates/evaluate` (dry run with per-criterion breakdown) |
 | `sign-off` | start a sign-off, add approvals, read reports |
+| `sign-off/{id}/export` | `GET` the report as a file: `format=Pdf` (default, A4, with places to sign) or `format=Xlsx` (a sheet for the report and one each for the criteria, the open defects and the approvals), written from what was frozen and in the language of the caller |
 | `api-keys` | list, create (secret shown once) and revoke API keys |
 | `dashboard` | `GET`: pass rate, execution velocity, burn-down and defect density of a plan or of every run |
 | `flaky-tests` | `GET` the flakiness score of test cases, `POST flaky-tests/apply` to flag them in the library |

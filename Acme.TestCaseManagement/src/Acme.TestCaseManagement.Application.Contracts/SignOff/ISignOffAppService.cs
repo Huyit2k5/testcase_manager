@@ -1,6 +1,8 @@
+using Acme.TestCaseManagement.Enums;
 using Acme.TestCaseManagement.SignOff.Dtos;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Content;
 
 namespace Acme.TestCaseManagement.SignOff;
 
@@ -24,4 +26,11 @@ public interface ISignOffAppService : IApplicationService
     /// the report and the approval is refused if it no longer passes. A user can approve once.
     /// </summary>
     Task<SignOffReportDto> ApproveAsync(Guid id, ApproveSignOffDto input);
+
+    /// <summary>
+    /// The sign-off report as a file to keep, print and sign: a PDF (A4, with places for the signatures) or an Excel workbook (one sheet for the
+    /// report, and one for the criteria, the open defects and the approvals). It states what was frozen when the sign-off was made (the
+    /// figures, the gate, who approved, the hash and whether it still matches), in the language of the caller. Needs the permission to read sign-offs.
+    /// </summary>
+    Task<IRemoteStreamContent> ExportAsync(Guid id, ReportFormat format = ReportFormat.Pdf);
 }

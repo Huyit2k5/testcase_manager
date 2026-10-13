@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { apiRoot } from '../core/host';
 import { ProjectContext } from '../core/project-context';
 import { Observable, map } from 'rxjs';
+import { DownloadedFile, fileNameOf } from './transfer';
 import {
   StepSuggestionResult, StepSuggestionStatus, SuggestStepsInput, AddDefect, ApiKey, Attachment, SaveSharedStepGroup, SharedStepGroup, SharedStepGroupSummary, SharedStepUsage, TagSummary, UpdateSharedStepUsersResult, ApiKeyCreated, ApplyFlakyFlagsResult, CreateRun, Dashboard, FlakyTestList, DefectLink, EvaluateInput, ExecuteItem, PagedResult, QualityGate, QualityGateEvaluation,
   Requirement, RtmMatrix, RtmRequest, SavePlan, SaveQualityGate, SaveRequirement, SaveTestCase, SignOffReport, StartSignOff,
@@ -199,6 +200,12 @@ export class SignOffService {
   start(input: StartSignOff): Observable<SignOffReport> { return this.http.post<SignOffReport>(`${this.root}/sign-off`, inProject(input, this.project.currentId())); }
   approve(id: string, approverRole: string | null, comment: string | null): Observable<SignOffReport> {
     return this.http.post<SignOffReport>(`${this.root}/sign-off/${id}/approvals`, { approverRole, comment });
+  }
+  /** The report of a sign-off as a file to keep and sign (PDF) or to work on (Excel), in the language of the caller. */
+  exportReport(id: string, format: 'pdf' | 'xlsx', title = 'signoff'): Observable<DownloadedFile> {
+    return this.http.get(`${this.root}/sign-off/${id}/export`, { params: { format: format === 'pdf' ? '0' : '1' }, responseType: 'blob', observe: 'response' }).pipe(
+      map(response => ({ blob: response.body as Blob, fileName: fileNameOf(response.headers.get('Content-Disposition')) ?? `${title.replace(/[\/:*?"<>|]+/g, '-').trim() || 'signoff'}.${format}` })),
+    );
   }
 }
 

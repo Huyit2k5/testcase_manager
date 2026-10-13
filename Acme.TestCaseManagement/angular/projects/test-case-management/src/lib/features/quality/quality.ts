@@ -8,6 +8,7 @@ import { badge, shortId } from '../../core/ui';
 import { QualityGate, QualityGateEvaluation, SignOffReport, TestPlan } from '../../proxy/dtos';
 import { SeverityLevel, SignOffStatus, TestResultStatus } from '../../proxy/enums';
 import { QualityGateService, SignOffService, TestPlanService } from '../../proxy/services';
+import { saveFile } from '../../proxy/transfer';
 import { IconButtonComponent } from '../../core/icon-button';
 import { ConfirmService } from '../../core/confirm';
 
@@ -124,6 +125,15 @@ export class QualityComponent implements OnInit {
         if (this.evaluation()) { this.evaluateFor(this.evaluatedPlanId(), this.evaluatedGateId()); }
       },
       error: () => this.approvalBusy.set(false),
+    });
+  }
+
+  /** Downloads the report of a sign-off: a PDF to print and sign, or an Excel workbook. */
+  protected exportReport(report: SignOffReport, format: 'pdf' | 'xlsx'): void {
+    // The server names the file; when the browser may not read that header (another origin), the title of the report does.
+    this.signOffService.exportReport(report.id, format, report.title).subscribe(file => {
+      saveFile(file);
+      this.toast.success(this.i18n.t('transfer.exported', { name: file.fileName }));
     });
   }
 

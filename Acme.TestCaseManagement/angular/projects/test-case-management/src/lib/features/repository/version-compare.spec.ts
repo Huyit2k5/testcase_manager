@@ -43,8 +43,8 @@ describe('the comparison of two versions', () => {
     const fixture = open([version(2, 'Login', [step('a', 1, 'Open')]), version(1, 'Login', [step('a', 1, 'Open')])]);
     expect(root(fixture).querySelector('[data-test=compare-identical]')).not.toBeNull();
 
-    const component = fixture.componentInstance as unknown as { fromNumber: { set(n: number): void } };
-    component.fromNumber.set(2);
+    const component = fixture.componentInstance as unknown as { fromChoice: { set(n: number): void } };
+    component.fromChoice.set(2);
     fixture.detectChanges();
     expect(root(fixture).querySelector('[data-test=compare-same-version]')).not.toBeNull();
   });

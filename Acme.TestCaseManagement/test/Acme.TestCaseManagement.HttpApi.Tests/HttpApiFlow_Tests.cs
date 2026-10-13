@@ -287,6 +287,16 @@ public class HttpApiFlow_Tests
         approved.IntegrityVerified.ShouldBeTrue();
 
         (await qaLead.GetAsync<SignOffReportDto>($"{Root}/sign-off/{pending.Id}")).SnapshotHash.ShouldBe(pending.SnapshotHash);
+
+        // The report as a file: a PDF to sign, and a workbook to work on.
+        var pdf = await qaLead.DownloadAsync($"{Root}/sign-off/{pending.Id}/export");
+        pdf.ContentType.ShouldBe("application/pdf");
+        System.Text.Encoding.ASCII.GetString(pdf.Bytes, 0, 5).ShouldBe("%PDF-");
+        pdf.FileName.ShouldEndWith(".pdf");
+        var workbook = await qaLead.DownloadAsync($"{Root}/sign-off/{pending.Id}/export?format=Xlsx");
+        workbook.ContentType.ShouldBe("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        workbook.FileName.ShouldEndWith(".xlsx");
+        (await productOwner.DownloadAsync($"{Root}/sign-off/{pending.Id}/export")).Bytes.ShouldNotBeEmpty();
         (await qaLead.GetAsync<PagedResultDto<SignOffReportDto>>($"{Root}/sign-off?TestPlanId={plan.Id}&Status={(int)SignOffStatus.Approved}"))
             .Items.Select(report => report.Id).ShouldBe(new[] { pending.Id });
 

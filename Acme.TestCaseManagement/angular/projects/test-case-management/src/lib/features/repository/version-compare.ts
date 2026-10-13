@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { I18nService, TranslatePipe } from '../../core/i18n/i18n';
 import { TestCaseVersion } from '../../proxy/dtos';
@@ -19,11 +19,11 @@ const ENUMS: Record<string, object> = {
     } @else {
       <div class="row" style="margin-bottom: 8px">
         <label for="compare-from">{{ 'compare.from' | t }}</label>
-        <select id="compare-from" name="compare-from" [ngModel]="fromNumber()" (ngModelChange)="fromNumber.set($event)" style="width: auto">
+        <select id="compare-from" name="compare-from" [ngModel]="fromNumber()" (ngModelChange)="fromChoice.set($event)" style="width: auto">
           @for (v of versions(); track v.id) { <option [ngValue]="v.versionNumber">v{{ v.versionNumber }}</option> }
         </select>
         <label for="compare-to">{{ 'compare.to' | t }}</label>
-        <select id="compare-to" name="compare-to" [ngModel]="toNumber()" (ngModelChange)="toNumber.set($event)" style="width: auto">
+        <select id="compare-to" name="compare-to" [ngModel]="toNumber()" (ngModelChange)="toChoice.set($event)" style="width: auto">
           @for (v of versions(); track v.id) { <option [ngValue]="v.versionNumber">v{{ v.versionNumber }}</option> }
         </select>
       </div>
@@ -87,24 +87,17 @@ export class VersionCompareComponent {
   /** The versions of the test case, newest first. */
   readonly versions = input.required<TestCaseVersion[]>();
 
-  protected readonly fromNumber = signal<number | null>(null);
-  protected readonly toNumber = signal<number | null>(null);
+  /** What the person chose; null until they choose, and then the newest version against the one before it. */
+  protected readonly fromChoice = signal<number | null>(null);
+  protected readonly toChoice = signal<number | null>(null);
+
+  private readonly known = (n: number | null) => n !== null && this.versions().some(v => v.versionNumber === n);
+  protected readonly fromNumber = computed(() => (this.known(this.fromChoice()) ? this.fromChoice() : this.versions()[1]?.versionNumber ?? null));
+  protected readonly toNumber = computed(() => (this.known(this.toChoice()) ? this.toChoice() : this.versions()[0]?.versionNumber ?? null));
 
   protected readonly from = computed(() => this.versions().find(v => v.versionNumber === this.fromNumber()) ?? null);
   protected readonly to = computed(() => this.versions().find(v => v.versionNumber === this.toNumber()) ?? null);
   protected readonly diff = computed(() => (this.from() && this.to() ? diffVersions(this.from()!, this.to()!) : null));
-
-  constructor() {
-    // The newest version against the one before it, until the person chooses others.
-    effect(() => {
-      const list = this.versions();
-      const known = (n: number | null) => list.some(v => v.versionNumber === n);
-      if (list.length >= 2 && (!known(this.toNumber()) || !known(this.fromNumber()))) {
-        this.toNumber.set(list[0].versionNumber);
-        this.fromNumber.set(list[1].versionNumber);
-      }
-    });
-  }
 
   protected words(change: FieldChange): Segment[] { return wordDiff(String(change.before ?? ''), String(change.after ?? '')); }
 

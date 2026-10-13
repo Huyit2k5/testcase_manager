@@ -50,6 +50,12 @@ internal static class XlsxTable
 
     public static byte[] Write(Table table, string sheetName)
     {
+        return WriteWorkbook(new[] { (sheetName, table) });
+    }
+
+    /// <summary>A workbook with one sheet for each table; the header of each is its first row, kept in view when the sheet is scrolled.</summary>
+    public static byte[] WriteWorkbook(IReadOnlyList<(string Name, Table Table)> sheets)
+    {
         using var stream = new MemoryStream();
 
         using (var document = SpreadsheetDocument.Create(stream, SpreadsheetDocumentType.Workbook))
@@ -60,50 +66,56 @@ internal static class XlsxTable
             var styles = workbook.AddNewPart<WorkbookStylesPart>();
             styles.Stylesheet = CreateStylesheet();
 
-            var worksheet = workbook.AddNewPart<WorksheetPart>();
-            var sheetData = new SheetData();
-
-            var allRows = new List<IReadOnlyList<string>> { table.Header };
-            allRows.AddRange(table.Rows);
-
-            for (var r = 0; r < allRows.Count; r++)
+            var sheetList = new Sheets();
+            for (var index = 0; index < sheets.Count; index++)
             {
-                var row = new Row { RowIndex = (uint)(r + 1) };
-                for (var c = 0; c < allRows[r].Count; c++)
+                var (name, table) = sheets[index];
+                var worksheet = workbook.AddNewPart<WorksheetPart>();
+                var sheetData = new SheetData();
+
+                var allRows = new List<IReadOnlyList<string>> { table.Header };
+                allRows.AddRange(table.Rows);
+
+                for (var r = 0; r < allRows.Count; r++)
                 {
-                    var value = Sanitize(allRows[r][c]);
-                    if (value.Length == 0 && r > 0)
+                    var row = new Row { RowIndex = (uint)(r + 1) };
+                    for (var c = 0; c < allRows[r].Count; c++)
                     {
-                        continue;
+                        var value = Sanitize(allRows[r][c]);
+                        if (value.Length == 0 && r > 0)
+                        {
+                            continue;
+                        }
+
+                        row.Append(new Cell
+                        {
+                            CellReference = ColumnName(c) + (r + 1),
+                            DataType = CellValues.InlineString,
+                            StyleIndex = (uint)(r == 0 ? HeaderStyle : BodyStyle),
+                            InlineString = new InlineString(new Text(value) { Space = SpaceProcessingModeValues.Preserve }),
+                        });
                     }
 
-                    row.Append(new Cell
-                    {
-                        CellReference = ColumnName(c) + (r + 1),
-                        DataType = CellValues.InlineString,
-                        StyleIndex = (uint)(r == 0 ? HeaderStyle : BodyStyle),
-                        InlineString = new InlineString(new Text(value) { Space = SpaceProcessingModeValues.Preserve }),
-                    });
+                    sheetData.Append(row);
                 }
 
-                sheetData.Append(row);
+                worksheet.Worksheet = new Worksheet(
+                    new SheetViews(new SheetView(
+                        new Pane { VerticalSplit = 1D, TopLeftCell = "A2", ActivePane = PaneValues.BottomLeft, State = PaneStateValues.Frozen },
+                        new Selection { Pane = PaneValues.BottomLeft })
+                    { WorkbookViewId = 0U }),
+                    CreateColumns(allRows),
+                    sheetData);
+
+                sheetList.Append(new Sheet
+                {
+                    Id = workbook.GetIdOfPart(worksheet),
+                    SheetId = (uint)(index + 1),
+                    Name = name,
+                });
             }
 
-            worksheet.Worksheet = new Worksheet(
-                new SheetViews(new SheetView(
-                    new Pane { VerticalSplit = 1D, TopLeftCell = "A2", ActivePane = PaneValues.BottomLeft, State = PaneStateValues.Frozen },
-                    new Selection { Pane = PaneValues.BottomLeft })
-                { WorkbookViewId = 0U }),
-                CreateColumns(allRows),
-                sheetData);
-
-            workbook.Workbook.AppendChild(new Sheets(new Sheet
-            {
-                Id = workbook.GetIdOfPart(worksheet),
-                SheetId = 1U,
-                Name = sheetName,
-            }));
-
+            workbook.Workbook.AppendChild(sheetList);
             workbook.Workbook.Save();
         }
 

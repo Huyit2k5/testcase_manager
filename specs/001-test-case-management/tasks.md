@@ -372,3 +372,12 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 - [x] T151 Members of a project: `Project.IsRestricted`, `ProjectMember`, `TestCase.ProjectId` with its backfill, `ProjectAccessScope`, `ProjectAccessProvider`, the interceptor, the query filters on seven entities, `projects/{id}/access`; checks of attempts, defect links and attachments through their run or test case.
 - [x] T152 Tests of the members: Application 9 (the scope, the provider, the filters across lists, ids, changes, dashboard and matrix, the default project, the project kept on the test case), Domain 4 (the scope), HTTP with real users and permissions 2, page 4 (the Access dialog).
 - [x] T153 Hosts: `ConfigureTestCaseManagement(this)`, `DbSet<ProjectMember>`, migration `AddProjectMembers` in the sandbox; tried in the browser with an admin and a tester; the documentation (business analysis 1.4, README, plan 4.29, spec FR-028).
+
+---
+
+## Phase 31: The sign-off report as a PDF and a workbook
+
+- [x] T154 `ExportAsync` and `GET sign-off/{id}/export` (PDF and Excel), the builder of the content in the language of the caller, `SignOffReportDocument`, `XlsxTable.WriteWorkbook`, the keys of the resource (en, vi).
+- [x] T155 The PDF: PDFsharp and MigraDoc, the embedded Noto Sans (Regular, Bold) with its licence, the resolver that does not disturb a host; looked at as images.
+- [x] T156 Tests: Application 6 (workbook content, languages, PDF with the font inside, not found and out of reach, file names, broken hash), the contract and the flow over HTTP, page 2.
+- [x] T157 The buttons on the page, tried in the browser on the sandbox (both files downloaded); the documentation (business analysis 1.5, README, plan 4.30, spec FR-029, exercise 15 of the guide). The comparison of two versions no longer depends on an effect (it showed nothing on a rare run of its test).

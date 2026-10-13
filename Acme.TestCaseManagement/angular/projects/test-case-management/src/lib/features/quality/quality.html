@@ -71,7 +71,9 @@
             <td><span class="badge" [class]="badgeOf('signoff', r.status)">{{ label(statusEnum, r.status) }}</span></td>
             <td>{{ r.approvals.length }} / {{ r.requiredApprovals }}</td>
             <td><span class="badge" [class]="r.integrityVerified ? 'ok' : 'bad'">{{ (r.integrityVerified ? 'qg.verified' : 'qg.tampered') | t }}</span></td>
-            <td class="right">
+            <td class="right nowrap">
+              <button type="button" class="btn sm" data-test="export-pdf" [attr.title]="'qg.exportPdfTitle' | t" (click)="exportReport(r, 'pdf')">PDF</button>
+              <button type="button" class="btn sm" data-test="export-xlsx" [attr.title]="'qg.exportExcelTitle' | t" (click)="exportReport(r, 'xlsx')">Excel</button>
               @if (r.status === statusEnum.Pending && auth.can(perm.SignOff.Approve)) {
                 <button type="button" class="btn sm primary" [disabled]="alreadyApproved(r)" [title]="alreadyApproved(r) ? ('qg.alreadyApproved' | t) : ''" (click)="approve(r)">{{ 'qg.approve' | t }}</button>
               }
@@ -150,6 +152,8 @@
       <span class="badge" [class]="badgeOf('signoff', r.status)">{{ label(statusEnum, r.status) }}</span>
       <span class="badge" [class]="r.integrityVerified ? 'ok' : 'bad'">{{ (r.integrityVerified ? 'qg.integrityOk' : 'qg.integrityFail') | t }}</span>
       <span class="muted">{{ 'qg.snapshot' | t }} <span class="mono">{{ r.snapshotHash }}</span></span>
+      <button type="button" class="btn sm" data-test="export-pdf-detail" (click)="exportReport(r, 'pdf')">{{ 'qg.exportPdf' | t }}</button>
+      <button type="button" class="btn sm" data-test="export-xlsx-detail" (click)="exportReport(r, 'xlsx')">{{ 'qg.exportExcel' | t }}</button>
     </div>
     @if (r.summary; as s) {
       <p>{{ 'qg.summaryLine' | t: { rate: s.metrics.passRate ?? ('common.na' | t), items: s.metrics.totalItems, p1Executed: s.metrics.p1Executed, p1Total: s.metrics.p1Total, defects: s.metrics.openDefects.total } }}</p>

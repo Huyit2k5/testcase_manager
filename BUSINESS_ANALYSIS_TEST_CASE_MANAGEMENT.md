@@ -15,6 +15,7 @@
 | Phiên bản | Ngày | Nội dung |
 | :--- | :--- | :--- |
 | 1.0 | 2026-10-12 | Bản đầu đủ nghiệp vụ và sơ đồ, đối chiếu với code |
+| 1.5 | 2026-10-13 | Xuất biên bản nghiệm thu ra PDF và Excel (UC-32, BR-RPT-01 đến 04, API `sign-off/{id}/export`); bỏ mục này khỏi phần chưa làm |
 | 1.4 | 2026-10-13 | Duyệt hàng loạt test case; thành viên theo dự án (dự án có thể chỉ cho thành viên xem); test case giữ mã dự án; cập nhật quy tắc, use case, tích hợp và các mục giới hạn |
 | 1.3 | 2026-10-13 | Ghi các quyết định nghiệp vụ đã xác nhận (mục 12.4); chạy lại MySQL 8.4.11; bỏ trường người phụ trách cấp run khỏi mô tả thực thể |
 | 1.2 | 2026-10-12 | Thêm so sánh hai phiên bản, lịch sử thay đổi của từng test case (bảng `TcmTestCaseHistory`), xóa run chưa có kết quả; bỏ ba hạng mục này khỏi phần chưa làm |
@@ -81,7 +82,7 @@
 | Truy vết | Requirement; ma trận truy vết RTM |
 | Chất lượng | Quality Gate cấu hình được; nghiệm thu (Sign-off) nhiều người ký có băng SHA-256 |
 | Báo cáo | Dashboard (pass rate, tốc độ, burn-down, mật độ lỗi); phát hiện test chập chờn (flaky) |
-| Nhập / xuất | Test case và kết quả chạy ra Excel / CSV; nhập có chạy thử, tất cả hoặc không gì |
+| Nhập / xuất | Test case và kết quả chạy ra Excel / CSV; nhập có chạy thử, tất cả hoặc không gì; biên bản nghiệm thu ra PDF (để in và ký) hoặc Excel |
 | Đính kèm | Ảnh, log, video cho test case và cho từng lần chạy |
 | AI | Gợi ý bước kiểm thử từ nội dung yêu cầu, người dùng duyệt trước khi thêm |
 | Giao diện | Thư viện trang Angular 22, tiếng Anh và tiếng Việt |
@@ -601,6 +602,7 @@ flowchart LR
     subgraph PRJ["Dự án và thư viện"]
         U1["Quản lý dự án"]
         U20["Quản lý thành viên của dự án"]
+        U21["Xuất biên bản nghiệm thu PDF / Excel"]
         U2["Quản lý cây suite"]
         U3["Soạn test case, tag, bước"]
         U4["Nhóm bước dùng chung"]
@@ -627,9 +629,9 @@ flowchart LR
         U16["Gợi ý bước bằng AI"]
     end
 
-    QL --> U1 & U2 & U4 & U5 & U6 & U7 & U10 & U12 & U13 & U14 & U17 & U18 & U19 & U20
+    QL --> U1 & U2 & U4 & U5 & U6 & U7 & U10 & U12 & U13 & U14 & U17 & U18 & U19 & U20 & U21
     QT --> U2 & U3 & U4 & U8 & U9 & U15 & U16 & U17
-    PO --> U11 & U13 & U14
+    PO --> U11 & U13 & U14 & U21
 ```
 
 ### 6.2. Danh sách Use Case
@@ -667,6 +669,7 @@ flowchart LR
 | UC-29 | Xóa run chưa có kết quả | QA Lead | Xóa run tạo nhầm; không xóa run đã có kết quả |
 | UC-30 | Duyệt hàng loạt test case | QA Lead | Chọn nhiều test case và duyệt một lần; báo cáo các test case không duyệt được kèm lý do |
 | UC-31 | Quản lý thành viên của dự án | QA Lead | Đặt dự án chỉ cho thành viên xem; thêm, bớt thành viên |
+| UC-32 | Xuất biên bản nghiệm thu ra PDF hoặc Excel | QA Lead, PO | PDF A4 để in và ký, hoặc Excel nhiều trang tính; nội dung là số liệu đã chốt lúc nghiệm thu |
 
 ---
 
@@ -761,9 +764,41 @@ Mọi chỉ số lọc được theo **dự án**; dashboard còn lọc theo pla
 | Quality Gate | Đánh giá từng tiêu chí |
 | Sign-off | Kết quả nghiệm thu: phạm vi, số liệu đã chụp, người ký, băng SHA-256 |
 | Xuất dữ liệu | Thư viện test và kết quả run dạng Excel hoặc CSV |
+| Biên bản nghiệm thu (file) | PDF khổ A4 có chỗ ký tay, hoặc sổ Excel nhiều trang tính (xem 8.4) |
 
 ### 8.3. Nội dung biên bản nghiệm thu được chốt
 Tên sign-off; phạm vi (plan hoặc milestone); tên và ngưỡng của Quality Gate tại thời điểm chốt; số liệu tổng hợp (`SummaryStatsJson`); `SnapshotHash` SHA-256; danh sách người ký (tên, vai trò, thời điểm, nhận xét).
+
+### 8.4. Biên bản nghiệm thu thành file (PDF và Excel)
+
+Từ trang "Quality and sign-off", mỗi biên bản có nút **PDF** và **Excel** (cũng có trong màn chi tiết biên bản). File nói **đúng những gì đã chốt lúc nghiệm thu**, nên mở lúc nào cũng cho kết quả như nhau; không đọc lại số liệu hiện tại của thư viện.
+
+```mermaid
+flowchart LR
+    R["Biên bản nghiệm thu<br/>(số liệu đã chốt + mã băm + người ký)"] --> B["Dựng nội dung<br/>theo ngôn ngữ của người gọi"]
+    B --> P["PDF A4<br/>đọc, in, ký tay"]
+    B --> X["Excel 4 trang tính<br/>để xử lý tiếp"]
+```
+
+| Phần | Nội dung |
+| :--- | :--- |
+| 1. Thông tin chung | Tên biên bản, dự án, phạm vi (các plan hoặc milestone), cổng chất lượng và ngưỡng, số người duyệt cần có, trạng thái, ngày tạo, ngày hoàn tất duyệt, thời điểm đánh giá, kết quả cổng, mã băm SHA-256 và kết quả kiểm tra khớp mã băm |
+| 2. Tổng hợp kết quả | Số run, số test case, đạt, không đạt, bị chặn, bỏ qua, chưa chạy, tiến độ, tỷ lệ đạt, đạt ngay lần đầu, test ưu tiên cao nhất đã chạy |
+| 3. Cổng chất lượng | Từng tiêu chí: yêu cầu, thực tế, đạt hay không |
+| 4. Lỗi đang mở | Số lỗi theo mức nghiêm trọng và danh sách lỗi (hệ thống, mã, mức, đường dẫn) |
+| 5. Phê duyệt | Từng người duyệt: họ tên, vai trò, thời gian, nhận xét, chữ ký (mã băm; PDF in 16 ký tự đầu, Excel đủ) |
+| 6. Chữ ký (chỉ PDF) | Hai khối để ký tay: người lập và người nghiệm thu, kèm họ tên và ngày |
+
+**Quy tắc:**
+
+| Mã | Quy tắc |
+| :--- | :--- |
+| BR-RPT-01 | Xuất cần quyền đọc nghiệm thu (`SignOff.Default`); biên bản thuộc dự án người gọi không thấy thì "không tìm thấy" |
+| BR-RPT-02 | Nội dung lấy từ bản chốt của biên bản, không từ dữ liệu hiện tại; thời gian ghi theo UTC |
+| BR-RPT-03 | Chữ và nhãn theo ngôn ngữ của người gọi (tiếng Anh hoặc tiếng Việt, theo `Accept-Language`) |
+| BR-RPT-04 | Biên bản mà số liệu không còn khớp mã băm vẫn xuất được và ghi rõ "số liệu KHÔNG khớp với mã băm" |
+
+**Kỹ thuật:** PDF tạo bằng PDFsharp và MigraDoc (giấy phép MIT), với **phông Noto Sans nhúng sẵn trong module** (giấy phép SIL OFL, đã cắt gọn còn chữ Latin và tiếng Việt, khoảng 330 KB) nên file giống nhau trên mọi máy chủ và có đủ dấu tiếng Việt. Excel tạo bằng Open XML. Tên file có dạng `signoff-<tên biên bản không dấu>-<ngày tạo>.pdf` hoặc `.xlsx`.
 
 ---
 
@@ -851,7 +886,6 @@ Chưa thử trên ứng dụng thật của công ty, chưa thử với nhiều 
 | Thực thể Milestone riêng | `MilestoneId` là tham chiếu tự do dùng làm phạm vi cho gate và sign-off |
 | Mã test case tự sinh theo dự án | Người dùng nhập mã |
 | Nhân bản test case | Chưa có |
-| Xuất biên bản nghiệm thu PDF hoặc Excel | Xem trong giao diện và API |
 | Kết quả chạy theo từng bước | Kết quả ghi ở cấp attempt |
 | Cập nhật dashboard realtime (SignalR) | Tải lại để cập nhật |
 | Báo cáo xu hướng qua nhiều Sprint, báo cáo khối lượng theo tester | Chưa có |
@@ -863,7 +897,7 @@ Chưa thử trên ứng dụng thật của công ty, chưa thử với nhiều 
 | Ưu tiên | Hạng mục | Lý do |
 | :---: | :--- | :--- |
 | Cao | Thử trên ứng dụng thật của công ty (MySQL đã chạy lại và đạt trên bản sao ứng dụng ABP mẫu) | Giảm rủi ro khi đưa vào sử dụng |
-| Trung bình | Thông báo; luồng requirement đổi; xuất PDF biên bản; nhân bản test case; so sánh phiên bản | Tiện cho quy trình hằng ngày |
+| Trung bình | Thông báo; luồng requirement đổi; nhân bản test case | Tiện cho quy trình hằng ngày |
 | Trung bình | Xu hướng chất lượng qua nhiều Sprint | Báo cáo quản lý |
 | Thấp | SignalR; mở rộng AI; MVC / Blazor; gói npm | Tùy nhu cầu |
 
@@ -976,6 +1010,7 @@ Mọi route bắt đầu bằng `api/test-case-management/`. Hầu hết các en
 | `executions/{executionId}/defects` | Liên kết lỗi: thêm, liệt kê, sửa, xóa |
 | `requirements`, `rtm` | Requirement và ma trận truy vết |
 | `quality-gates` | Quản lý gate, `evaluate` (đánh giá thử) |
+| `sign-off/{id}/export` | Biên bản nghiệm thu thành file: `format=Pdf` (mặc định) hoặc `format=Xlsx` |
 | `sign-off` | Bắt đầu nghiệm thu, ký, xem báo cáo |
 | `dashboard`, `flaky-tests` | Chỉ số; chấm điểm flaky và `apply` để đánh cờ |
 | `attachments` | Tải lên (multipart), liệt kê, tải xuống, xóa |

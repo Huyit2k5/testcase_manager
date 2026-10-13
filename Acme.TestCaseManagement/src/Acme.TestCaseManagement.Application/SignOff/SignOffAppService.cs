@@ -1,11 +1,15 @@
 using System.Text.Json;
+using Acme.TestCaseManagement.Enums;
 using Acme.TestCaseManagement.Permissions;
 using Acme.TestCaseManagement.Plans;
+using Acme.TestCaseManagement.Projects;
 using Acme.TestCaseManagement.Quality;
+using Acme.TestCaseManagement.Reports;
 using Acme.TestCaseManagement.QualityGates;
 using Acme.TestCaseManagement.SignOff.Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Content;
 using Volo.Abp.Domain.Repositories;
 
 namespace Acme.TestCaseManagement.SignOff;
@@ -15,16 +19,57 @@ public class SignOffAppService : TestCaseManagementAppService, ISignOffAppServic
 {
     private readonly IRepository<SignOffReport, Guid> _reportRepository;
     private readonly SignOffManager _signOffManager;
+    private readonly IRepository<Project, Guid> _projects;
+    private readonly SignOffReportBuilder _reportBuilder;
 
-    public SignOffAppService(IRepository<SignOffReport, Guid> reportRepository, SignOffManager signOffManager)
+    public SignOffAppService(
+        IRepository<SignOffReport, Guid> reportRepository,
+        SignOffManager signOffManager,
+        IRepository<Project, Guid> projects,
+        SignOffReportBuilder reportBuilder)
     {
         _reportRepository = reportRepository;
         _signOffManager = signOffManager;
+        _projects = projects;
+        _reportBuilder = reportBuilder;
     }
 
     public virtual async Task<SignOffReportDto> GetAsync(Guid id)
     {
         return ToDto(await _reportRepository.GetAsync(id));
+    }
+
+    public virtual async Task<IRemoteStreamContent> ExportAsync(Guid id, ReportFormat format)
+    {
+        var report = await GetAsync(id);
+        var project = report.ProjectId == Guid.Empty ? null : await _projects.FindAsync(report.ProjectId);
+        var projectLabel = project == null ? "-" : $"{project.Key} - {project.Name}";
+
+        var document = _reportBuilder.Build(report, projectLabel);
+        var bytes = format == ReportFormat.Pdf ? SignOffReportPdf.Write(document) : SignOffReportWorkbook.Write(document);
+
+        var name = $"signoff-{FileSlug(report.Title)}-{report.CreationTime:yyyyMMdd}.{(format == ReportFormat.Pdf ? "pdf" : "xlsx")}";
+        var contentType = format == ReportFormat.Pdf ? "application/pdf" : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        return new RemoteStreamContent(new MemoryStream(bytes), name, contentType, bytes.Length, disposeStream: true);
+    }
+
+    /// <summary>The title as a part of a file name: letters and digits without accents, other characters as dashes.</summary>
+    internal static string FileSlug(string title)
+    {
+        var decomposed = title.Replace('đ', 'd').Replace('Đ', 'D').Normalize(System.Text.NormalizationForm.FormD);
+        var builder = new System.Text.StringBuilder();
+        foreach (var c in decomposed)
+        {
+            if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) == System.Globalization.UnicodeCategory.NonSpacingMark)
+            {
+                continue;
+            }
+
+            builder.Append(char.IsAsciiLetterOrDigit(c) ? char.ToLowerInvariant(c) : '-');
+        }
+
+        var slug = string.Join('-', builder.ToString().Split('-', StringSplitOptions.RemoveEmptyEntries));
+        return slug.Length == 0 ? "report" : slug.Length > 60 ? slug[..60].TrimEnd('-') : slug;
     }
 
     public virtual async Task<PagedResultDto<SignOffReportDto>> GetListAsync(GetSignOffListInput input)

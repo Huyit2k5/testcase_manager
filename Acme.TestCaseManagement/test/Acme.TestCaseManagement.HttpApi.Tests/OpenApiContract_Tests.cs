@@ -107,6 +107,7 @@ public class OpenApiContract_Tests
         "SignOff_Get GET /sign-off/{id}",
         "SignOff_SignOff POST /sign-off",
         "SignOff_Approve POST /sign-off/{id}/approvals",
+        "SignOff_Export GET /sign-off/{id}/export",
 
         "ApiKey_GetList GET /api-keys",
         "ApiKey_Create POST /api-keys",
@@ -251,6 +252,13 @@ public class OpenApiContract_Tests
             new[] { "Format", "ProjectId", "Filter", "SuiteId", "IncludeDescendantSuites", "Status", "Priority", "Severity", "ExecutionType", "Kind", "Layer", "Tags", "HasAutomationId" },
             ignoreOrder: true);
         QueryParameters(document, "TestResultTransfer_Export").ShouldBe(new[] { "format" });
+
+        // The report of a sign-off is a download too, as a PDF or a workbook.
+        var report = operations["SignOff_Export"]["responses"]!["200"]!["content"]!.AsObject();
+        report.Select(media => media.Key).ShouldBe(
+            new[] { "application/pdf", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }, ignoreOrder: true);
+        ((string?)report["application/pdf"]!["schema"]!["format"]).ShouldBe("binary");
+        QueryParameters(document, "SignOff_Export").ShouldBe(new[] { "format" });
     }
 
     [Fact]
@@ -346,7 +354,7 @@ public class OpenApiContract_Tests
         var schemas = Schemas(await GetDocumentAsync());
 
         var documented = schemas.Where(schema => schema.Key.StartsWith("Acme.TestCaseManagement.Enums.")).ToList();
-        documented.Count.ShouldBe(18);
+        documented.Count.ShouldBe(19);
 
         foreach (var (name, schema) in documented)
         {

@@ -1252,6 +1252,19 @@ Both come from the business rules the user confirmed (`business-decisions`): the
 
 ---
 
+### 4.30. Phase 31: the report of a sign-off as a PDF and as a workbook
+
+The report of a sign-off was only readable on the page and through the API. `GET sign-off/{id}/export?format=Pdf|Xlsx` (`ISignOffAppService.ExportAsync`, permission `SignOff.Default`) writes it as a file.
+
+- *Source.* The file is written from the report as it was frozen (`SignOffReportDto` with its `Summary`, the hash and the approvals), not from the library as it is now, so it is the same whenever it is made. `SignOffReportBuilder` turns it into `SignOffReportDocument`, every text already in the language of the caller (new keys `SignOffReport:*` in the resource, English and Vietnamese); times are written in UTC and say so. A report whose figures no longer match its hash is still exported and says "do NOT match".
+- *Workbook.* `XlsxTable.WriteWorkbook` (the writer of the import and export, now with many sheets): a sheet for the report with its results, and one each for the criteria, the open defects and the approvals.
+- *PDF.* PDFsharp and MigraDoc 6.2.4 (MIT), after weighing the others: QuestPDF asks for a licence from companies above a revenue, iText is AGPL. A4, sections 1 to 5 as tables, a block for two signatures by hand. Vietnamese needs a font that has the letters, and a server cannot be counted on to have one, so Noto Sans (Regular and Bold, SIL OFL, cut with `fonttools` to Latin, Latin Extended, Vietnamese and some punctuation, about 165 KB each) is an embedded resource with its licence (`Reports/Fonts/OFL.txt`). PDFsharp reads fonts through one resolver for the process (`GlobalFontSettings`); `ReportFonts` answers for the family "Noto Sans" (and for "Courier New", which MigraDoc names for its own error text) and hands every other family to the resolver set before it. If a host sets its own resolver after the first export, the next export needs `ReportFonts.Install()` again, which it does by itself on each export.
+- *Looked at.* The PDF was rendered to images and read: the Vietnamese is complete, the hash wraps inside its cell, short tables stay on one page.
+- *The page.* PDF and Excel buttons on each report of the list and in its detail. The server names the file, but a browser on another origin may not read `Content-Disposition`, so the page falls back to the title of the report.
+- *Not done.* A per-module breakdown and the list of the tests (the frozen figures do not hold them), and the Excel sheet has no logo or print layout.
+
+---
+
 ## 5. Security, RBAC & Permissions
 
 Defined in `TestCaseManagementPermissions`:

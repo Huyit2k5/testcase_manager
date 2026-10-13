@@ -1,6 +1,6 @@
 # Hướng dẫn sử dụng Test Case Management
 
-Tài liệu thực hành cho cả đội: tester, QA lead và product owner. Đọc phần khái niệm mất khoảng 10 phút; làm hết 12 bài tập mất khoảng 75 phút.
+Tài liệu thực hành cho cả đội: tester, QA lead và product owner. Đọc phần khái niệm mất khoảng 10 phút; làm hết 15 bài tập mất khoảng 100 phút.
 
 **Mọi bài tập trong tài liệu này đã được làm thật, từng bước, trên giao diện, bằng đúng tài khoản của vai trò đó**, và các ảnh chụp lấy từ chính lần làm đó (ô vàng là chỗ cần chú ý).
 
@@ -9,7 +9,7 @@ Tài liệu thực hành cho cả đội: tester, QA lead và product owner. Đ�
 - [3. Trước khi bắt đầu](#3-trước-khi-bắt-đầu)
 - [4. Thực hành](#4-thực-hành)
   - [Phần A: Tester (Bài 1 đến 4)](#phần-a-tester)
-  - [Phần B: QA Lead (Bài 5 đến 12)](#phần-b-qa-lead)
+  - [Phần B: QA Lead (Bài 5 đến 15)](#phần-b-qa-lead)
 - [5. Quy ước của đội](#5-quy-ước-của-đội)
 - [6. Hỏi đáp và xử lý sự cố](#6-hỏi-đáp-và-xử-lý-sự-cố)
 - [Phụ lục: quyền theo vai trò](#phụ-lục-quyền-theo-vai-trò)
@@ -455,6 +455,82 @@ Mặc định mọi người dùng module đều thấy mọi dự án. Có dự
 > - Là thành viên chỉ cho phép **thấy** dự án. Việc được làm gì trong đó (viết, duyệt, chạy test...) vẫn theo **vai trò** của người đó trong cả hệ thống.
 > - Bỏ tích ô hạn chế thì dự án mở lại cho mọi người; danh sách thành viên được giữ nhưng không còn tác dụng.
 > - Đưa người vào dự án thì họ thấy ngay ở lần tải trang kế tiếp. Người đang mở trang có thể cần tải lại.
+
+#### Bài 13: Xem lịch sử và so sánh các phiên bản của một test case
+
+Test case được sửa nhiều lần qua nhiều đợt. Khi cần biết **ai đã sửa gì, khi nào**, hoặc **bản v2 khác bản v1 ở đâu**, bạn không phải đoán. Ai xem được test case cũng xem được phần này.
+
+1. Mở một test case (ở đây `EINV-DEMO-001`, đã duyệt hai lần) và kéo xuống mục **Version history**. Mỗi phiên bản có ghi chú thay đổi của người duyệt và thời điểm.
+
+   ![Lịch sử phiên bản](images/guide/b13-01-lich-su-phien-ban.png)
+
+2. Ngay dưới là mục **Compare versions**. Mặc định hệ thống so **bản mới nhất với bản liền trước** (v1 sang v2); chọn hai phiên bản khác ở ô **From** và **to** nếu muốn. Bảng đầu liệt kê các trường đã đổi: với chữ (tiêu đề, điều kiện trước, điều kiện sau), **từng từ thêm vào tô xanh, từng từ bỏ đi gạch đỏ**; với ưu tiên, mức nghiêm trọng, loại, tầng, cách chạy thì hiện giá trị cũ rồi giá trị mới.
+
+   ![So sánh hai phiên bản](images/guide/b13-02-so-sanh-hai-phien-ban.png)
+
+3. Bảng thứ hai so từng **bước**, mỗi bước thuộc một loại: **Same** (giữ nguyên), **Changed** (đã sửa, từ đổi được tô màu), **Removed** (đã bỏ), **Added** (thêm mới) hoặc **Moved** (đổi chỗ). Chèn một bước vào đầu không làm các bước sau bị tính là đổi chỗ.
+
+   ![So sánh từng bước](images/guide/b13-03-so-sanh-tung-buoc.png)
+
+4. Mục **Change history** là **dòng thời gian** của test case, mới nhất ở trên, mỗi dòng có giờ và người làm: tạo test case, **sửa** (kèm tên các trường đã đổi), đổi trạng thái (có ghi "edited after approval" khi test case đã duyệt bị sửa và quay về Under review), phát hành phiên bản, đổi tag, đổi thứ tự bước, chèn hoặc cập nhật bước dùng chung.
+
+   ![Dòng thời gian](images/guide/b13-04-lich-su-thay-doi.png)
+
+> **Lưu ý:**
+> - Lưu mà **không đổi gì** thì không ghi dòng nào.
+> - Test case có từ **trước khi** có lịch sử vẫn hiện dòng "tạo" và các phiên bản đã phát hành; các lần sửa trước đó thì không có, vì lúc ấy hệ thống chưa ghi.
+> - Phiên bản cũ chưa lưu ưu tiên, mức nghiêm trọng... nên các trường này chỉ được so khi **cả hai** phiên bản đều có.
+> - Bước được làm lại từ một nhóm bước dùng chung có thể hiện là một bước **Removed** và một bước **Added**.
+
+#### Bài 14: Xóa một run tạo nhầm
+
+Tạo nhầm một run (sai build, sai plan) thì xóa được, **miễn là run đó chưa có kết quả nào**. Bài này dành cho người có quyền quản lý plan (QA Lead).
+
+1. Vào **Plans and runs**, chọn chế độ **List**. Run chưa có kết quả nào (tiến độ 0, chưa chạy lần nào) có nút **Delete** ở cuối dòng.
+
+   ![Run tạo nhầm](images/guide/b14-01-run-tao-nham.png)
+
+2. Bấm **Delete**: hệ thống hỏi xác nhận, vì **không hoàn tác được**.
+
+   ![Hỏi xác nhận](images/guide/b14-02-hoi-xac-nhan.png)
+
+3. Run biến mất khỏi danh sách. Các test case của run đó lại **tự do** để đưa vào run khác.
+
+   ![Đã xóa](images/guide/b14-03-da-xoa.png)
+
+4. Run đã có dù **một** kết quả thì **không có nút Delete** và máy chủ cũng từ chối, vì đó là một phần lịch sử kiểm thử. Run xong việc thì **Complete** (hoàn tất), không xóa.
+
+   ![Run đã có kết quả](images/guide/b14-04-run-da-co-ket-qua.png)
+
+> **Lưu ý:** run **đã hoàn tất** mà chưa từng có kết quả vẫn xóa được. Hệ thống không có thao tác bớt từng test case ra khỏi một run; run sai thì xóa rồi tạo lại.
+
+#### Bài 15: Xuất biên bản nghiệm thu ra PDF hoặc Excel
+
+Sau khi nghiệm thu (Bài 9), cần một **bản để in, ký tay và lưu hồ sơ**, hoặc một bảng để xử lý tiếp. Hệ thống tạo sẵn cả hai từ biên bản đã chốt.
+
+1. Vào **Quality and sign-off**. Mỗi biên bản trong danh sách **Sign-off reports** có nút **PDF** và **Excel**.
+
+   ![Nút xuất biên bản](images/guide/b15-01-nut-xuat-bien-ban.png)
+
+2. Mở chi tiết một biên bản cũng có hai nút **Download PDF** và **Download Excel**.
+
+   ![Xuất từ màn chi tiết](images/guide/b15-02-xuat-trong-chi-tiet.png)
+
+3. **PDF** là một văn bản A4: thông tin chung (dự án, phạm vi, cổng chất lượng, trạng thái, mã băm và kết quả kiểm tra mã băm), tổng hợp kết quả, từng tiêu chí của cổng chất lượng với yêu cầu và thực tế, lỗi đang mở, danh sách người đã duyệt.
+
+   ![Trang 1 của PDF](images/guide/b15-03-pdf-trang-1.png)
+
+4. Cuối PDF có hai khối **chữ ký tay**: người lập và người nghiệm thu, kèm họ tên và ngày.
+
+   ![Trang 2 của PDF](images/guide/b15-04-pdf-trang-2.png)
+
+5. **Excel** có 4 trang tính: báo cáo (thông tin chung và kết quả), tiêu chí, lỗi đang mở và phê duyệt. Cột chữ ký chứa đủ mã băm, không bị cắt như trong PDF.
+
+> **Lưu ý:**
+> - File nói **đúng những gì đã chốt lúc nghiệm thu**, nên mở lúc nào cũng giống nhau; không đọc lại số liệu hiện tại.
+> - Chữ và nhãn trong file theo **ngôn ngữ đang dùng** (tiếng Anh hoặc tiếng Việt). Thời gian ghi theo UTC.
+> - Nếu số liệu của biên bản không còn khớp mã băm, file vẫn xuất và ghi rõ "số liệu KHÔNG khớp với mã băm" ở phần thông tin chung.
+> - Ai xem được biên bản đều xuất được; biên bản của dự án mình không thấy thì không xuất được.
 
 ## 5. Quy ước của đội
 
