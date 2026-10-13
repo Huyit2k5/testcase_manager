@@ -70,7 +70,9 @@ public class TestCaseManagementApplicationAutoMapperProfile : Profile
 
         // Defect links are loaded separately by TestRunAppService.
         CreateMap<TestExecution, TestExecutionDto>()
-            .ForMember(d => d.DefectLinks, o => o.Ignore());
+            .ForMember(d => d.DefectLinks, o => o.Ignore())
+            .ForMember(d => d.StepResults, o => o.Ignore());
+        CreateMap<TestStepResult, TestStepResultDto>();
 
         CreateMap<DefectLink, DefectLinkDto>();
 

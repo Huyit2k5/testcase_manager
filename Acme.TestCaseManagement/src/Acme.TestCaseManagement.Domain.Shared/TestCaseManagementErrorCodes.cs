@@ -91,6 +91,12 @@ public static class TestCaseManagementErrorCodes
     public const string ProjectNotEmpty = "TestCaseManagement:ProjectNotEmpty";
     public const string DifferentProject = "TestCaseManagement:DifferentProject";
 
+    // Generated codes, copies and results by step
+    public const string TestCaseCodeNotGenerated = "TestCaseManagement:TestCaseCodeNotGenerated";
+    public const string TestStepNotInVersion = "TestCaseManagement:TestStepNotInVersion";
+    public const string DuplicateStepResult = "TestCaseManagement:DuplicateStepResult";
+    public const string PassedWithUnpassedStep = "TestCaseManagement:PassedWithUnpassedStep";
+
     // Import and export
     public const string ExportTooLarge = "TestCaseManagement:ExportTooLarge";
 }

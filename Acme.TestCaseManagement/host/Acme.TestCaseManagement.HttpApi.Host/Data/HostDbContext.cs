@@ -42,6 +42,7 @@ public class HostDbContext : AbpDbContext<HostDbContext>, ITestCaseManagementDbC
     public DbSet<TestRun> TestRuns { get; set; } = null!;
     public DbSet<TestRunItem> TestRunItems { get; set; } = null!;
     public DbSet<TestExecution> TestExecutions { get; set; } = null!;
+    public DbSet<TestStepResult> TestStepResults { get; set; } = null!;
     public DbSet<Requirement> Requirements { get; set; } = null!;
     public DbSet<RequirementTestCase> RequirementTestCases { get; set; } = null!;
     public DbSet<DefectLink> DefectLinks { get; set; } = null!;

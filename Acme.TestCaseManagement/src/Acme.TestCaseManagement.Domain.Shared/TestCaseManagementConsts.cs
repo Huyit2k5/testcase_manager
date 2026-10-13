@@ -12,6 +12,9 @@ public static class ProjectConsts
     public const string DefaultKey = "DEFAULT";
     public const string DefaultName = "Default project";
     public const int MaxMembers = 500;
+
+    /// <summary>How many numbers are tried for a generated test case code before giving up (codes typed by hand take some numbers).</summary>
+    public const int MaxCodeAttempts = 10000;
 }
 
 public static class TestSuiteConsts
@@ -50,6 +53,9 @@ public static class TestRunConsts
 public static class TestExecutionConsts
 {
     public const int MaxActualResultLength = 4000;
+
+    /// <summary>The most step results one attempt can carry (the same as the most steps a test case has).</summary>
+    public const int MaxStepResults = 500;
 }
 
 public static class RequirementConsts

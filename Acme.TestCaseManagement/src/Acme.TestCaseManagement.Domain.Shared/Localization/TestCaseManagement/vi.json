@@ -212,6 +212,12 @@
     "SignOffReport:SignatureLine": "Chữ ký",
     "SignOffReport:DateLine": "Ngày",
     "SignOffReport:Page": "Trang",
-    "SignOffReport:GeneratedNote": "Số liệu đã chốt lúc nghiệm thu; mã băm chữ ký chứng minh việc duyệt đã được ghi nhận."
+    "SignOffReport:GeneratedNote": "Số liệu đã chốt lúc nghiệm thu; mã băm chữ ký chứng minh việc duyệt đã được ghi nhận.",
+    "TestCaseManagement:TestCaseCodeNotGenerated": "Không sinh được mã còn trống cho dự án '{Key}'. Hãy nhập mã.",
+    "TestCaseManagement:TestStepNotInVersion": "Bước '{StepId}' không thuộc phiên bản {Version} của test case này.",
+    "TestCaseManagement:DuplicateStepResult": "Một bước được ghi kết quả hai lần.",
+    "TestCaseManagement:PassedWithUnpassedStep": "Lần chạy không thể là Đạt khi có bước Không đạt hoặc Bị chặn.",
+    "TestCase:CopyTitle": "{0} (bản sao)",
+    "TestCase:DuplicatedFrom": "Sao chép từ {0}"
   }
 }

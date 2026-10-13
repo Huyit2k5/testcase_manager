@@ -16,6 +16,7 @@ public class TestRunManager : DomainService
     private readonly IRepository<TestRunItem, Guid> _itemRepository;
     private readonly IRepository<TestExecution, Guid> _executionRepository;
     private readonly IRepository<TestCaseVersion, Guid> _versionRepository;
+    private readonly IRepository<TestStepResult, Guid> _stepResultRepository;
     private readonly ITestCaseRepository _testCaseRepository;
     private readonly ProjectManager _projectManager;
 
@@ -25,9 +26,11 @@ public class TestRunManager : DomainService
         IRepository<TestRunItem, Guid> itemRepository,
         IRepository<TestExecution, Guid> executionRepository,
         IRepository<TestCaseVersion, Guid> versionRepository,
+        IRepository<TestStepResult, Guid> stepResultRepository,
         ITestCaseRepository testCaseRepository,
         ProjectManager projectManager)
     {
+        _stepResultRepository = stepResultRepository;
         _projectManager = projectManager;
         _planRepository = planRepository;
         _runRepository = runRepository;
@@ -111,9 +114,14 @@ public class TestRunManager : DomainService
     /// <summary>
     /// Appends a new attempt for <paramref name="runItemId"/> (attempt = highest existing attempt + 1), updates the item's
     /// current status and starts the run. Existing attempts and the master test case are never modified.
+    /// <para>
+    /// <paramref name="stepResults"/> are the results of single steps, all optional: each names a step of the version the item executes,
+    /// at most once, and an attempt is not Passed when one of its steps is Failed or Blocked. The results are read back with the attempt
+    /// through <see cref="GetStepResultsAsync"/>.
+    /// </para>
     /// </summary>
     public virtual async Task<TestExecution> RecordExecutionAttemptAsync(
-        Guid runItemId, TestResultStatus status, string? actualResult, int durationSeconds)
+        Guid runItemId, TestResultStatus status, string? actualResult, int durationSeconds, IReadOnlyCollection<StepResultInput>? stepResults = null)
     {
         var item = await _itemRepository.FindAsync(runItemId);
         if (item == null)
@@ -132,6 +140,10 @@ public class TestRunManager : DomainService
         var execution = new TestExecution(
             GuidGenerator.Create(), item.TenantId, runItemId, nextAttempt, status, actualResult, durationSeconds);
 
+        var steps = stepResults == null || stepResults.Count == 0
+            ? new List<TestStepResult>()
+            : await BuildStepResultsAsync(item, execution, status, stepResults);
+
         item.SetCurrentStatus(status);
         run.MarkInProgress();
         await _runRepository.UpdateAsync(run);
@@ -139,7 +151,58 @@ public class TestRunManager : DomainService
         // One save writes the attempt together with the new item and run status. Saving here (not at the end of the
         // unit of work) lets a following attempt in a batch, and any query in the same unit of work, see all of it.
         await _executionRepository.InsertAsync(execution, autoSave: true);
+        if (steps.Count > 0)
+        {
+            await _stepResultRepository.InsertManyAsync(steps, autoSave: true);
+        }
 
         return execution;
+    }
+
+    /// <summary>The results of the steps of the given attempts, by attempt, each list in the order of the steps.</summary>
+    public virtual async Task<ILookup<Guid, TestStepResult>> GetStepResultsAsync(IReadOnlyCollection<Guid> executionIds)
+    {
+        if (executionIds.Count == 0)
+        {
+            return Array.Empty<TestStepResult>().ToLookup(x => x.TestExecutionId);
+        }
+
+        var ids = executionIds.ToList();
+        return (await _stepResultRepository.GetListAsync(x => ids.Contains(x.TestExecutionId)))
+            .OrderBy(x => x.StepOrder)
+            .ToLookup(x => x.TestExecutionId);
+    }
+
+    private async Task<List<TestStepResult>> BuildStepResultsAsync(
+        TestRunItem item, TestExecution execution, TestResultStatus status, IReadOnlyCollection<StepResultInput> stepResults)
+    {
+        var version = await _versionRepository.GetAsync(item.TestCaseVersionId);
+        var stepsOfVersion = TestStepSnapshot.Deserialize(version.StepsJson).ToDictionary(s => s.Id);
+
+        var seen = new HashSet<Guid>();
+        var results = new List<TestStepResult>(stepResults.Count);
+        foreach (var input in stepResults)
+        {
+            if (!stepsOfVersion.TryGetValue(input.StepId, out var step))
+            {
+                throw new BusinessException(TestCaseManagementErrorCodes.TestStepNotInVersion)
+                    .WithData("StepId", input.StepId)
+                    .WithData("Version", version.VersionNumber);
+            }
+
+            if (!seen.Add(input.StepId))
+            {
+                throw new BusinessException(TestCaseManagementErrorCodes.DuplicateStepResult);
+            }
+
+            results.Add(new TestStepResult(GuidGenerator.Create(), item.TenantId, execution.Id, step.Id, step.Order, input.Status, input.ActualResult));
+        }
+
+        if (status == TestResultStatus.Passed && results.Any(r => r.Status is TestResultStatus.Failed or TestResultStatus.Blocked))
+        {
+            throw new BusinessException(TestCaseManagementErrorCodes.PassedWithUnpassedStep);
+        }
+
+        return results;
     }
 }

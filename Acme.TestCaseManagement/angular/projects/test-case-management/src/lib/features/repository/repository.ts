@@ -289,6 +289,12 @@ export class RepositoryComponent implements OnInit {
     this.refresh();
   }
 
+  /** A copy was made: it is shown, and it is in the list. */
+  protected onCopied(copy: TestCase): void {
+    this.detail.set(copy);
+    this.refresh();
+  }
+
   protected onChanged(): void {
     this.detail.set(null);
     this.refresh();

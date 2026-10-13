@@ -121,6 +121,40 @@
         <textarea id="ex-actual" name="actual" [(ngModel)]="form.actualResult"></textarea>
       </div>
 
+      @if (stepRows(); as rows) {
+        @if (rows.length) {
+          <div class="row" style="justify-content: space-between; margin-top: 8px">
+            <h3 style="margin: 0">{{ 'run.stepsOf' | t: { version: form.item.versionNumber } }}</h3>
+            <button type="button" class="btn sm" (click)="passAllSteps(form)" data-test="pass-all-steps">{{ 'run.passAllSteps' | t }}</button>
+          </div>
+          <table data-test="step-rows">
+            <thead><tr><th>#</th><th>{{ 'run.steps' | t }}</th><th>{{ 'run.stepResult' | t }}</th></tr></thead>
+            <tbody>
+              @for (row of rows; track row.id) {
+                <tr [attr.data-step]="row.order">
+                  <td>{{ row.order }}</td>
+                  <td>
+                    <div>{{ row.action }}</div>
+                    <div class="muted">{{ row.expectedResult }}</div>
+                    @if (row.testData) { <div class="muted mono">{{ row.testData }}</div> }
+                  </td>
+                  <td style="min-width: 190px">
+                    <select [name]="'step' + row.id" [(ngModel)]="row.status" (ngModelChange)="stepChanged(form)" [attr.aria-label]="'run.stepResult' | t" data-test="step-status">
+                      <option [ngValue]="null">{{ 'run.stepNotRun' | t }}</option>
+                      @for (o of resultOptions; track o.value) { <option [ngValue]="o.value">{{ label(resultEnum, o.value) }}</option> }
+                    </select>
+                    @if (row.status !== null && row.status !== resultEnum.Passed) {
+                      <input [name]="'stepactual' + row.id" [(ngModel)]="row.actual" maxlength="4000" [placeholder]="'run.stepActual' | t" [attr.aria-label]="'run.stepActual' | t" style="margin-top: 4px" />
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          @if (stepsAgainstPass(form)) { <div class="alert bad" role="alert" data-test="steps-against-pass">{{ 'run.stepsFailedNote' | t }}</div> }
+        }
+      }
+
       @if (form.status === resultEnum.Failed) {
         <h3>{{ 'run.defectsFound' | t }}</h3>
         @for (d of form.defects; track $index; let i = $index) {
@@ -160,6 +194,19 @@
           }
         </div>
         @if (attempt.actualResult) { <p>{{ attempt.actualResult }}</p> }
+        @if (attempt.stepResults.length) {
+          <table data-test="attempt-steps" [attr.aria-label]="'run.stepResultsOf' | t">
+            <tbody>
+              @for (r of attempt.stepResults; track r.stepId) {
+                <tr>
+                  <td>{{ r.stepOrder }}</td>
+                  <td>{{ stepText(r.stepId) }}@if (r.actualResult) { <div class="muted">{{ r.actualResult }}</div> }</td>
+                  <td><span class="badge" [class]="badgeOf('result', r.status)">{{ label(resultEnum, r.status) }}</span></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
         <app-attachments [ownerType]="executionOwner" [ownerId]="attempt.id" [canWrite]="auth.can(perm.TestRuns.Execute)" />
         @if (attempt.defectLinks.length) {
           <table>

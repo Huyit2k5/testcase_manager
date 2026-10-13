@@ -54,6 +54,13 @@ public class TestCaseController : TestCaseManagementController, ITestCaseAppServ
     }
 
     /// <inheritdoc />
+    [HttpPost("{id:guid}/duplicate")]
+    public virtual Task<TestCaseDto> DuplicateAsync(Guid id, DuplicateTestCaseDto input)
+    {
+        return _testCaseAppService.DuplicateAsync(id, input);
+    }
+
+    /// <inheritdoc />
     [HttpPut("{id:guid}/steps/order")]
     public virtual Task<TestCaseDto> ReorderStepsAsync(Guid id, ReorderTestStepsDto input)
     {

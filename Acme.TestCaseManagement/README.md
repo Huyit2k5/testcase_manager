@@ -162,11 +162,12 @@ All routes start with `api/test-case-management/`.
 | `test-cases` | test cases, step ordering, status changes, versions, linked defects; `GET` filters by text, suite, status, priority, severity, kind, layer, execution type, `Tags` (all of them) and `HasAutomationId` |
 | `test-cases/{id}/history` | what happened to a test case, newest first: made, edited (the fields), status, versions published, tags, step order, shared steps |
 | `test-cases/{id}/tags`, `test-cases/tags` | replace the tags of a test case (no new version), and list the tags in use with their counts |
+| `test-cases/{id}/duplicate` | `POST` makes a Draft copy of a test case (details, steps and tags, next code of the project); `suiteId`, `code` and `title` are optional, and the suite may be of another project |
 | `test-cases/approve` | `POST` approves many test cases at once, each as if alone; the ones that cannot be approved come back with the reason |
 | `test-cases/export`, `test-cases/import` | Excel or CSV export (with the list filters) and import of test cases |
 | `runs/{runId}/results/export`, `.../import` | Excel or CSV export of every attempt of a run, and import of results |
 | `plans` | test plans and plan status |
-| `runs` | runs, run items, assignment, executions (single and batch), completion, and `DELETE runs/{id}` for a run that has no result yet (a run with one is completed, not deleted) |
+| `runs` | runs, run items, assignment, executions (single and batch, each with optional results by step in `stepResults`), completion, and `DELETE runs/{id}` for a run that has no result yet (a run with one is completed, not deleted) |
 | `executions/{executionId}/defects` | link, list, update (severity, resolved) and remove defect links |
 | `requirements` | requirements and their test-case links |
 | `rtm` | requirements traceability matrix |
@@ -209,6 +210,7 @@ gate and the export take an optional `ProjectId`; leaving it out answers for eve
 - **Archive.** Nothing can be added to an archived project; it is still read. A project is deleted only while it has no suites, plans, requirements or runs.
 - **Old data.** The first call of `GET projects` on a library that has no project makes the default project and gives it everything that was made before (once). The host adds the migration for the new table and columns.
 - **Members.** A project can be made "for its members only" (`PUT projects/{id}/access`). Then only its members and the people who hold `Projects.Manage` see it and what is in it (suites, test cases, plans, runs, requirements, sign-offs, attachments, defect links): to anyone else that data does not exist, so a list leaves it out and a call by id answers "not found". A project that is not restricted (the default, and every project made before this existed) is seen by everyone who may use the module. Members keep the limits of their roles; the list of members counts only while the project is restricted. A caller that is not a user, such as an API key, is not limited. How it works: each application service of the module runs inside a `ProjectAccessScope` of its caller, and global query filters on the entities that have a project read it.
+- **Codes made by the project.** A test case created without a code gets the next one of its project: the key, a dash and a number of at least three digits (`EINV-001`, `EINV-002`). The counter (`TcmProjects.LastTestCaseNumber`) only goes up, so the number of a deleted test case is not given again; a code that somebody typed is skipped; a code that is typed is used as it is and does not use a number. Updating with an empty code keeps the code. Two people creating at the same moment in one project can make one of the two saves fail with a conflict (the project row carries ABP's concurrency stamp); saving again works.
 - **Shared on purpose.** Shared-step groups, the codes of test cases and of requirements (unique in the whole library: use a prefix such as `EINV-`), the quality gates and the permissions are not per project.
 
 ## Shared steps
@@ -217,7 +219,13 @@ A group of steps ("Log in as a customer") is written once in the library and cop
 link to the group and the revision copied, so changing a group never changes an approved test case, a version or a run by itself: the test cases that
 copied an older revision show as behind, and `POST shared-step-groups/{id}/update-test-cases` (or the refresh of one test case) brings them up to date, with
 the approved ones going back to review. Editing a copied step inside a test case, or detaching, makes it the test case's own. A group in use cannot be deleted.
-A host that embeds the model in its own DbContext also needs `DbSet<SharedStepGroup>`, and, for the history of a test case and for the members of a project, `DbSet<TestCaseHistoryEntry>` and `DbSet<ProjectMember>`; it calls `builder.ConfigureTestCaseManagement(this)` with its own context (the project filters read two members of it, which `ITestCaseManagementDbContext` gives a default, so nothing else is written). The new columns are `TcmProjects.IsRestricted` and `TcmTestCases.ProjectId` (filled in from the suite the first time the projects are listed after the upgrade). The reasoning is in `specs/001-test-case-management/plan.md`, section 4.13.
+A host that embeds the model in its own DbContext also needs `DbSet<SharedStepGroup>`, and, for the history of a test case and for the members of a project, `DbSet<TestCaseHistoryEntry>` and `DbSet<ProjectMember>`; it calls `builder.ConfigureTestCaseManagement(this)` with its own context (the project filters read two members of it, which `ITestCaseManagementDbContext` gives a default, so nothing else is written). A host also needs `DbSet<TestStepResult>` (the results by step of an execution, table `TcmTestStepResults`). The new columns are `TcmProjects.IsRestricted`, `TcmProjects.LastTestCaseNumber` and `TcmTestCases.ProjectId` (filled in from the suite the first time the projects are listed after the upgrade). The reasoning is in `specs/001-test-case-management/plan.md`, section 4.13.
+
+## Results by step and copies
+
+An attempt of a run item can carry the result of single steps (`stepResults` in the body of an execution: the id of a step of the version being run, a status of Passed, Failed, Blocked or Skipped, and what was seen). They are optional; a step that was not run has no row. The result of the attempt is still the one sent in `status`, but Passed is refused when a step is Failed or Blocked, and so is a step that is not in the version the item runs, one that is given twice, or one with no status. The results belong to their attempt, are never changed, and are read back with the attempts (`GET runs/{id}/items/{itemId}/executions`). Metrics, the matrix and the quality gate still count attempts, and the exports and the sign-off report do not carry the steps yet.
+
+`POST test-cases/{id}/duplicate` copies what describes a test case (details, classification, flaky flag, tags and steps) into a new Draft with the next code of the project. Versions, runs, requirement links, attachments and the Automation ID stay with the original, and the steps of the copy are its own even where they came from a group of shared steps.
 
 ## Tags
 
@@ -357,7 +365,7 @@ the requirement text. Details: plan.md, section 4.15.
 ## Running on MySQL
 
 The module has been run against MySQL 8.4 with `Volo.Abp.EntityFrameworkCore.MySQL` (the package of the ABP application template): the model creates, and every test of the module passes (plan.md,
-section 4.17). It was run again on MySQL 8.4.11 after the projects, the version snapshot and the history were added (all three test projects pass), and an application made from ABP's own template, switched to MySQL, created its schema with a migration (22 `Tcm` tables) and ran the main flows through the API (plan.md, section 4.28). To repeat it, start a MySQL server and run the tests with `TCM_TEST_MYSQL` set and the settings file that turns parallel runs off:
+section 4.17). It was run again on MySQL 8.4.11 after the projects, the version snapshot and the history were added (all three test projects pass; once more after the generated codes, the copies and the results by step), and an application made from ABP's own template, switched to MySQL, created its schema with a migration (22 `Tcm` tables) and ran the main flows through the API (plan.md, section 4.28). To repeat it, start a MySQL server and run the tests with `TCM_TEST_MYSQL` set and the settings file that turns parallel runs off:
 
 ```text
 docker run -d --name tcm-mysql -e MYSQL_ROOT_PASSWORD=secret -p 3307:3306 mysql:8.4

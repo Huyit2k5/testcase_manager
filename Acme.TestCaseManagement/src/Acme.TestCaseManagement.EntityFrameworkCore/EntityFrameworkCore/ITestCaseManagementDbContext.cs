@@ -48,6 +48,8 @@ public interface ITestCaseManagementDbContext : IEfCoreDbContext
 
     DbSet<TestExecution> TestExecutions { get; }
 
+    DbSet<TestStepResult> TestStepResults { get; }
+
     // Traceability
     DbSet<Requirement> Requirements { get; }
 

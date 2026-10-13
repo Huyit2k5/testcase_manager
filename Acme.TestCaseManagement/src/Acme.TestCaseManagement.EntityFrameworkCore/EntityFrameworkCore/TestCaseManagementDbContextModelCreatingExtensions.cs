@@ -417,6 +417,20 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
             // Attempt numbers are allocated once per item, so concurrent testers cannot create a duplicate attempt.
             b.HasIndex(x => new { x.TestRunItemId, x.AttemptNumber }).IsUnique();
         });
+
+        builder.Entity<TestStepResult>(b =>
+        {
+            b.ToTable(TableName("TestStepResults"), TestCaseManagementDbProperties.DbSchema);
+            b.ConfigureByConvention();
+
+            b.Property(x => x.ActualResult).HasMaxLength(TestExecutionConsts.MaxActualResultLength);
+
+            // Results are append-only like the attempts they belong to, so nothing cascades into them.
+            b.HasOne<TestExecution>().WithMany().HasForeignKey(x => x.TestExecutionId).OnDelete(DeleteBehavior.Restrict).IsRequired();
+
+            // One result for a step in an attempt.
+            b.HasIndex(x => new { x.TestExecutionId, x.StepId }).IsUnique();
+        });
     }
 
     /// <summary>

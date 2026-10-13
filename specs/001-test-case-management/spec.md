@@ -160,6 +160,9 @@ So that buggy releases are blocked from deploying to Production without document
 | **FR-027** | AI Assistance | Integration hook for AI-powered test step generation from requirements text. | UC-27 |
 | **FR-028** | Projects | A project is the top level of the library: suites (so test cases), plans, requirements and runs belong to one project and are not mixed with those of another. Lists, dashboard and quality views follow the project in use; things made without naming a project go to a default project; nothing is added to an archived project. A project can be restricted to its members, and then only they and the people who manage projects see it and what is in it. | UC-28 |
 | **FR-029** | Sign-off report file | The report of a sign-off can be downloaded as a PDF (to print and sign, with a font of its own so that Vietnamese is complete on any server) or as an Excel workbook, written from the figures frozen at sign-off and in the language of the caller. | UC-17 |
+| **FR-030** | Generated test case codes | A test case created without a code gets the next code of its project (`KEY-001`, `KEY-002`, ...): the counter only goes up, a code typed by a person is skipped, and a typed code is used as it is. An update with an empty code keeps the code. | UC-04 |
+| **FR-031** | Duplicate a test case | A test case can be copied into a new Draft with the next code of the project: details, classification, tags and steps are copied; versions, runs, requirement links, attachments and the Automation ID are not. The copy may go to a suite of another project. | UC-04 |
+| **FR-032** | Results by step | An attempt can carry the result of single steps of the version being run (Passed, Failed, Blocked, Skipped, with what was seen). They are optional, belong to their attempt, are append-only, must name steps of that version once each, and an attempt cannot be Passed while one is Failed or Blocked. | UC-15, UC-16 |
 
 ---
 

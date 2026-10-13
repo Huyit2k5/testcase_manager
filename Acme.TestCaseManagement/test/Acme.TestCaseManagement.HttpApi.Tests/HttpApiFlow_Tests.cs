@@ -120,6 +120,11 @@ public class HttpApiFlow_Tests
         {
             SuiteId = caseA.SuiteId, Code = "PAY-BULK", Title = "To approve with the others", Steps = { new TestStepDto { Action = "Pay", ExpectedResult = "Paid" } },
         });
+        var autoCoded = await qaLead.PostAsync<TestCaseDto>($"{Root}/test-cases", new CreateUpdateTestCaseDto { SuiteId = caseA.SuiteId, Title = "Code given by the project" });
+        autoCoded.Code.ShouldContain("-");
+        var copy = await qaLead.PostAsync<TestCaseDto>($"{Root}/test-cases/{caseA.Id}/duplicate", new DuplicateTestCaseDto());
+        (copy.Status, copy.Title, copy.Steps.Count, copy.CurrentVersion).ShouldBe((TestCaseStatus.Draft, "Pay with a valid card (3-D Secure) (copy)", detail.Steps.Count, 0));
+        copy.Code.ShouldNotBe(autoCoded.Code);
         var bulk = await qaLead.PostAsync<ApproveTestCasesResultDto>($"{Root}/test-cases/approve", new ApproveTestCasesInput { TestCaseIds = { drafted.Id }, ChangeSummary = "Bulk" });
         bulk.ApprovedCodes.ShouldBe(new[] { "PAY-BULK" });
         var history = await qaLead.GetAsync<List<TestCaseHistoryDto>>($"{Root}/test-cases/{caseA.Id}/history");
@@ -169,6 +174,7 @@ public class HttpApiFlow_Tests
             Status = TestResultStatus.Failed,
             ActualResult = "The card was declined twice",
             DurationSeconds = 45,
+            StepResults = { new StepResultInputDto { StepId = caseB.Steps[0].Id!.Value, Status = TestResultStatus.Failed, ActualResult = "Declined" } },
             Defects =
             {
                 new AddDefectLinkDto
@@ -193,8 +199,10 @@ public class HttpApiFlow_Tests
         var runs = await qaLead.GetAsync<PagedResultDto<TestRunDto>>(
             $"{Root}/runs?TestPlanId={plan.Id}&Status={(int)RunStatus.InProgress}&Environment=staging");
         runs.Items.Select(candidate => candidate.Id).ShouldBe(new[] { run.Id });
-        (await qaLead.GetAsync<List<TestExecutionDto>>($"{Root}/runs/{run.Id}/items/{itemB.Id}/executions"))
-            .Select(attempt => attempt.AttemptNumber).ShouldBe(new[] { 1 });
+        var attemptsOfB = await qaLead.GetAsync<List<TestExecutionDto>>($"{Root}/runs/{run.Id}/items/{itemB.Id}/executions");
+        attemptsOfB.Select(attempt => attempt.AttemptNumber).ShouldBe(new[] { 1 });
+        var stepResult = attemptsOfB.Single().StepResults.Single();
+        (stepResult.StepId, stepResult.Status, stepResult.ActualResult).ShouldBe((caseB.Steps[0].Id!.Value, TestResultStatus.Failed, "Declined"));
 
         // ---- Defects, addressed by execution (absolute routes) -----------------------------------------------
         var executionB = failedAttempt.Id;

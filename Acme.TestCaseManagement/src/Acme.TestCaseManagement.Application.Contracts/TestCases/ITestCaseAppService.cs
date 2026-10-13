@@ -18,6 +18,13 @@ public interface ITestCaseAppService : IApplicationService
 
     Task DeleteAsync(Guid id);
 
+    /// <summary>
+    /// Makes a Draft copy of a test case: its details, steps and tags, under a new code (the next code of the project when none is
+    /// given). The copy has no version, run, requirement link, attachment or Automation ID of the original, and it may be put in a
+    /// suite of another project.
+    /// </summary>
+    Task<TestCaseDto> DuplicateAsync(Guid id, DuplicateTestCaseDto input);
+
     /// <summary>Reorders the steps. When the test case is Approved it goes back to Under review, as for any other edit.</summary>
     Task<TestCaseDto> ReorderStepsAsync(Guid id, ReorderTestStepsDto input);
 

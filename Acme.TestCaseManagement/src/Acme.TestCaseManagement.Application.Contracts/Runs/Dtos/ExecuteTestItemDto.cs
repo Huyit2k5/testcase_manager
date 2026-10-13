@@ -14,6 +14,13 @@ public class ExecuteTestItemDto
     [Range(0, int.MaxValue)]
     public int DurationSeconds { get; set; }
 
+    /// <summary>
+    /// Optional results of single steps of the version being run, each step at most once. An attempt cannot be Passed when one of
+    /// its steps is Failed or Blocked. The result of the attempt is still the one in <see cref="Status"/>.
+    /// </summary>
+    [MaxLength(TestExecutionConsts.MaxStepResults)]
+    public List<StepResultInputDto> StepResults { get; set; } = new();
+
     /// <summary>Optional defects to link to this attempt. Only allowed when <see cref="Status"/> is Failed.</summary>
     public List<AddDefectLinkDto> Defects { get; set; } = new();
 }

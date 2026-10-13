@@ -110,6 +110,29 @@ public class ProjectManager : DomainService
         return suite.ProjectId;
     }
 
+    /// <summary>
+    /// The next free code for a test case of the project (the one that holds <paramref name="suiteId"/>; for a suite not assigned to a
+    /// project yet, the default project). A number whose code a person already typed is skipped. The project is saved with the unit of
+    /// work of the test case that takes the code.
+    /// </summary>
+    public virtual async Task<string> GenerateTestCaseCodeAsync(Guid suiteId, Func<string, Task<bool>> isTaken)
+    {
+        var projectId = await GetProjectOfSuiteAsync(suiteId);
+        var project = projectId == Guid.Empty ? await GetOrCreateDefaultAsync() : await GetAsync(projectId);
+
+        for (var attempt = 0; attempt < ProjectConsts.MaxCodeAttempts; attempt++)
+        {
+            var code = project.TakeNextTestCaseCode();
+            if (!await isTaken(code))
+            {
+                await _projects.UpdateAsync(project);
+                return code;
+            }
+        }
+
+        throw new BusinessException(TestCaseManagementErrorCodes.TestCaseCodeNotGenerated).WithData("Key", project.Key);
+    }
+
     /// <summary>Throws when the suite is in an archived project: nothing is added to a project that is archived.</summary>
     public virtual async Task EnsureSuiteIsOpenAsync(Guid suiteId)
     {

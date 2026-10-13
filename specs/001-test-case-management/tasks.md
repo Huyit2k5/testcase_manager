@@ -381,3 +381,15 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 - [x] T155 The PDF: PDFsharp and MigraDoc, the embedded Noto Sans (Regular, Bold) with its licence, the resolver that does not disturb a host; looked at as images.
 - [x] T156 Tests: Application 6 (workbook content, languages, PDF with the font inside, not found and out of reach, file names, broken hash), the contract and the flow over HTTP, page 2.
 - [x] T157 The buttons on the page, tried in the browser on the sandbox (both files downloaded); the documentation (business analysis 1.5, README, plan 4.30, spec FR-029, exercise 15 of the guide). The comparison of two versions no longer depends on an effect (it showed nothing on a rare run of its test).
+
+---
+
+## Phase 32: Generated codes, copies of a test case, and results by step
+
+- [x] T158 Codes made by the project: `Project.LastTestCaseNumber`, `TakeNextTestCaseCode`, `ProjectManager.GenerateTestCaseCodeAsync`, `TestCaseManager.CreateAsync` with an optional code, `Code` optional in `CreateUpdateTestCaseDto` (an empty code on update keeps it), the error `TestCaseCodeNotGenerated`, the field of the form.
+- [x] T159 Copies: `DuplicateAsync` and `POST test-cases/{id}/duplicate`, `DuplicateTestCaseDto`, the "Duplicate" button of the detail with the title question, the history line; the keys of the resource (en, vi).
+- [x] T160 Results by step: `TestStepResult` and its table, `RecordExecutionAttemptAsync` with the results and their checks, `StepResultInputDto`, `TestStepResultDto`, `TestExecutionDto.StepResults`, the three errors, the mapping and the `DbSet` of the context, the host and the sandbox.
+- [x] T161 The run page: the steps of the version in the execute form, a result and a note for each, the result of the attempt follows a failed or blocked step, "all steps passed", and the results under each attempt of the history.
+- [x] T162 Tests: Application 16 (8 codes and copies, 8 results by step), the contract and the flow over HTTP updated, Angular 14 (run page 8, copy and code 6).
+- [x] T163 Module tests on MySQL 8.4.11 (Domain 219, Application 442, HttpApi 84); the migration `AddStepResultsAndCodeCounter` on the sandbox (SQLite); tried in the browser; the documentation (business analysis 1.6, README, plan 4.31, spec FR-030 to FR-032).
+

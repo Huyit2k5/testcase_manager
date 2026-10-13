@@ -41,11 +41,14 @@ export interface TestCase {
 }
 
 export interface SaveTestCase {
-  suiteId: string; code: string; title: string; description?: string | null;
+  suiteId: string; /** Empty on create: the project gives the next code. Empty on update: the code stays. */ code?: string | null; title: string; description?: string | null;
   preconditions?: string | null; postconditions?: string | null;
   priority: PriorityLevel; severity: SeverityLevel; executionType: ExecutionType; kind: TestKind; layer: TestLayer;
   automationId?: string | null; isFlaky: boolean; tags?: string[] | null; steps: TestStep[]; changeSummary?: string | null;
 }
+
+/** What a copy of a test case may be given; all optional. */
+export interface DuplicateTestCase { suiteId?: string | null; code?: string | null; title?: string | null }
 
 export interface TestCaseVersion {
   id: string; testCaseId: string; versionNumber: number; title: string; preconditions: string | null;
@@ -117,12 +120,15 @@ export interface TestRun {
   projectId: string; id: string; testPlanId: string | null; title: string; environment: string; assignedToUserId: string | null;
   status: RunStatus; items: TestRunItem[]; summary: TestRunSummary;
 }
+/** The result of one step of an attempt; the step is one of the version the item runs. */
+export interface TestStepResult { stepId: string; stepOrder: number; status: TestResultStatus; actualResult: string | null }
+export interface StepResultInput { stepId: string; status: TestResultStatus; actualResult?: string | null }
 export interface TestExecution {
   id: string; testRunItemId: string; attemptNumber: number; status: TestResultStatus; actualResult: string | null;
-  durationSeconds: number; defectLinks: DefectLink[]; creationTime: string; creatorId: string | null;
+  durationSeconds: number; stepResults: TestStepResult[]; defectLinks: DefectLink[]; creationTime: string; creatorId: string | null;
 }
 export interface CreateRun { projectId?: string | null; testPlanId?: string | null; title: string; environment: string; testCaseIds: string[] }
-export interface ExecuteItem { status: TestResultStatus; actualResult?: string | null; durationSeconds: number; defects: AddDefect[] }
+export interface ExecuteItem { status: TestResultStatus; actualResult?: string | null; durationSeconds: number; stepResults?: StepResultInput[]; defects: AddDefect[] }
 export interface TestRunListRequest extends PagedRequest { projectId?: string | null; filter?: string; testPlanId?: string | null; noPlan?: boolean; status?: RunStatus | null; environment?: string }
 
 // ---- Requirements and RTM

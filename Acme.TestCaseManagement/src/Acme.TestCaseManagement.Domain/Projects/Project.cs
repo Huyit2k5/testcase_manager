@@ -27,6 +27,12 @@ public class Project : FullAuditedAggregateRoot<Guid>, IMultiTenant
     /// </summary>
     public virtual bool IsRestricted { get; protected set; }
 
+    /// <summary>
+    /// The last number given to a test case code made for this project ("EINV-007" is 7). It only goes up, so a number is not used
+    /// twice even after the test case that had it was deleted.
+    /// </summary>
+    public virtual int LastTestCaseNumber { get; protected set; }
+
     protected Project()
     {
         Key = default!;
@@ -55,6 +61,13 @@ public class Project : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public virtual void SetDescription(string? description)
     {
         Description = Check.Length(description, nameof(description), ProjectConsts.MaxDescriptionLength);
+    }
+
+    /// <summary>The next code for a test case of this project: the key and a number of at least three digits ("EINV-008").</summary>
+    public virtual string TakeNextTestCaseCode()
+    {
+        LastTestCaseNumber++;
+        return Key + "-" + LastTestCaseNumber.ToString("000", System.Globalization.CultureInfo.InvariantCulture);
     }
 
     public virtual void SetRestricted(bool restricted)

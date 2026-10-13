@@ -36,12 +36,22 @@ public class TestCaseManager : DomainService
         _suiteRepository = suiteRepository;
     }
 
-    /// <summary>Builds a new Draft test case after checking the suite exists and the code is free. The caller inserts it.</summary>
-    public virtual async Task<TestCase> CreateAsync(Guid suiteId, string code, string title)
+    /// <summary>
+    /// Builds a new Draft test case after checking the suite exists and the code is free. Without a code, the next code of the
+    /// project ("EINV-008") is given. The caller inserts it.
+    /// </summary>
+    public virtual async Task<TestCase> CreateAsync(Guid suiteId, string? code, string title)
     {
         await EnsureSuiteExistsAsync(suiteId);
         await _projectManager.EnsureSuiteIsOpenAsync(suiteId);
-        await EnsureCodeIsUniqueAsync(code, exceptTestCaseId: null);
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            code = await _projectManager.GenerateTestCaseCodeAsync(suiteId, async candidate => await _testCaseRepository.FindByCodeAsync(candidate) != null);
+        }
+        else
+        {
+            await EnsureCodeIsUniqueAsync(code, exceptTestCaseId: null);
+        }
 
         var testCase = new TestCase(GuidGenerator.Create(), CurrentTenant.Id, suiteId, code, title);
         testCase.SetProject(await _projectManager.GetProjectOfSuiteAsync(suiteId));

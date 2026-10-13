@@ -7,9 +7,12 @@ public class CreateUpdateTestCaseDto
 {
     public Guid SuiteId { get; set; }
 
-    [Required]
+    /// <summary>
+    /// On create: leave it empty to give the next code of the project ("EINV-008"). On update: leave it empty to keep the code the
+    /// test case has.
+    /// </summary>
     [StringLength(TestCaseConsts.MaxCodeLength)]
-    public string Code { get; set; } = string.Empty;
+    public string? Code { get; set; }
 
     [Required]
     [StringLength(TestCaseConsts.MaxTitleLength)]

@@ -103,13 +103,53 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
         return await MapAsync(testCase);
     }
 
+    [Authorize(TestCaseManagementPermissions.TestCases.Create)]
+    public virtual async Task<TestCaseDto> DuplicateAsync(Guid id, DuplicateTestCaseDto input)
+    {
+        var source = await _testCaseRepository.GetAsync(id);
+
+        var title = string.IsNullOrWhiteSpace(input.Title) ? L["TestCase:CopyTitle", source.Title].Value : input.Title.Trim();
+        if (title.Length > TestCaseConsts.MaxTitleLength)
+        {
+            title = title[..TestCaseConsts.MaxTitleLength];
+        }
+
+        var copy = await _testCaseManager.CreateAsync(input.SuiteId ?? source.SuiteId, input.Code, title);
+
+        // What describes the test case is copied; what ties the original to the rest of the library is not: its Automation ID names
+        // one test case only, and its versions, runs, requirements and files belong to the original. Steps become the copy's own.
+        ApplyContent(copy, new CreateUpdateTestCaseDto
+        {
+            Description = source.Description,
+            Preconditions = source.Preconditions,
+            Postconditions = source.Postconditions,
+            Priority = source.Priority,
+            Severity = source.Severity,
+            ExecutionType = source.ExecutionType,
+            Kind = source.Kind,
+            Layer = source.Layer,
+            IsFlaky = source.IsFlaky,
+            Tags = source.Tags.Select(t => t.Name).ToList(),
+            Steps = source.Steps.OrderBy(s => s.StepOrder).Select(s => new TestStepDto { Action = s.Action, ExpectedResult = s.ExpectedResult, TestData = s.TestData }).ToList(),
+        });
+
+        await _testCaseRepository.InsertAsync(copy, autoSave: true);
+        await _history.RecordAsync(copy.Id, TestCaseHistoryType.Created, note: L["TestCase:DuplicatedFrom", source.Code].Value);
+
+        return await MapAsync(copy);
+    }
+
     [Authorize(TestCaseManagementPermissions.TestCases.Update)]
     public virtual async Task<TestCaseDto> UpdateAsync(Guid id, CreateUpdateTestCaseDto input)
     {
         var testCase = await _testCaseRepository.GetAsync(id);
         var before = TestCaseContentSnapshot.Of(testCase);
 
-        await _testCaseManager.ChangeCodeAsync(testCase, input.Code);
+        if (!string.IsNullOrWhiteSpace(input.Code))
+        {
+            await _testCaseManager.ChangeCodeAsync(testCase, input.Code);
+        }
+
         await _testCaseManager.ChangeSuiteAsync(testCase, input.SuiteId);
         testCase.SetTitle(input.Title);
 

@@ -7,7 +7,7 @@ import { DownloadedFile, fileNameOf } from './transfer';
 import {
   StepSuggestionResult, StepSuggestionStatus, SuggestStepsInput, AddDefect, ApiKey, Attachment, SaveSharedStepGroup, SharedStepGroup, SharedStepGroupSummary, SharedStepUsage, TagSummary, UpdateSharedStepUsersResult, ApiKeyCreated, ApplyFlakyFlagsResult, CreateRun, Dashboard, FlakyTestList, DefectLink, EvaluateInput, ExecuteItem, PagedResult, QualityGate, QualityGateEvaluation,
   Requirement, RtmMatrix, RtmRequest, SavePlan, SaveQualityGate, SaveRequirement, SaveTestCase, SignOffReport, StartSignOff,
-  ApproveTestCasesResult, TestCase, TestCaseDefect, TestCaseHistory, TestCaseListRequest, TestCaseVersion, TestExecution, TestPlan, TestRun, TestRunListRequest,
+  ApproveTestCasesResult, DuplicateTestCase, TestCase, TestCaseDefect, TestCaseHistory, TestCaseListRequest, TestCaseVersion, TestExecution, TestPlan, TestRun, TestRunListRequest,
   TestSuite, TestSuiteTree,
 } from './dtos';
 import { PlanStatus, SeverityLevel, SignOffStatus, TestCaseStatus } from './enums';
@@ -76,11 +76,14 @@ export class TestCaseService {
   }
   setTags(id: string, tags: string[]): Observable<TestCase> { return this.http.put<TestCase>(`${this.root}/test-cases/${id}/tags`, { tags }); }
   tags(): Observable<TagSummary[]> { return this.http.get<TagSummary[]>(`${this.root}/test-cases/tags`, { params: query({ projectId: this.project.currentId() }) }); }
+  version(id: string, versionNumber: number): Observable<TestCaseVersion> { return this.http.get<TestCaseVersion>(`${this.root}/test-cases/${id}/versions/${versionNumber}`); }
   versions(id: string): Observable<TestCaseVersion[]> { return this.http.get<TestCaseVersion[]>(`${this.root}/test-cases/${id}/versions`); }
   /** Approves many test cases, each as if alone; the ones that cannot be approved come back with the reason. */
   approveMany(testCaseIds: string[], changeSummary?: string | null): Observable<ApproveTestCasesResult> {
     return this.http.post<ApproveTestCasesResult>(`${this.root}/test-cases/approve`, { testCaseIds, changeSummary: changeSummary || null });
   }
+  /** A Draft copy of the test case: the next code of the project, the title of the original and "(copy)" when none is given. */
+  duplicate(id: string, input: DuplicateTestCase = {}): Observable<TestCase> { return this.http.post<TestCase>(`${this.root}/test-cases/${id}/duplicate`, input); }
   history(id: string): Observable<TestCaseHistory[]> { return this.http.get<TestCaseHistory[]>(`${this.root}/test-cases/${id}/history`); }
   defects(id: string): Observable<TestCaseDefect[]> { return this.http.get<TestCaseDefect[]>(`${this.root}/test-cases/${id}/defects`); }
 }

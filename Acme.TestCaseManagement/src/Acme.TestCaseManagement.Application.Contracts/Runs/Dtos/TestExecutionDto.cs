@@ -16,6 +16,9 @@ public class TestExecutionDto : CreationAuditedEntityDto<Guid>
 
     public int DurationSeconds { get; set; }
 
+    /// <summary>The results of single steps, in the order of the steps; empty when only the result of the attempt was recorded.</summary>
+    public List<TestStepResultDto> StepResults { get; set; } = new();
+
     /// <summary>External issues linked to this attempt, oldest first.</summary>
     public List<DefectLinkDto> DefectLinks { get; set; } = new();
 }

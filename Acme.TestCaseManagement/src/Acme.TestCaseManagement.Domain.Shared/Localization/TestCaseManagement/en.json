@@ -212,6 +212,12 @@
     "SignOffReport:SignatureLine": "Signature",
     "SignOffReport:DateLine": "Date",
     "SignOffReport:Page": "Page",
-    "SignOffReport:GeneratedNote": "Frozen figures of the sign-off; the signature digest proves the approval was recorded."
+    "SignOffReport:GeneratedNote": "Frozen figures of the sign-off; the signature digest proves the approval was recorded.",
+    "TestCaseManagement:TestCaseCodeNotGenerated": "No free code could be generated for project '{Key}'. Enter a code.",
+    "TestCaseManagement:TestStepNotInVersion": "Step '{StepId}' is not a step of version {Version} of this test case.",
+    "TestCaseManagement:DuplicateStepResult": "A result is given twice for the same step.",
+    "TestCaseManagement:PassedWithUnpassedStep": "The attempt cannot be Passed while a step is Failed or Blocked.",
+    "TestCase:CopyTitle": "{0} (copy)",
+    "TestCase:DuplicatedFrom": "Copied from {0}"
   }
 }

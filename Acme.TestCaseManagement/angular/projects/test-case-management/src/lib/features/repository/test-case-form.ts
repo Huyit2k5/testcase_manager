@@ -28,7 +28,7 @@ import { TCM_FEATURES } from '../../core/host';
           </div>
           <div class="field">
             <label for="tc-code">{{ 'common.code' | t }}</label>
-            <input id="tc-code" name="code" required maxlength="64" [(ngModel)]="model.code" [placeholder]="'form.codePlaceholder' | t" />
+            <input id="tc-code" name="code" [required]="!!existing()" maxlength="64" [(ngModel)]="model.code" [placeholder]="(existing() ? 'form.codePlaceholder' : 'form.codeAuto') | t" data-test="code-input" />
           </div>
         </div>
         <div class="field">
@@ -224,6 +224,7 @@ export class TestCaseFormComponent implements OnInit {
     }
     const body: SaveTestCase = {
       ...this.model,
+      code: this.model.code?.trim() || null,
       description: this.model.description || null,
       preconditions: this.model.preconditions || null,
       postconditions: this.model.postconditions || null,

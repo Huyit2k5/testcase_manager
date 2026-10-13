@@ -56,6 +56,7 @@ public class OpenApiContract_Tests
         "TestCase_DetachSharedSteps DELETE /test-cases/{id}/shared-steps/{groupId}",
         "TestCase_ChangeStatus POST /test-cases/{id}/status",
         "TestCase_ApproveMany POST /test-cases/approve",
+        "TestCase_Duplicate POST /test-cases/{id}/duplicate",
         "TestCase_GetVersions GET /test-cases/{id}/versions",
         "TestCase_GetVersion GET /test-cases/{id}/versions/{versionNumber}",
         "TestCase_GetHistory GET /test-cases/{id}/history",
@@ -340,7 +341,7 @@ public class OpenApiContract_Tests
         Required(schemas, "Suites.Dtos.CreateTestSuiteDto").ShouldBe(new[] { "name" });
         ((int)Property(schemas, "Suites.Dtos.CreateTestSuiteDto")("name")["maxLength"]!).ShouldBe(TestSuiteConsts.MaxNameLength);
 
-        Required(schemas, "TestCases.Dtos.CreateUpdateTestCaseDto").ShouldBe(new[] { "code", "title" }, ignoreOrder: true);
+        Required(schemas, "TestCases.Dtos.CreateUpdateTestCaseDto").ShouldBe(new[] { "title" });
         Required(schemas, "TestCases.Dtos.TestStepDto").ShouldBe(new[] { "action", "expectedResult" }, ignoreOrder: true);
         Required(schemas, "Runs.Dtos.CreateTestRunDto").ShouldBe(new[] { "title", "environment" }, ignoreOrder: true);
         Required(schemas, "Runs.Dtos.BatchExecuteTestItemsDto").ShouldBe(new[] { "items" });

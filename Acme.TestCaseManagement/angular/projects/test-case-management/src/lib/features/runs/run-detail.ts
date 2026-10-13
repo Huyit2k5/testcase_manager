@@ -10,9 +10,9 @@ import { TCM_BASE_PATH } from '../../core/host';
 import { FormatDatePipe, I18nService, TranslatePipe } from '../../core/i18n/i18n';
 import { badge } from '../../core/ui';
 import { UserNames } from '../../core/users';
-import { AddDefect, DefectLink, TestExecution, TestRun, TestRunItem } from '../../proxy/dtos';
+import { AddDefect, DefectLink, TestExecution, TestRun, TestRunItem, TestStep } from '../../proxy/dtos';
 import { AttachmentOwnerType, RunStatus, SeverityLevel, TestResultStatus, TransferFormat, enumOptions } from '../../proxy/enums';
-import { TestRunService } from '../../proxy/services';
+import { TestCaseService, TestRunService } from '../../proxy/services';
 import { TransferService, saveFile } from '../../proxy/transfer';
 import { AttachmentsComponent } from '../attachments/attachments';
 import { ImportDialogComponent } from '../transfer/import-dialog';
@@ -23,6 +23,9 @@ interface ExecuteForm {
   item: TestRunItem; status: TestResultStatus; actualResult: string; durationSeconds: number; defects: AddDefect[];
 }
 
+/** One step of the version being run, with the result the tester gives it (null: the step is not run, so no result is recorded). */
+interface StepRow { id: string; order: number; action: string; expectedResult: string; testData: string | null; status: TestResultStatus | null; actual: string }
+
 @Component({
   selector: 'app-run-detail',
   imports: [FormsModule, RouterLink, FormatDatePipe, TranslatePipe, ModalComponent, CasePickerComponent, ImportDialogComponent, AttachmentsComponent],
@@ -31,6 +34,7 @@ interface ExecuteForm {
 export class RunDetailComponent {
   protected readonly base = inject(TCM_BASE_PATH);
   private readonly service = inject(TestRunService);
+  private readonly testCaseService = inject(TestCaseService);
   private readonly toast = inject(ToastService);
   private readonly transfer = inject(TransferService);
   private readonly i18n = inject(I18nService);
@@ -50,6 +54,10 @@ export class RunDetailComponent {
   /** Counts the loads: /runs/A to /runs/B reuses this component, and a late answer for A must not show under B. */
   private loadRequest = 0;
   protected readonly executeForm = signal<ExecuteForm | null>(null);
+  /** The steps of the version in the execute form; null while they load or when they could not be loaded. */
+  protected readonly stepRows = signal<StepRow[] | null>(null);
+  /** The steps of the version in the history dialog, by id, to show what each result is about. */
+  protected readonly historySteps = signal<Map<string, TestStep>>(new Map());
   protected readonly history = signal<{ item: TestRunItem; attempts: TestExecution[] } | null>(null);
   protected readonly addForm = signal<{ testCaseIds: string[]; assignedUserId: string } | null>(null);
   /** Which items to list: 'all', 'me', 'none' (nobody assigned) or the id of a user. */
@@ -149,6 +157,40 @@ export class RunDetailComponent {
   // ---- execute
   protected startExecute(item: TestRunItem): void {
     this.executeForm.set({ item, status: TestResultStatus.Passed, actualResult: '', durationSeconds: 0, defects: [] });
+    this.stepRows.set(null);
+    this.testCaseService.version(item.testCaseId, item.versionNumber).subscribe({
+      // The answer is for the item that was asked: a tester who has moved on to another one must not get these steps.
+      next: version => {
+        if (this.executeForm()?.item.id !== item.id) { return; }
+        this.stepRows.set([...version.steps].sort((a, b) => (a.stepOrder ?? 0) - (b.stepOrder ?? 0))
+          .map(s => ({ id: s.id as string, order: s.stepOrder ?? 0, action: s.action, expectedResult: s.expectedResult, testData: s.testData ?? null, status: null, actual: '' })));
+      },
+      error: () => undefined,
+    });
+  }
+
+  /** All the steps passed: the attempt passes too. */
+  protected passAllSteps(form: ExecuteForm): void {
+    for (const row of this.stepRows() ?? []) { row.status = TestResultStatus.Passed; }
+    form.status = TestResultStatus.Passed;
+  }
+
+  /** A step that failed or was blocked settles the attempt: it cannot pass (the server refuses it), so the result follows the step. */
+  protected stepChanged(form: ExecuteForm): void {
+    const rows = this.stepRows() ?? [];
+    if (form.status !== TestResultStatus.Passed) { return; }
+    if (rows.some(r => r.status === TestResultStatus.Failed)) { form.status = TestResultStatus.Failed; }
+    else if (rows.some(r => r.status === TestResultStatus.Blocked)) { form.status = TestResultStatus.Blocked; }
+  }
+
+  protected stepsAgainstPass(form: ExecuteForm): boolean {
+    return form.status === TestResultStatus.Passed && (this.stepRows() ?? []).some(r => r.status === TestResultStatus.Failed || r.status === TestResultStatus.Blocked);
+  }
+
+  /** The text of a step that a result was recorded for, from the version; a note when the version does not have it. */
+  protected stepText(stepId: string): string {
+    const step = this.historySteps().get(stepId);
+    return step ? step.action : this.i18n.t('run.stepGone');
   }
 
   protected addDefectRow(form: ExecuteForm): void {
@@ -165,6 +207,7 @@ export class RunDetailComponent {
       status: form.status,
       actualResult: form.actualResult || null,
       durationSeconds: form.durationSeconds || 0,
+      stepResults: (this.stepRows() ?? []).filter(r => r.status !== null).map(r => ({ stepId: r.id, status: r.status as TestResultStatus, actualResult: r.actual.trim() || null })),
       defects: failed
         ? form.defects.filter(d => d.issueKey.trim()).map(d => ({ ...d, issueUrl: d.issueUrl || null, severity: d.severity === null ? null : Number(d.severity) }))
         : [],
@@ -173,6 +216,7 @@ export class RunDetailComponent {
         this.busy.set(false);
         this.toast.success(this.i18n.t('run.recorded', { code: form.item.testCaseCode, result: this.label(TestResultStatus, form.status) }));
         this.executeForm.set(null);
+        this.stepRows.set(null);
         this.reload();
       },
       error: () => this.busy.set(false),
@@ -181,7 +225,15 @@ export class RunDetailComponent {
 
   // ---- history and defects
   protected openHistory(item: TestRunItem): void {
-    this.service.executions(this.id(), item.id).subscribe(attempts => this.history.set({ item, attempts }));
+    this.historySteps.set(new Map());
+    this.service.executions(this.id(), item.id).subscribe(attempts => {
+      this.history.set({ item, attempts });
+      if (attempts.some(a => a.stepResults?.length)) {
+        this.testCaseService.version(item.testCaseId, item.versionNumber).subscribe(version => {
+          this.historySteps.set(new Map(version.steps.map(s => [s.id as string, s])));
+        });
+      }
+    });
   }
 
   protected toggleResolved(attempt: TestExecution, defect: DefectLink): void {

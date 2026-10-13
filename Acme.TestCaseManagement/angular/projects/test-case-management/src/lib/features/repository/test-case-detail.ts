@@ -141,6 +141,7 @@ import { VersionCompareComponent } from './version-compare';
           <button type="button" class="btn" (click)="changeStatus(target)">{{ actionLabel(target) }}</button>
         }
         @if (auth.can(perm.TestCases.Delete)) { <button type="button" class="btn danger" (click)="remove()">{{ 'common.delete' | t }}</button> }
+        @if (auth.can(perm.TestCases.Create)) { <button type="button" class="btn" (click)="duplicate()" data-test="duplicate">{{ 'detail.duplicate' | t }}</button> }
         @if (auth.can(perm.TestCases.Update)) { <button type="button" class="btn primary" (click)="edit.emit(testCase())">{{ 'common.edit' | t }}</button> }
       </ng-container>
     </app-modal>
@@ -157,6 +158,8 @@ export class TestCaseDetailComponent {
 
   readonly testCase = input.required<TestCase>();
   readonly edit = output<TestCase>();
+  /** The copy that was made; the page opens it. */
+  readonly copied = output<TestCase>();
   readonly changed = output<void>();
   /** The test case after its shared steps were inserted, refreshed or detached; the dialog shows it. */
   readonly stepsChanged = output<TestCase>();
@@ -295,6 +298,20 @@ export class TestCaseDetailComponent {
     this.service.changeStatus(this.testCase().id, target, changeSummary).subscribe(() => {
       this.toast.success(this.i18n.t('detail.statusNow', { status: this.label(TestCaseStatus, target) }));
       this.changed.emit();
+    });
+  }
+
+  protected duplicate(): void {
+    const testCase = this.testCase();
+    this.confirmer.askText({
+      title: this.i18n.t('detail.duplicateTitle'), message: this.i18n.t('detail.duplicateMessage', { code: testCase.code }), placeholder: testCase.title,
+      confirmText: this.i18n.t('detail.duplicate'), optional: true,
+    }).subscribe(title => {
+      if (title === null) { return; }
+      this.service.duplicate(testCase.id, { title: title || null }).subscribe(copy => {
+        this.toast.success(this.i18n.t('detail.duplicated', { code: copy.code }));
+        this.copied.emit(copy);
+      });
     });
   }
 

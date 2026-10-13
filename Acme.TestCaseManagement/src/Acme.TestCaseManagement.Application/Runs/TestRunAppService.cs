@@ -215,9 +215,12 @@ public class TestRunAppService : TestCaseManagementAppService, ITestRunAppServic
             .OrderBy(x => x.CreationTime)
             .ToLookup(x => x.TestExecutionId);
 
+        var stepResults = await _runManager.GetStepResultsAsync(executionIds);
+
         return executions.Select(execution =>
         {
             var dto = ObjectMapper.Map<TestExecution, TestExecutionDto>(execution);
+            dto.StepResults = ObjectMapper.Map<List<TestStepResult>, List<TestStepResultDto>>(stepResults[execution.Id].ToList());
             dto.DefectLinks = ObjectMapper.Map<List<DefectLink>, List<DefectLinkDto>>(links[execution.Id].ToList());
             return dto;
         }).ToList();
@@ -368,9 +371,12 @@ public class TestRunAppService : TestCaseManagementAppService, ITestRunAppServic
     private async Task<TestExecutionDto> RecordAttemptAsync(Guid itemId, ExecuteTestItemDto input)
     {
         var execution = await _runManager.RecordExecutionAttemptAsync(
-            itemId, input.Status, input.ActualResult, input.DurationSeconds);
+            itemId, input.Status, input.ActualResult, input.DurationSeconds,
+            input.StepResults.Select(s => new StepResultInput(s.StepId, s.Status, s.ActualResult)).ToList());
 
         var dto = ObjectMapper.Map<TestExecution, TestExecutionDto>(execution);
+        var recorded = await _runManager.GetStepResultsAsync(new[] { execution.Id });
+        dto.StepResults = ObjectMapper.Map<List<TestStepResult>, List<TestStepResultDto>>(recorded[execution.Id].ToList());
         foreach (var defect in input.Defects)
         {
             var link = await _defectManager.AddAsync(

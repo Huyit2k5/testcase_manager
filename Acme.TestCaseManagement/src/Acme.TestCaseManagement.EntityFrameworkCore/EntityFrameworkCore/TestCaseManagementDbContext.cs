@@ -36,6 +36,7 @@ public class TestCaseManagementDbContext : AbpDbContext<TestCaseManagementDbCont
     public DbSet<TestRunItem> TestRunItems { get; set; } = null!;
 
     public DbSet<TestExecution> TestExecutions { get; set; } = null!;
+    public DbSet<TestStepResult> TestStepResults { get; set; } = null!;
 
     public DbSet<Requirement> Requirements { get; set; } = null!;
 
