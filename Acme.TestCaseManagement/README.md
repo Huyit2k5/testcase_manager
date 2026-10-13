@@ -169,7 +169,7 @@ All routes start with `api/test-case-management/`.
 | `plans` | test plans and plan status |
 | `runs` | runs, run items, assignment, executions (single and batch, each with optional results by step in `stepResults`), completion, and `DELETE runs/{id}` for a run that has no result yet (a run with one is completed, not deleted) |
 | `executions/{executionId}/defects` | link, list, update (severity, resolved) and remove defect links |
-| `requirements` | requirements and their test-case links |
+| `requirements` | requirements and their test-case links; `for-test-case/{testCaseId}` the requirements of a test case; `{id}/review` and `{id}/test-cases/{testCaseId}/review` confirm the test cases to check after a change |
 | `rtm` | requirements traceability matrix |
 | `quality-gates` | gate CRUD and `POST quality-gates/evaluate` (dry run with per-criterion breakdown) |
 | `sign-off` | start a sign-off, add approvals, read reports |
@@ -287,6 +287,12 @@ added (`addMissingToRun`). The same test case twice in a request counts as retri
 A request holds at most 2000 results. Send an `Idempotency-Key` so that retrying a request does not record twice. A host that embeds
 the module's model in its own DbContext needs the new `DbSet`s (`ApiKey`, `AutomationPublication`, `Attachment`, `SharedStepGroup`).
 
+## Requirement changes and the test cases to check
+
+When the title, the description or the acceptance criteria of a requirement change (`PUT requirements/{id}`), every test case linked to it is marked **to be checked** (a suspect link): `RequirementTestCase.IsSuspect`, `SuspectSince` (the first change nobody has looked at) and `SuspectReason` (the names of the fields, such as `Title, AcceptanceCriteria`). Changing the code, the priority or the milestone marks nothing, and neither does saving the same text. A link made after the change, or made again after being removed, starts clean. Each marking adds a line (`RequirementChanged`) to the history of the test case.
+
+The mark only reminds: it does not change the coverage, the results, the quality gate or the right to run a test. It is shown in the matrix (`rtm`: `SuspectTestCaseCount` of a row, `IsSuspect`, `SuspectSince` and `SuspectReason` of each test case, `SuspectRequirements` in the summary, and `OnlySuspect=true` to list only those requirements), in the requirement list (`SuspectTestCaseCount`), and in the detail of a test case, from `GET requirements/for-test-case/{testCaseId}`. Deprecated and deleted test cases are not counted. Someone with `TestCases.Update` confirms with `POST requirements/{id}/test-cases/{testCaseId}/review`, or all of a requirement with `POST requirements/{id}/review`; nothing clears a mark by itself, not even editing or approving the test case again, and each confirmation adds a `RequirementReviewed` line. A host adds the three columns of `TcmRequirementTestCases` in a migration. Nothing is sent to anybody.
+
 ## Trend across sprints and the workload of the testers
 
 A test plan is a sprint. `GET dashboard/trend?ProjectId=&Sprints=8` (2 to 20) returns the latest plans that have run items, oldest first, each with its runs, its items by result, completion, pass rate, first-time pass rate and defects (also per 100 executed tests), worked out as the dashboard works out a plan from the current state of its runs, and how the last plan moved against the one before it in points. Runs without a plan (CI runs) are not in it. It needs what the dashboard needs.
@@ -372,7 +378,7 @@ the requirement text. Details: plan.md, section 4.15.
 ## Running on MySQL
 
 The module has been run against MySQL 8.4 with `Volo.Abp.EntityFrameworkCore.MySQL` (the package of the ABP application template): the model creates, and every test of the module passes (plan.md,
-section 4.17). It was run again on MySQL 8.4.11 after the projects, the version snapshot and the history were added (all three test projects pass; once more after the generated codes, the copies, the results by step, and the trend and the workload), and an application made from ABP's own template, switched to MySQL, created its schema with a migration (22 `Tcm` tables) and ran the main flows through the API (plan.md, section 4.28). To repeat it, start a MySQL server and run the tests with `TCM_TEST_MYSQL` set and the settings file that turns parallel runs off:
+section 4.17). It was run again on MySQL 8.4.11 after the projects, the version snapshot and the history were added (all three test projects pass; once more after the generated codes, the copies, the results by step, the trend and the workload, and the changes of requirements), and an application made from ABP's own template, switched to MySQL, created its schema with a migration (22 `Tcm` tables) and ran the main flows through the API (plan.md, section 4.28). To repeat it, start a MySQL server and run the tests with `TCM_TEST_MYSQL` set and the settings file that turns parallel runs off:
 
 ```text
 docker run -d --name tcm-mysql -e MYSQL_ROOT_PASSWORD=secret -p 3307:3306 mysql:8.4

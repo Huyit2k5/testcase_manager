@@ -3,9 +3,10 @@ import { FormsModule } from '@angular/forms';
 import { ModalComponent } from '../../core/modal';
 import { AuthService, Permissions } from '../../core/auth';
 import { ToastService } from '../../core/core';
+import { fieldList } from '../../core/field-names';
 import { I18nService, TranslatePipe } from '../../core/i18n/i18n';
 import { badge } from '../../core/ui';
-import { RtmMatrix, RtmRow, TestPlan } from '../../proxy/dtos';
+import { RtmMatrix, RtmRow, RtmTestCase, TestPlan } from '../../proxy/dtos';
 import { PriorityLevel, RequirementCoverageStatus, SeverityLevel, TestResultStatus, enumOptions } from '../../proxy/enums';
 import { RequirementService, RtmService, TestPlanService } from '../../proxy/services';
 import { CasePickerComponent } from '../runs/case-picker';
@@ -15,6 +16,8 @@ import { ConfirmService } from '../../core/confirm';
 interface RequirementForm {
   id: string | null; code: string; title: string; description: string; acceptanceCriteria: string;
   priority: PriorityLevel; milestoneId: string;
+  /** The test cases linked to it that count; they are to be checked when its title, description or criteria change. */
+  linkedTests: number;
 }
 
 @Component({
@@ -45,6 +48,9 @@ export class TraceabilityComponent implements OnInit {
   protected planId = '';
   protected environment = '';
   protected status: RequirementCoverageStatus | '' = '';
+  protected onlySuspect = false;
+  /** Confirming that a test case still matches a changed requirement is looking after the test case. */
+  protected readonly canReview = this.auth.can(Permissions.TestCases.Update);
 
   protected readonly coverageEnum = RequirementCoverageStatus;
   protected readonly resultEnum = TestResultStatus;
@@ -69,20 +75,22 @@ export class TraceabilityComponent implements OnInit {
       testPlanId: this.planId || null,
       environment: this.environment,
       status: this.status === '' ? null : this.status,
+      onlySuspect: this.onlySuspect ? true : null,
     }).subscribe(m => { if (request === this.matrixRequest) { this.matrix.set(m); } });
   }
 
   protected newRequirement(): void {
-    this.form.set({ id: null, code: '', title: '', description: '', acceptanceCriteria: '', priority: PriorityLevel.Medium, milestoneId: '' });
+    this.form.set({ id: null, code: '', title: '', description: '', acceptanceCriteria: '', priority: PriorityLevel.Medium, milestoneId: '', linkedTests: 0 });
   }
 
   protected editRequirement(row: RtmRow): void {
+    const linkedTests = row.testCases.filter(t => t.countsTowardCoverage).length;
     this.requirementService.list({ filter: row.code }).subscribe(result => {
       const requirement = result.items.find(r => r.id === row.requirementId);
       if (!requirement) { return; }
       this.form.set({
         id: requirement.id, code: requirement.code, title: requirement.title, description: requirement.description ?? '',
-        acceptanceCriteria: requirement.acceptanceCriteria ?? '', priority: requirement.priority, milestoneId: requirement.milestoneId ?? '',
+        acceptanceCriteria: requirement.acceptanceCriteria ?? '', priority: requirement.priority, milestoneId: requirement.milestoneId ?? '', linkedTests,
       });
     });
   }
@@ -141,4 +149,23 @@ export class TraceabilityComponent implements OnInit {
   }
 
   protected linkedIds(row: RtmRow): string[] { return row.testCases.map(t => t.testCaseId); }
+
+  /** "Title, Acceptance criteria since Mar 5": what changed and when, for the hint on the mark. */
+  protected suspectHint(tc: RtmTestCase): string {
+    return this.i18n.t('rtm.checkTitle', { fields: fieldList(this.i18n, tc.suspectReason), date: tc.suspectSince ? this.i18n.date(tc.suspectSince, 'mediumDate') : '' });
+  }
+
+  protected reviewLink(row: RtmRow, tc: RtmTestCase): void {
+    this.requirementService.reviewLink(row.requirementId, tc.testCaseId).subscribe(() => {
+      this.toast.success(this.i18n.t('rtm.reviewed', { code: tc.code }));
+      this.load();
+    });
+  }
+
+  protected reviewAll(row: RtmRow): void {
+    this.requirementService.reviewAll(row.requirementId).subscribe(result => {
+      this.toast.success(this.i18n.t('rtm.reviewedAll', { n: result.reviewed }));
+      this.load();
+    });
+  }
 }

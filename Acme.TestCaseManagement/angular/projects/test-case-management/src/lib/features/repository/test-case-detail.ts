@@ -5,12 +5,13 @@ import { AuthService, Permissions } from '../../core/auth';
 import { ToastService } from '../../core/core';
 import { FormatDatePipe, I18nService, TranslatePipe } from '../../core/i18n/i18n';
 import { badge } from '../../core/ui';
-import { SharedStepGroupSummary, TestCase, TestCaseDefect, TestCaseVersion } from '../../proxy/dtos';
+import { fieldList } from '../../core/field-names';
+import { RequirementLink, SharedStepGroupSummary, TestCase, TestCaseDefect, TestCaseVersion } from '../../proxy/dtos';
 import {
   ExecutionType, PriorityLevel, SeverityLevel, TEST_CASE_TRANSITIONS, TestCaseStatus, TestKind, TestLayer,
 } from '../../proxy/enums';
 import { AttachmentOwnerType } from '../../proxy/enums';
-import { SharedStepGroupService, TestCaseService } from '../../proxy/services';
+import { RequirementService, SharedStepGroupService, TestCaseService } from '../../proxy/services';
 import { AttachmentsComponent } from '../attachments/attachments';
 import { TagInputComponent } from '../tags/tag-input';
 import { ConfirmService } from '../../core/confirm';
@@ -32,6 +33,9 @@ import { VersionCompareComponent } from './version-compare';
 
       @if (waitingForReview()) {
         <p class="alert warn" data-test="review-banner">{{ 'detail.waitingReview' | t: { n: testCase().currentVersion } }}</p>
+      }
+      @for (link of suspectLinks(); track link.requirementId) {
+        <p class="alert warn" data-test="requirement-banner">{{ 'detail.reqChanged' | t: { code: link.code, fields: fields(link.suspectReason) } }}</p>
       }
 
       <div class="field">
@@ -61,6 +65,34 @@ import { VersionCompareComponent } from './version-compare';
           }
         </tbody>
       </table>
+
+      @if (canSeeRequirements) {
+        <h3>{{ 'detail.reqTitle' | t }}</h3>
+        @if (requirementLinks().length) {
+          <table data-test="requirement-links">
+            <tbody>
+              @for (link of requirementLinks(); track link.requirementId) {
+                <tr>
+                  <td><span class="mono">{{ link.code }}</span> {{ link.title }}</td>
+                  <td>
+                    @if (link.isSuspect) {
+                      <span class="badge warn">{{ 'detail.reqToCheck' | t: { date: link.suspectSince ? (link.suspectSince | fdate: 'mediumDate') : '' } }}</span>
+                      <div class="muted">{{ fields(link.suspectReason) }}</div>
+                    } @else {
+                      <span class="badge ok">{{ 'detail.reqUpToDate' | t }}</span>
+                    }
+                  </td>
+                  <td class="right nowrap">
+                    @if (link.isSuspect && auth.can(perm.TestCases.Update)) { <button type="button" class="btn sm primary" (click)="reviewRequirement(link)" data-test="review-requirement">{{ 'rtm.markReviewed' | t }}</button> }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <p class="muted">{{ 'detail.noRequirements' | t }}</p>
+        }
+      }
 
       <h3>{{ 'shared.sectionTitle' | t }}</h3>
       @if (groupsUsed().length) {
@@ -111,7 +143,7 @@ import { VersionCompareComponent } from './version-compare';
       <app-version-compare [versions]="versions()" />
 
       <h3>{{ 'history.timeline' | t }}</h3>
-      <app-test-case-timeline [testCaseId]="testCase().id" [version]="testCase()" />
+      <app-test-case-timeline [testCaseId]="testCase().id" [version]="[testCase(), reviews()]" />
 
       <h3>{{ 'att.title' | t }}</h3>
       <app-attachments [ownerType]="ownerType" [ownerId]="testCase().id" [canWrite]="auth.can(perm.TestCases.Update)" />
@@ -150,6 +182,7 @@ import { VersionCompareComponent } from './version-compare';
 export class TestCaseDetailComponent {
   private readonly service = inject(TestCaseService);
   private readonly groupService = inject(SharedStepGroupService);
+  private readonly requirementService = inject(RequirementService);
   private readonly toast = inject(ToastService);
   private readonly i18n = inject(I18nService);
   private readonly confirmer = inject(ConfirmService);
@@ -190,6 +223,12 @@ export class TestCaseDetailComponent {
   protected readonly suggestions = signal<string[]>([]);
   protected readonly versions = signal<TestCaseVersion[]>([]);
   protected readonly defects = signal<TestCaseDefect[]>([]);
+  /** The requirements this test case is linked to, and which of them changed since the test case was last checked against them. */
+  protected readonly requirementLinks = signal<RequirementLink[]>([]);
+  protected readonly suspectLinks = computed(() => this.requirementLinks().filter(l => l.isSuspect));
+  protected readonly canSeeRequirements = this.auth.can(Permissions.Requirements.Default);
+  /** Counts the confirmations, so that the timeline reads its lines again. */
+  protected readonly reviews = signal(0);
 
   protected readonly statuses = TestCaseStatus;
   protected readonly priorities = PriorityLevel;
@@ -215,6 +254,24 @@ export class TestCaseDetailComponent {
     this.service.tags().subscribe(all => this.suggestions.set(all.map(t => t.name)));
     this.service.versions(testCase.id).subscribe(v => this.versions.set(v));
     this.service.defects(testCase.id).subscribe(d => this.defects.set(d));
+    this.loadRequirements(testCase.id);
+  }
+
+  private loadRequirements(id: string): void {
+    if (!this.canSeeRequirements) { return; }
+    this.requirementService.forTestCase(id).subscribe({ next: links => this.requirementLinks.set(links), error: () => this.requirementLinks.set([]) });
+  }
+
+  protected fields(names: string | null): string { return fieldList(this.i18n, names); }
+
+  /** The person has looked at the test case against the changed requirement and it still matches. */
+  protected reviewRequirement(link: RequirementLink): void {
+    const id = this.testCase().id;
+    this.requirementService.reviewLink(link.requirementId, id).subscribe(() => {
+      this.toast.success(this.i18n.t('rtm.reviewed', { code: link.code }));
+      this.loadRequirements(id);
+      this.reviews.update(n => n + 1);
+    });
   }
 
   protected label(type: object, value: number): string { return this.i18n.enumText(type, value); }

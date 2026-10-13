@@ -23,6 +23,9 @@ public class GetRtmInput
     /// <summary>Show only requirements in this status. The summary is not affected.</summary>
     public RequirementCoverageStatus? Status { get; set; }
 
+    /// <summary>Show only requirements that have a test case to be checked against them (a requirement changed and nobody confirmed it). The summary is not affected.</summary>
+    public bool OnlySuspect { get; set; }
+
     [Range(0, int.MaxValue)]
     public int SkipCount { get; set; }
 

@@ -23,4 +23,16 @@ public interface IRequirementAppService : IApplicationService
 
     /// <summary>Removes the link (soft delete). Does nothing when it does not exist.</summary>
     Task UnlinkTestCaseAsync(Guid id, Guid testCaseId);
+
+    /// <summary>The requirements a test case is linked to, with whether it is to be checked against each, ordered by code.</summary>
+    Task<List<RequirementLinkDto>> GetForTestCaseAsync(Guid testCaseId);
+
+    /// <summary>
+    /// Confirms that the test case still matches the requirement after it changed; the link stops being suspect. Needs the permission to
+    /// update test cases, which is what looking after a test case is. Does nothing when the link is not suspect.
+    /// </summary>
+    Task<RequirementReviewResultDto> ReviewLinkAsync(Guid id, Guid testCaseId);
+
+    /// <summary>Confirms every suspect test case of the requirement at once.</summary>
+    Task<RequirementReviewResultDto> ReviewAllAsync(Guid id);
 }

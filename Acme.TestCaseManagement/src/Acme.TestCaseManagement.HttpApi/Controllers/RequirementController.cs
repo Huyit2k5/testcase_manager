@@ -66,4 +66,25 @@ public class RequirementController : TestCaseManagementController, IRequirementA
     {
         return _requirementAppService.UnlinkTestCaseAsync(id, testCaseId);
     }
+
+    /// <inheritdoc />
+    [HttpGet("for-test-case/{testCaseId:guid}")]
+    public virtual Task<List<RequirementLinkDto>> GetForTestCaseAsync(Guid testCaseId)
+    {
+        return _requirementAppService.GetForTestCaseAsync(testCaseId);
+    }
+
+    /// <inheritdoc />
+    [HttpPost("{id:guid}/test-cases/{testCaseId:guid}/review")]
+    public virtual Task<RequirementReviewResultDto> ReviewLinkAsync(Guid id, Guid testCaseId)
+    {
+        return _requirementAppService.ReviewLinkAsync(id, testCaseId);
+    }
+
+    /// <inheritdoc />
+    [HttpPost("{id:guid}/review")]
+    public virtual Task<RequirementReviewResultDto> ReviewAllAsync(Guid id)
+    {
+        return _requirementAppService.ReviewAllAsync(id);
+    }
 }

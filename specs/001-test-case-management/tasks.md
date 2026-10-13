@@ -403,3 +403,15 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 - [x] T167 Tests: Domain 7, Application 7, the contract, the flow and the rules of access over HTTP, Angular 11.
 - [x] T168 Tried in the browser on the sandbox (three sprints, two testers, the tester denied); module tests on SQLite and MySQL 8.4.11 (Domain 226, Application 449, HttpApi 85) and Angular 244; the documentation (business analysis 1.7, README, plan 4.32, spec FR-033 and FR-034). No migration: the database is the same.
 
+
+
+---
+
+## Phase 34: The change of a requirement and the test cases to check
+
+- [x] T169 `IsSuspect`, `SuspectSince` and `SuspectReason` on `RequirementTestCase` with their mapping; `RequirementManager.MarkLinksSuspectAsync`, `ReviewLinkAsync`, `ReviewAllLinksAsync`; two new `TestCaseHistoryType` values; a new link and a restored link start clean.
+- [x] T170 `UpdateAsync` of the requirement works out the fields that changed; the counts (`RequirementDto`, the matrix); `OnlySuspect`; `GetForTestCaseAsync`, `ReviewLinkAsync` and `ReviewAllAsync` with their routes and DTOs.
+- [x] T171 The page: card, badge, filter and buttons in the matrix; banner and list in the detail of a test case; the lines of the timeline; the warning in the dialog of a requirement; the keys (en, vi).
+- [x] T172 Tests: Application 12, the contract and the flow over HTTP, Angular 15.
+- [x] T173 Migration `AddSuspectLinks` on the sandbox; tried in the browser; module tests on SQLite and MySQL 8.4.11 (Domain 226, Application 461, HttpApi 85) and Angular 259; the documentation (business analysis 1.8, README, plan 4.33, spec FR-035, exercise 19 of the guide).
+

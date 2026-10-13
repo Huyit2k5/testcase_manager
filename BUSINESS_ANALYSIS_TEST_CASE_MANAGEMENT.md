@@ -15,6 +15,7 @@
 | Phiên bản | Ngày | Nội dung |
 | :--- | :--- | :--- |
 | 1.0 | 2026-10-12 | Bản đầu đủ nghiệp vụ và sơ đồ, đối chiếu với code |
+| 1.8 | 2026-10-13 | Cảnh báo khi yêu cầu đổi: liên kết yêu cầu–test case "cần đối soát" (UC-37, BR-REQ-01 đến 07, API `requirements/{id}/review`, `requirements/for-test-case/{testCaseId}`, cột `IsSuspect`, `SuspectSince`, `SuspectReason`); thêm hai loại dòng lịch sử test case; bỏ mục này khỏi phần chưa làm |
 | 1.7 | 2026-10-13 | Xu hướng chất lượng qua nhiều sprint (UC-35, BR-DASH-01 đến 03, API `dashboard/trend`) và khối lượng công việc theo tester (UC-36, BR-DASH-04 đến 07, API `dashboard/workload`); bỏ mục này khỏi phần chưa làm; sửa lộ trình |
 | 1.6 | 2026-10-13 | Mã test case tự sinh theo dự án (BR-TC-12), nhân bản test case (UC-33, BR-TC-13), kết quả chạy theo từng bước (UC-34, BR-RUN-11 đến 13; bảng `TcmTestStepResults`); bỏ ba mục này khỏi phần chưa làm |
 | 1.5 | 2026-10-13 | Xuất biên bản nghiệm thu ra PDF và Excel (UC-32, BR-RPT-01 đến 04, API `sign-off/{id}/export`); bỏ mục này khỏi phần chưa làm |
@@ -81,7 +82,7 @@
 | Dự án | Tạo, sửa, lưu trữ, xóa khi trống; dự án mặc định; chọn dự án đang làm việc; dự án chỉ cho thành viên xem |
 | Thư viện test | Cây suite lồng nhau, test case có bước, tag, bộ lọc; vòng duyệt; phiên bản bất biến và so sánh hai phiên bản; lịch sử thay đổi từng test case; duyệt hàng loạt; nhóm bước dùng chung; mã test case tự sinh theo dự án; nhân bản test case |
 | Kế hoạch và thực thi | Test plan; test run (trong hoặc ngoài plan); run item gắn đúng phiên bản; gán người test; ghi kết quả đơn lẻ hoặc hàng loạt; nhiều lần chạy; kết quả theo từng bước; xóa run chưa có kết quả |
-| Truy vết | Requirement; ma trận truy vết RTM |
+| Truy vết | Requirement; ma trận truy vết RTM; cảnh báo test case cần đối soát khi yêu cầu đổi |
 | Chất lượng | Quality Gate cấu hình được; nghiệm thu (Sign-off) nhiều người ký có băng SHA-256 |
 | Báo cáo | Dashboard (pass rate, tốc độ, burn-down, mật độ lỗi); xu hướng qua các sprint (mỗi test plan là một sprint); khối lượng công việc theo tester; phát hiện test chập chờn (flaky) |
 | Nhập / xuất | Test case và kết quả chạy ra Excel / CSV; nhập có chạy thử, tất cả hoặc không gì; biên bản nghiệm thu ra PDF (để in và ký) hoặc Excel |
@@ -304,7 +305,7 @@ Người dùng được lưu dưới dạng `Guid` (id) và audit của ABP; mod
 | **TestStepResult** (`TcmTestStepResults`) | `TestExecutionId`, `StepId`, `StepOrder`, `Status`, `ActualResult?` | Kết quả của một bước trong một lần chạy; `StepId` là mã bước trong phiên bản mà item chạy; chỉ thêm; duy nhất theo (lần chạy, bước); không khóa ngoại tới bước |
 | **DefectLink** | `TestExecutionId`, `ExternalSystem`, `IssueKey`, `IssueUrl?`, `Severity`, `IsResolved`, `ResolvedTime?` | Chỉ gắn vào attempt Failed |
 | **Requirement** | `ProjectId`, `Code`, `Title`, `Description`, `AcceptanceCriteria`, `Priority`, `MilestoneId?` | `Code` duy nhất toàn thư viện |
-| **RequirementTestCase** | `RequirementId`, `TestCaseId` | Liên kết nhiều–nhiều |
+| **RequirementTestCase** | `RequirementId`, `TestCaseId`, `IsSuspect`, `SuspectSince?`, `SuspectReason?` | Liên kết nhiều–nhiều. `IsSuspect` bật khi yêu cầu đổi nội dung và tắt khi có người xác nhận (xem 5.6); `SuspectReason` là tên các trường đã đổi, ví dụ `Title, AcceptanceCriteria` |
 | **QualityGate** | `Name`, `Description`, `MinPassRate`, `RequiredApprovals`, `IsDefault` | |
 | **SignOffReport / SignOffApproval** | phạm vi (plan hoặc milestone), `ProjectId`, tên và ngưỡng gate đã chụp, `Status`, `SummaryStatsJson`, `SnapshotHash`, người ký | |
 | **Attachment** | chủ sở hữu (test case hoặc attempt), tên file, loại, dung lượng | Nội dung lưu trong blob container |
@@ -498,6 +499,30 @@ flowchart LR
 - Requirement có mã duy nhất, tiêu đề, mô tả, tiêu chí chấp nhận, ưu tiên, milestone tùy chọn.
 - RTM phân biệt **được phủ** (có test case) với **đã đạt** (test case chạy Passed) và hiện lỗi đang chặn; lọc theo dự án.
 
+**Cảnh báo khi yêu cầu đổi ("liên kết nghi vấn").** Test case được viết theo nội dung của yêu cầu. Khi yêu cầu đổi, test case có thể không còn kiểm đúng điều cần kiểm, nên hệ thống nhắc **đối soát lại**:
+
+```mermaid
+sequenceDiagram
+    actor BA as BA / QA Lead
+    actor T as Tester
+    participant S as Hệ thống
+    BA->>S: Sửa yêu cầu (tiêu đề, mô tả hoặc tiêu chí chấp nhận)
+    S->>S: Đánh dấu "cần đối soát" mọi liên kết tới test case
+    S->>S: Ghi vào lịch sử từng test case: yêu cầu nào đổi, đổi gì
+    Note over S: RTM, chi tiết test case và danh sách yêu cầu hiện cảnh báo
+    T->>S: Đọc yêu cầu mới, sửa test case nếu cần
+    T->>S: Bấm "Đã đối soát"
+    S->>S: Gỡ cờ, ghi vào lịch sử test case
+```
+
+1. **Khi nào đánh dấu:** khi lưu yêu cầu mà **tiêu đề, mô tả hoặc tiêu chí chấp nhận** thật sự đổi (so sánh sau khi bỏ khoảng trắng hai đầu; để trống và chỉ có dấu cách coi như nhau). Đổi mã, ưu tiên hoặc milestone **không** đánh dấu, vì test case không kiểm theo các trường đó.
+2. **Đánh dấu ai:** mọi test case đang liên kết với yêu cầu. Test case đã gỡ liên kết thì không; test case được liên kết **sau** khi yêu cầu đổi, hoặc liên kết lại, thì bắt đầu ở trạng thái đã khớp (người liên kết đã xem nội dung hiện tại). Test case ngừng dùng (Deprecated) vẫn mang dấu nhưng **không được tính** và không ai phải đối soát; test case đã xóa không tính.
+3. **Đổi tiếp khi chưa đối soát:** giữ thời điểm của lần đổi đầu tiên và gộp tên các trường đã đổi.
+4. **Hiển thị:** (a) RTM có thẻ tổng "Test cần đối soát sau khi yêu cầu đổi", nhãn "N test case cần đối soát" ở từng yêu cầu, nhãn "Cần đối soát" ở từng test case (rê chuột thấy đổi gì, khi nào), và ô lọc "Chỉ yêu cầu có test cần đối soát"; (b) màn chi tiết test case có dải cảnh báo ở đầu và mục "Yêu cầu liên quan"; (c) dòng thời gian của test case có dòng "Yêu cầu REQ-1 đã đổi (Title): cần đối soát lại"; (d) khi sửa một yêu cầu đang có test case, hộp thoại báo trước rằng các test case đó sẽ được đánh dấu.
+5. **Gỡ dấu:** người có quyền cập nhật test case bấm **Đã đối soát** cho từng test case (ở chi tiết test case hoặc trong RTM), hoặc **Đã đối soát tất cả** cho một yêu cầu. Hệ thống **không tự gỡ**, kể cả khi test case được sửa hay duyệt lại, vì chỉ người đọc yêu cầu mới biết test case đã khớp chưa. Mỗi lần gỡ ghi một dòng "Đã đối soát với REQ-1" vào lịch sử test case.
+6. **Chỉ là lời nhắc:** dấu này **không đổi** trạng thái phủ, kết quả, tỷ lệ đạt, Quality Gate hay quyền chạy test. Nó không chặn nghiệm thu.
+7. **Giới hạn:** chỉ theo dõi sự thay đổi từ khi có tính năng này (yêu cầu đã đổi trước đó không có dấu); không gửi thông báo cho ai (xem mục 12.2); thay đổi nằm trong bản nháp của yêu cầu không có, vì yêu cầu không có phiên bản.
+
 ### 5.7. Quality Gate và nghiệm thu
 
 ```mermaid
@@ -627,6 +652,7 @@ flowchart LR
     end
     subgraph QUA["Chất lượng và báo cáo"]
         U11["Quản lý requirement, xem RTM"]
+        U24["Đối soát test case khi yêu cầu đổi"]
         U12["Cấu hình Quality Gate"]
         U13["Nghiệm thu Sign-off"]
         U14["Xem dashboard, flaky"]
@@ -638,9 +664,9 @@ flowchart LR
         U16["Gợi ý bước bằng AI"]
     end
 
-    QL --> U1 & U2 & U4 & U5 & U6 & U7 & U10 & U12 & U13 & U14 & U17 & U18 & U19 & U20 & U21 & U22 & U23
-    QT --> U2 & U3 & U4 & U8 & U9 & U15 & U16 & U17 & U22
-    PO --> U11 & U13 & U14 & U21 & U22
+    QL --> U1 & U2 & U4 & U5 & U6 & U7 & U10 & U12 & U13 & U14 & U17 & U18 & U19 & U20 & U21 & U22 & U23 & U24
+    QT --> U2 & U3 & U4 & U8 & U9 & U15 & U16 & U17 & U22 & U24
+    PO --> U11 & U13 & U14 & U21 & U22 & U24
 ```
 
 ### 6.2. Danh sách Use Case
@@ -681,6 +707,7 @@ flowchart LR
 | UC-32 | Xuất biên bản nghiệm thu ra PDF hoặc Excel | QA Lead, PO | PDF A4 để in và ký, hoặc Excel nhiều trang tính; nội dung là số liệu đã chốt lúc nghiệm thu |
 | UC-33 | Nhân bản test case | Tester | Tạo bản sao Nháp của test case, mã kế tiếp của dự án, chép nội dung, bước và tag |
 | UC-35 | Xem xu hướng chất lượng qua các sprint | QA Lead, PM, PO, Tester | Tỷ lệ đạt, tỷ lệ đạt ngay lần đầu, tiến độ và mật độ lỗi của các test plan gần nhất, so với sprint liền trước |
+| UC-37 | Đối soát test case khi yêu cầu đổi | BA, Tester, QA Lead | Thấy test case nào cần xem lại sau khi yêu cầu đổi (RTM, chi tiết test case), xác nhận từng test case hoặc cả yêu cầu |
 | UC-36 | Xem khối lượng công việc theo tester | QA Lead | Mỗi người: số test được giao và đã xong, số lần chạy, kết quả, tỷ lệ đạt, thời gian, số ngày làm; số test chưa giao cho ai |
 | UC-34 | Ghi kết quả theo từng bước | Tester | Trong lúc ghi một lần chạy, chọn kết quả và ghi nhận thực tế cho từng bước của phiên bản; xem lại trong lịch sử các lần chạy |
 
@@ -728,6 +755,17 @@ flowchart LR
 | BR-RUN-07 | Liên kết lỗi chỉ cho attempt Failed, không trùng; URL hợp lệ | `DefectRequiresFailedExecution`, `DuplicateDefectLink`, `InvalidDefectUrl` |
 | BR-RUN-08 | Gate không đạt thì không nghiệm thu; không có override | `QualityGateNotPassed` |
 | BR-RUN-09 | Sign-off phải có phạm vi hợp lệ và không rỗng; mỗi người ký một lần; người ký có id | `InvalidSignOffScope`, `SignOffScopeEmpty`, `DuplicateSignOffApproval`, `SignOffRequiresUser` |
+
+### 7.3a. Requirement đổi và test case cần đối soát
+| Mã | Quy tắc | Khi vi phạm |
+| :--- | :--- | :--- |
+| BR-REQ-01 | Sửa tiêu đề, mô tả hoặc tiêu chí chấp nhận của requirement (thật sự đổi) đánh dấu mọi liên kết đang có là cần đối soát; đổi mã, ưu tiên, milestone thì không | |
+| BR-REQ-02 | Liên kết làm sau khi requirement đổi, hoặc liên kết lại sau khi gỡ, bắt đầu không có dấu | |
+| BR-REQ-03 | Đã có dấu mà requirement đổi tiếp: giữ thời điểm đầu, gộp các trường đã đổi | |
+| BR-REQ-04 | Gỡ dấu chỉ bằng thao tác xác nhận, không tự gỡ khi sửa hay duyệt lại test case; xác nhận một liên kết không có dấu thì không làm gì và không ghi lịch sử | |
+| BR-REQ-05 | Xác nhận cần quyền cập nhật test case (`TestCases.Update`) và quyền xem requirement | HTTP 403 |
+| BR-REQ-06 | Dấu chỉ là lời nhắc: không đổi trạng thái phủ, kết quả, Quality Gate; test case ngừng dùng và đã xóa không được đếm | |
+| BR-REQ-07 | Mỗi lần đánh dấu và mỗi lần xác nhận ghi một dòng vào lịch sử của test case (`RequirementChanged`, `RequirementReviewed`) | |
 
 ### 7.3b. Dashboard: xu hướng và khối lượng
 | Mã | Quy tắc | Khi vi phạm |
@@ -892,15 +930,15 @@ Module đã được cắm vào một ứng dụng sinh từ template ABP (Angul
 | Loại | Kết quả gần nhất |
 | :--- | :--- |
 | Domain test | 226 test đạt |
-| Application test | 449 test đạt |
+| Application test | 461 test đạt |
 | HttpApi test (gồm hợp đồng OpenAPI) | 85 test đạt |
-| Angular test | 244 test đạt (36 file) |
+| Angular test | 259 test đạt (37 file) |
 | Chạy trên SQLite | Đạt |
-| Chạy trên MySQL 8.4.11 | Đạt cả ba bộ test (Domain 226, Application 449, HttpApi 85), chạy tuần tự ngày 2026-10-13, sau khi thêm xu hướng và khối lượng theo tester |
+| Chạy trên MySQL 8.4.11 | Đạt cả ba bộ test (Domain 226, Application 461, HttpApi 85), chạy tuần tự ngày 2026-10-13, sau khi thêm cảnh báo khi yêu cầu đổi |
 | Cắm vào ứng dụng ABP sinh từ template, chạy MySQL | Ở lần chạy trước khi có kết quả theo bước: migration tạo đủ 22 bảng `Tcm*`; máy chủ ABP chạy trên MySQL và các luồng chính qua API đều đạt (dự án, test case, phiên bản, lịch sử, run, kết quả, truy vết, cổng chất lượng, nhập/xuất, nghiệm thu, xóa run) |
 | Chạy thử trình duyệt trên ứng dụng ABP mẫu | Đã chạy các luồng chính, kể cả hai dự án |
 
-Migration `AddStepResultsAndCodeCounter` (bảng `TcmTestStepResults` và cột `TcmProjects.LastTestCaseNumber`) mới chạy trên SQLite của ứng dụng ABP mẫu, chưa chạy trên MySQL của ứng dụng đó (các test của module đã tạo đúng cấu trúc trên MySQL). Mã tự sinh khi hai người tạo cùng lúc trong một dự án chưa thử với hai yêu cầu song song thật. Chưa thử trên ứng dụng thật của công ty, chưa thử với nhiều tenant thực, chưa thử trên Pomelo, MariaDB hay MySQL 5.7, và chưa đo lại hiệu năng ở dữ liệu lớn trên MySQL.
+Các migration `AddStepResultsAndCodeCounter` (bảng `TcmTestStepResults` và cột `TcmProjects.LastTestCaseNumber`) và `AddSuspectLinks` (ba cột của `TcmRequirementTestCases`) mới chạy trên SQLite của ứng dụng ABP mẫu, chưa chạy trên MySQL của ứng dụng đó (các test của module đã tạo đúng cấu trúc trên MySQL). Mã tự sinh khi hai người tạo cùng lúc trong một dự án chưa thử với hai yêu cầu song song thật. Chưa thử trên ứng dụng thật của công ty, chưa thử với nhiều tenant thực, chưa thử trên Pomelo, MariaDB hay MySQL 5.7, và chưa đo lại hiệu năng ở dữ liệu lớn trên MySQL.
 
 ---
 
@@ -931,7 +969,7 @@ Migration `AddStepResultsAndCodeCounter` (bảng `TcmTestStepResults` và cột 
 | Hạng mục | Tình trạng hiện tại |
 | :--- | :--- |
 | Thông báo (trong ứng dụng, email, webhook ra ngoài), cấu hình thông báo | Chưa có |
-| Cảnh báo "requirement đổi thì các test liên quan cần đối soát" | Người dùng tự đối soát qua RTM |
+| Thông báo khi requirement đổi (gửi cho người phụ trách test case), phiên bản của requirement, tự gỡ dấu khi test case được sửa | Dấu chỉ hiện trên màn hình (RTM, chi tiết test case, lịch sử); chưa gửi cho ai; requirement chưa có phiên bản |
 | Thực thể Milestone riêng | `MilestoneId` là tham chiếu tự do dùng làm phạm vi cho gate và sign-off |
 | Kết quả theo từng bước trong báo cáo | Đã ghi và xem được trong lịch sử các lần chạy; chưa có trong xuất Excel, CSV, nhập kết quả, tự động nạp kết quả, biên bản nghiệm thu, dashboard và RTM |
 | Nhân bản test case: chọn suite trên giao diện, nhân bản hàng loạt, giữ liên kết nhóm bước dùng chung | API có suite đích; giao diện chỉ hỏi tên; bước của bản sao là bước riêng |
@@ -945,7 +983,7 @@ Migration `AddStepResultsAndCodeCounter` (bảng `TcmTestStepResults` và cột 
 | Ưu tiên | Hạng mục | Lý do |
 | :---: | :--- | :--- |
 | Cao | Thử trên ứng dụng thật của công ty (MySQL đã chạy lại và đạt trên bản sao ứng dụng ABP mẫu) | Giảm rủi ro khi đưa vào sử dụng |
-| Trung bình | Thông báo; luồng requirement đổi | Tiện cho quy trình hằng ngày |
+| Trung bình | Thông báo (kể cả báo khi requirement đổi) | Tiện cho quy trình hằng ngày |
 | Trung bình | Vai trò theo từng dự án; chi tiết theo module trong biên bản nghiệm thu; kết quả theo bước trong xuất file và biên bản | Hoàn thiện phần đã có |
 | Thấp | SignalR; mở rộng AI; MVC / Blazor; gói npm | Tùy nhu cầu |
 
@@ -960,6 +998,9 @@ Migration `AddStepResultsAndCodeCounter` (bảng `TcmTestStepResults` và cột 
 | Trường người phụ trách cấp run | Bỏ khỏi mô tả; giữ trong code cho API | Tài liệu chỉ nói gán theo từng test |
 | Duyệt hàng loạt | **Đã làm** (xem 5.2, mục 9) | Mỗi test case vẫn cần quyền `Approve` và ra phiên bản riêng |
 | Quyền theo dự án | **Đã làm** theo hướng thành viên theo dự án (xem 5.1) | Dự án mặc định mở cho mọi người; chỉ khi bật "chỉ thành viên" mới hạn chế |
+| Khối lượng theo tester | **Giữ** quyền `TestPlans.Manage` (người giao việc mới xem), không tạo quyền riêng | Tester và Product Owner không xem được; tách quyền riêng sau này nếu cần |
+| Nhân bản test case | **Giữ** bước của bản sao là bước riêng, không giữ liên kết nhóm bước dùng chung | Muốn liên kết thì chèn lại nhóm bước vào bản sao |
+| Cảnh báo khi requirement đổi | **Đề xuất, chưa được xác nhận:** theo dõi tiêu đề, mô tả, tiêu chí chấp nhận; chỉ người có quyền cập nhật test case xác nhận; không tự gỡ dấu; không chặn nghiệm thu | Cần người dùng xem lại 4 điểm này |
 
 ---
 
@@ -1057,7 +1098,9 @@ Mọi route bắt đầu bằng `api/test-case-management/`. Hầu hết các en
 | `runs` | Quản lý run (lọc theo plan, trạng thái, môi trường, từ khóa, run không có plan), item, gán người, ghi kết quả đơn và hàng loạt (kèm kết quả từng bước `stepResults`), hoàn tất, xóa run chưa có kết quả (`DELETE runs/{id}`) |
 | `runs/{runId}/results/export`, `.../import` | Xuất và nhập kết quả run |
 | `executions/{executionId}/defects` | Liên kết lỗi: thêm, liệt kê, sửa, xóa |
-| `requirements`, `rtm` | Requirement và ma trận truy vết |
+| `requirements`, `rtm` | Requirement và ma trận truy vết (`rtm` có `OnlySuspect`) |
+| `requirements/for-test-case/{testCaseId}` | Các requirement mà test case được liên kết, kèm test case có cần đối soát không |
+| `requirements/{id}/test-cases/{testCaseId}/review`, `requirements/{id}/review` | Xác nhận một test case, hoặc mọi test case cần đối soát của requirement (cần `TestCases.Update`) |
 | `quality-gates` | Quản lý gate, `evaluate` (đánh giá thử) |
 | `sign-off/{id}/export` | Biên bản nghiệm thu thành file: `format=Pdf` (mặc định) hoặc `format=Xlsx` |
 | `sign-off` | Bắt đầu nghiệm thu, ký, xem báo cáo |

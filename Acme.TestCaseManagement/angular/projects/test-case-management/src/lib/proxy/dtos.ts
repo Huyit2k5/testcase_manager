@@ -135,6 +135,8 @@ export interface TestRunListRequest extends PagedRequest { projectId?: string | 
 export interface Requirement {
   projectId: string; id: string; code: string; title: string; description: string | null; acceptanceCriteria: string | null;
   priority: PriorityLevel; milestoneId: string | null;
+  /** Linked test cases (not deprecated) to be checked against it because it changed and nobody confirmed them yet. */
+  suspectTestCaseCount: number;
 }
 export interface SaveRequirement {
   projectId?: string | null; code: string; title: string; description?: string | null; acceptanceCriteria?: string | null;
@@ -143,11 +145,13 @@ export interface SaveRequirement {
 export interface RtmSummary {
   totalRequirements: number; coveredRequirements: number; uncoveredRequirements: number; coveragePercentage: number;
   passedRequirements: number; passedPercentage: number; failedRequirements: number; blockedRequirements: number;
-  notRunRequirements: number;
+  notRunRequirements: number; suspectRequirements: number;
 }
 export interface RtmTestCase {
   testCaseId: string; code: string; title: string; status: TestCaseStatus; countsTowardCoverage: boolean;
   result: TestResultStatus; lastExecutedTime: string | null;
+  /** The requirement changed since and nobody confirmed that this test case still matches it; the result above is not changed by it. */
+  isSuspect: boolean; suspectSince: string | null; suspectReason: string | null;
 }
 export interface RtmDefect {
   testCaseId: string; testCaseCode: string; testExecutionId: string; externalSystem: string; issueKey: string;
@@ -155,10 +159,13 @@ export interface RtmDefect {
 }
 export interface RtmRow {
   requirementId: string; code: string; title: string; priority: PriorityLevel; milestoneId: string | null;
-  status: RequirementCoverageStatus; testCases: RtmTestCase[]; blockingDefects: RtmDefect[];
+  status: RequirementCoverageStatus; testCases: RtmTestCase[]; blockingDefects: RtmDefect[]; suspectTestCaseCount: number;
 }
 export interface RtmMatrix { summary: RtmSummary; requirements: RtmRow[]; totalCount: number }
-export interface RtmRequest { projectId?: string | null; milestoneId?: string | null; filter?: string; testPlanId?: string | null; environment?: string; status?: RequirementCoverageStatus | null; maxResultCount?: number }
+/** A requirement a test case is linked to, and whether the test case is to be checked against it. */
+export interface RequirementLink { requirementId: string; code: string; title: string; isSuspect: boolean; suspectSince: string | null; suspectReason: string | null }
+export interface RequirementReviewResult { reviewed: number }
+export interface RtmRequest { onlySuspect?: boolean | null; projectId?: string | null; milestoneId?: string | null; filter?: string; testPlanId?: string | null; environment?: string; status?: RequirementCoverageStatus | null; maxResultCount?: number }
 
 // ---- Quality gates and sign-off
 export interface QualityGate {

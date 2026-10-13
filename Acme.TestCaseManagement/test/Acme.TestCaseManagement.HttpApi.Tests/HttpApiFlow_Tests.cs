@@ -226,6 +226,16 @@ public class HttpApiFlow_Tests
             $"{Root}/requirements/{requirement.Id}", NewRequirement("REQ-PAY-01", milestone, acceptanceCriteria: "A confirmed order exists"));
         revised.AcceptanceCriteria.ShouldBe("A confirmed order exists");
         (await qaLead.GetAsync<RequirementDto>($"{Root}/requirements/{requirement.Id}")).Code.ShouldBe("REQ-PAY-01");
+
+        // The text the tests verify changed, so the two linked test cases (not the unlinked one) are to be checked against it.
+        revised.SuspectTestCaseCount.ShouldBe(2);
+        var linksOfA = await qaLead.GetAsync<List<RequirementLinkDto>>($"{Root}/requirements/for-test-case/{caseA.Id}");
+        (linksOfA.Single().Code, linksOfA.Single().IsSuspect, linksOfA.Single().SuspectReason).ShouldBe(("REQ-PAY-01", true, "AcceptanceCriteria"));
+        (await qaLead.GetAsync<List<RequirementLinkDto>>($"{Root}/requirements/for-test-case/{caseC.Id}")).ShouldBeEmpty();
+        (await qaLead.GetAsync<RtmMatrixDto>($"{Root}/rtm?MilestoneId={milestone}&OnlySuspect=true")).Requirements.Single().SuspectTestCaseCount.ShouldBe(2);
+        (await qaLead.PostAsync<RequirementReviewResultDto>($"{Root}/requirements/{requirement.Id}/test-cases/{caseA.Id}/review", new { })).Reviewed.ShouldBe(1);
+        (await qaLead.PostAsync<RequirementReviewResultDto>($"{Root}/requirements/{requirement.Id}/review", new { })).Reviewed.ShouldBe(1);
+        (await qaLead.GetAsync<RtmMatrixDto>($"{Root}/rtm?MilestoneId={milestone}&OnlySuspect=true")).Requirements.ShouldBeEmpty();
         (await qaLead.GetAsync<PagedResultDto<RequirementDto>>($"{Root}/requirements?Filter=PAY&MilestoneId={milestone}"))
             .Items.Select(candidate => candidate.Code).ShouldBe(new[] { "REQ-PAY-01" });
 

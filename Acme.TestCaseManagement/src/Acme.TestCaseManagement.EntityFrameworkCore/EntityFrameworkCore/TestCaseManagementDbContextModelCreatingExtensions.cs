@@ -269,6 +269,8 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
             // One row per (requirement, test case) pair; unlinking soft-deletes it and linking again restores it.
             b.HasKey(x => new { x.RequirementId, x.TestCaseId });
 
+            b.Property(x => x.SuspectReason).HasMaxLength(RequirementConsts.MaxSuspectReasonLength);
+
             b.HasOne<Requirement>().WithMany().HasForeignKey(x => x.RequirementId).OnDelete(DeleteBehavior.Restrict).IsRequired();
             b.HasOne<TestCase>().WithMany().HasForeignKey(x => x.TestCaseId).OnDelete(DeleteBehavior.Restrict).IsRequired();
 

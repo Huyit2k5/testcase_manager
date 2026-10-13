@@ -95,6 +95,9 @@ public class OpenApiContract_Tests
         "Requirement_Delete DELETE /requirements/{id}",
         "Requirement_LinkTestCases POST /requirements/{id}/test-cases",
         "Requirement_UnlinkTestCase DELETE /requirements/{id}/test-cases/{testCaseId}",
+        "Requirement_GetForTestCase GET /requirements/for-test-case/{testCaseId}",
+        "Requirement_ReviewLink POST /requirements/{id}/test-cases/{testCaseId}/review",
+        "Requirement_ReviewAll POST /requirements/{id}/review",
         "Rtm_GetMatrix GET /rtm",
 
         "QualityGate_GetList GET /quality-gates",
@@ -219,7 +222,7 @@ public class OpenApiContract_Tests
 
             // POST and PUT take a JSON body (the commands without a payload excepted), the imports a multipart upload; GET and DELETE never do.
             var takesBody = operation["requestBody"] is not null;
-            takesBody.ShouldBe(method is "POST" or "PUT" && id is not ("TestRun_Complete" or "ApiKey_Revoke" or "Project_Archive" or "Project_Restore"), $"{where}: request body");
+            takesBody.ShouldBe(method is "POST" or "PUT" && id is not ("TestRun_Complete" or "ApiKey_Revoke" or "Project_Archive" or "Project_Restore" or "Requirement_ReviewLink" or "Requirement_ReviewAll"), $"{where}: request body");
             if (takesBody)
             {
                 var bodyType = id is "TestCaseTransfer_Import" or "TestResultTransfer_Import" or "Attachment_Upload" ? "multipart/form-data" : "application/json";
@@ -319,7 +322,7 @@ public class OpenApiContract_Tests
             ignoreOrder: true);
 
         QueryParameters(document, "Rtm_GetMatrix").ShouldBe(
-            new[] { "ProjectId", "MilestoneId", "Filter", "TestPlanId", "Environment", "Status", "SkipCount", "MaxResultCount" },
+            new[] { "ProjectId", "MilestoneId", "Filter", "TestPlanId", "Environment", "Status", "OnlySuspect", "SkipCount", "MaxResultCount" },
             ignoreOrder: true);
 
         QueryParameters(document, "TestRun_GetList").ShouldBe(

@@ -1,5 +1,6 @@
 import { Component, effect, inject, input, signal, untracked } from '@angular/core';
 import { FormatDatePipe, I18nService, TranslatePipe } from '../../core/i18n/i18n';
+import { fieldList } from '../../core/field-names';
 import { UserNames } from '../../core/users';
 import { TestCaseHistory } from '../../proxy/dtos';
 import { TestCaseHistoryType } from '../../proxy/enums';
@@ -64,6 +65,12 @@ export class TestCaseTimelineComponent {
       case TestCaseHistoryType.TagsChanged: return line.note ? t('history.tags', { tags: line.note }) : t('history.tagsCleared');
       case TestCaseHistoryType.StepsReordered: return t('history.reordered');
       case TestCaseHistoryType.SharedStepsChanged: return this.shared(line.note);
+      case TestCaseHistoryType.RequirementChanged: {
+        // The note is "REQ-1: Title, AcceptanceCriteria".
+        const [code, fields] = (line.note ?? '').split(/:\s*(.*)/s);
+        return t('history.requirementChanged', { code: code ?? '', fields: fieldList(this.i18n, fields ?? '') });
+      }
+      case TestCaseHistoryType.RequirementReviewed: return t('history.requirementReviewed', { code: line.note ?? '' });
       default: return line.note ?? '';
     }
   }
@@ -74,14 +81,7 @@ export class TestCaseTimelineComponent {
     return text && text !== key ? text : name ?? '';
   }
 
-  /** The fields the server names ("Title, Steps") in the language of the person. */
-  private fields(note: string | null): string {
-    return (note ?? '').split(',').map(name => name.trim()).filter(Boolean).map(name => {
-      const key = `field.${name.charAt(0).toLowerCase()}${name.slice(1)}`;
-      const text = this.i18n.t(key);
-      return text === key ? name : text;
-    }).join(', ');
-  }
+  private fields(note: string | null): string { return fieldList(this.i18n, note); }
 
   private shared(note: string | null): string {
     const t = (key: string, name?: string) => this.i18n.t(key, { name: name ?? '' });

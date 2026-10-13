@@ -6,7 +6,7 @@ import { Observable, map } from 'rxjs';
 import { DownloadedFile, fileNameOf } from './transfer';
 import {
   StepSuggestionResult, StepSuggestionStatus, SuggestStepsInput, AddDefect, ApiKey, Attachment, SaveSharedStepGroup, SharedStepGroup, SharedStepGroupSummary, SharedStepUsage, TagSummary, UpdateSharedStepUsersResult, ApiKeyCreated, ApplyFlakyFlagsResult, CreateRun, Dashboard, FlakyTestList, DefectLink, EvaluateInput, ExecuteItem, PagedResult, QualityGate, QualityGateEvaluation,
-  Requirement, RtmMatrix, RtmRequest, SavePlan, SaveQualityGate, SaveRequirement, SaveTestCase, SignOffReport, SprintTrend, Workload, StartSignOff,
+  Requirement, RtmMatrix, RtmRequest, SavePlan, SaveQualityGate, SaveRequirement, RequirementLink, RequirementReviewResult, SaveTestCase, SignOffReport, SprintTrend, Workload, StartSignOff,
   ApproveTestCasesResult, DuplicateTestCase, TestCase, TestCaseDefect, TestCaseHistory, TestCaseListRequest, TestCaseVersion, TestExecution, TestPlan, TestRun, TestRunListRequest,
   TestSuite, TestSuiteTree,
 } from './dtos';
@@ -163,6 +163,14 @@ export class RequirementService {
   unlink(id: string, testCaseId: string): Observable<void> {
     return this.http.delete<void>(`${this.root}/requirements/${id}/test-cases/${testCaseId}`);
   }
+  /** The requirements a test case is linked to, with whether it is to be checked against each. */
+  forTestCase(testCaseId: string): Observable<RequirementLink[]> { return this.http.get<RequirementLink[]>(`${this.root}/requirements/for-test-case/${testCaseId}`); }
+  /** Confirms that the test case still matches the requirement after it changed. */
+  reviewLink(id: string, testCaseId: string): Observable<RequirementReviewResult> {
+    return this.http.post<RequirementReviewResult>(`${this.root}/requirements/${id}/test-cases/${testCaseId}/review`, null);
+  }
+  /** Confirms every test case of the requirement that is to be checked. */
+  reviewAll(id: string): Observable<RequirementReviewResult> { return this.http.post<RequirementReviewResult>(`${this.root}/requirements/${id}/review`, null); }
 }
 
 @Injectable({ providedIn: 'root' })

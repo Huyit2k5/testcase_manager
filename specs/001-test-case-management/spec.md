@@ -165,6 +165,7 @@ So that buggy releases are blocked from deploying to Production without document
 | **FR-032** | Results by step | An attempt can carry the result of single steps of the version being run (Passed, Failed, Blocked, Skipped, with what was seen). They are optional, belong to their attempt, are append-only, must name steps of that version once each, and an attempt cannot be Passed while one is Failed or Blocked. | UC-15, UC-16 |
 | **FR-033** | Trend across sprints | The dashboard shows how the quality moved over the latest test plans (each plan is a sprint): pass rate, first-time pass rate, completion and defects of each, oldest first, and the change of the last plan against the one before. | UC-25 |
 | **FR-034** | Workload of the testers | For each person: the run items given to them and how many are done, and the attempts they recorded in a window of days with their results, time and pass rate; the items given to nobody. Shown only to who may manage plans. | UC-25 |
+| **FR-035** | Requirement change alert | When the title, the description or the acceptance criteria of a requirement change, the test cases linked to it are marked to be checked against the new text, with when and in what; the mark is shown in the matrix, in the detail of the test case and in its history, and stays until someone who may update test cases confirms it. It does not change coverage, results or the quality gate. | UC-19, UC-20 |
 
 ---
 

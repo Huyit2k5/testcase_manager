@@ -23,4 +23,10 @@ public enum TestCaseHistoryType
 
     /// <summary>A group of shared steps was inserted, refreshed or detached; the note says which.</summary>
     SharedStepsChanged = 6,
+
+    /// <summary>A requirement the test case is linked to changed, so the test case is to be checked against it; the note has the code and the fields.</summary>
+    RequirementChanged = 7,
+
+    /// <summary>Someone confirmed that the test case still matches the requirement after it changed; the note has the code.</summary>
+    RequirementReviewed = 8,
 }

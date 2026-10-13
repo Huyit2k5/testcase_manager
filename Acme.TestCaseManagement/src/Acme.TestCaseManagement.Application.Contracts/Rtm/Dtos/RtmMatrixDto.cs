@@ -37,6 +37,9 @@ public class RtmSummaryDto
     public int BlockedRequirements { get; set; }
 
     public int NotRunRequirements { get; set; }
+
+    /// <summary>Requirements that changed and have at least one test case (not deprecated) that nobody has confirmed against the change.</summary>
+    public int SuspectRequirements { get; set; }
 }
 
 public class RequirementCoverageDto
@@ -61,6 +64,9 @@ public class RequirementCoverageDto
     /// A defect stops blocking when it is marked resolved.
     /// </summary>
     public List<RequirementDefectDto> BlockingDefects { get; set; } = new();
+
+    /// <summary>How many of the linked test cases (not deprecated) are to be checked because the requirement changed.</summary>
+    public int SuspectTestCaseCount { get; set; }
 }
 
 public class RequirementTestCaseDto
@@ -81,6 +87,14 @@ public class RequirementTestCaseDto
 
     /// <summary>When the most recent counted result was recorded; lets readers judge how stale a pass is.</summary>
     public DateTime? LastExecutedTime { get; set; }
+
+    /// <summary>The requirement changed since, and nobody has confirmed that this test case still matches it. It does not change the result above.</summary>
+    public bool IsSuspect { get; set; }
+
+    public DateTime? SuspectSince { get; set; }
+
+    /// <summary>The fields of the requirement that changed since ("Title, AcceptanceCriteria").</summary>
+    public string? SuspectReason { get; set; }
 }
 
 public class RequirementDefectDto

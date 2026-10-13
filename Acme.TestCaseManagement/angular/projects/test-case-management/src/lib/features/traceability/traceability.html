@@ -13,6 +13,7 @@
       <div class="stat"><b style="color: var(--warn)">{{ m.summary.blockedRequirements }}</b><span>{{ label(coverageEnum, coverageEnum.Blocked) }}</span></div>
       <div class="stat"><b>{{ m.summary.notRunRequirements }}</b><span>{{ label(coverageEnum, coverageEnum.NotRun) }}</span></div>
       <div class="stat"><b>{{ m.summary.uncoveredRequirements }}</b><span>{{ label(coverageEnum, coverageEnum.Uncovered) }}</span></div>
+      <div class="stat" data-test="suspect-stat"><b style="color: var(--warn)">{{ m.summary.suspectRequirements }}</b><span>{{ 'rtm.needReview' | t }}</span></div>
     </div>
   }
 
@@ -28,6 +29,7 @@
         <option value="">{{ 'common.anyStatus' | t }}</option>
         @for (o of statusOptions; track o.value) { <option [ngValue]="o.value">{{ label(coverageEnum, o.value) }}</option> }
       </select>
+      <label class="inline"><input type="checkbox" name="onlySuspect" [(ngModel)]="onlySuspect" (ngModelChange)="load()" data-test="only-suspect" /> {{ 'rtm.onlySuspect' | t }}</label>
       <button type="submit" class="btn">{{ 'common.apply' | t }}</button>
     </form>
   </div>
@@ -41,6 +43,12 @@
             <td>
               <span class="mono">{{ row.code }}</span> <span class="badge" [class]="badgeOf('priority', row.priority)">{{ label(priorityEnum, row.priority) }}</span>
               <div>{{ row.title }}</div>
+              @if (row.suspectTestCaseCount > 0) {
+                <div class="row" style="margin-top: 4px">
+                  <span class="badge warn" data-test="suspect-badge">{{ 'rtm.toCheck' | t: { n: row.suspectTestCaseCount } }}</span>
+                  @if (canReview) { <button type="button" class="btn sm" (click)="reviewAll(row)" data-test="review-all">{{ 'rtm.markAllReviewed' | t }}</button> }
+                </div>
+              }
             </td>
             <td><span class="badge" [class]="badgeOf('rtm', row.status)">{{ label(coverageEnum, row.status) }}</span></td>
             <td>
@@ -49,6 +57,10 @@
                   <span class="mono">{{ tc.code }}</span>
                   <span class="badge" [class]="badgeOf('result', tc.result)">{{ label(resultEnum, tc.result) }}</span>
                   @if (!tc.countsTowardCoverage) { <span class="muted">{{ 'rtm.deprecated' | t }}</span> }
+                  @if (tc.isSuspect) {
+                    <span class="badge warn" [attr.title]="suspectHint(tc)" data-test="suspect-link">{{ 'rtm.check' | t }}</span>
+                    @if (canReview && tc.countsTowardCoverage) { <button type="button" class="btn sm" (click)="reviewLink(row, tc)" data-test="review-link">{{ 'rtm.markReviewed' | t }}</button> }
+                  }
                   @if (auth.can(perm.Requirements.Manage)) {
                     <button type="button" class="icon-btn" style="font-size: 1rem" (click)="unlink(row, tc.testCaseId)" [attr.aria-label]="'rtm.unlink' | t: { code: tc.code }">&times;</button>
                   }
@@ -84,6 +96,7 @@
 @if (form(); as f) {
   <app-modal [side]="true" [title]="(f.id ? 'rtm.editRequirement' : 'rtm.newRequirementTitle') | t" (closed)="form.set(null)">
     <form id="req-form" (ngSubmit)="saveRequirement()">
+      @if (f.id && f.linkedTests > 0) { <p class="alert warn" data-test="change-warning">{{ 'rtm.changeWarning' | t: { n: f.linkedTests } }}</p> }
       <div class="form-grid">
         <div class="field"><label for="rq-code">{{ 'common.code' | t }}</label><input id="rq-code" name="code" required maxlength="64" [(ngModel)]="f.code" placeholder="REQ-PAY-01" /></div>
         <div class="field">

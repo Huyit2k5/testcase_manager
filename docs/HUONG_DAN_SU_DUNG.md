@@ -1,6 +1,6 @@
 # Hướng dẫn sử dụng Test Case Management
 
-Tài liệu thực hành cho cả đội: tester, QA lead và product owner. Đọc phần khái niệm mất khoảng 10 phút; làm hết 18 bài tập mất khoảng 120 phút.
+Tài liệu thực hành cho cả đội: tester, QA lead và product owner. Đọc phần khái niệm mất khoảng 10 phút; làm hết 19 bài tập mất khoảng 130 phút.
 
 **Mọi bài tập trong tài liệu này đã được làm thật, từng bước, trên giao diện, bằng đúng tài khoản của vai trò đó**, và các ảnh chụp lấy từ chính lần làm đó (ô vàng là chỗ cần chú ý).
 
@@ -9,7 +9,7 @@ Tài liệu thực hành cho cả đội: tester, QA lead và product owner. Đ�
 - [3. Trước khi bắt đầu](#3-trước-khi-bắt-đầu)
 - [4. Thực hành](#4-thực-hành)
   - [Phần A: Tester (Bài 1 đến 4)](#phần-a-tester)
-  - [Phần B: QA Lead (Bài 5 đến 18)](#phần-b-qa-lead)
+  - [Phần B: QA Lead (Bài 5 đến 19)](#phần-b-qa-lead)
 - [5. Quy ước của đội](#5-quy-ước-của-đội)
 - [6. Hỏi đáp và xử lý sự cố](#6-hỏi-đáp-và-xử-lý-sự-cố)
 - [Phụ lục: quyền theo vai trò](#phụ-lục-quyền-theo-vai-trò)
@@ -603,6 +603,39 @@ Dành cho QA Lead và người quản lý (`hoanganh.le`). Hai thẻ nằm dư�
 > - Số liệu của một sprint là **trạng thái hiện tại** của các run trong plan, không phải ảnh chụp lúc sprint kết thúc. Run không thuộc plan nào không nằm trong xu hướng.
 > - Đừng dùng bảng khối lượng để chấm điểm từng người: số lần chạy phụ thuộc loại test, mỗi retest là một lần chạy, và kết quả của pipeline không tính cho ai.
 
+#### Bài 19: Khi yêu cầu đổi, đối soát lại các test case liên quan
+
+Test case được viết theo yêu cầu. Khi yêu cầu đổi, test case có thể không còn kiểm đúng điều cần kiểm. Hệ thống **nhắc** bằng cách đánh dấu các test case liên kết là **cần đối soát**, cho đến khi có người xem lại và xác nhận.
+
+1. Vào **Traceability**, tìm yêu cầu và bấm biểu tượng **sửa**. Nếu yêu cầu đang có test case liên kết, hộp thoại **báo trước** rằng đổi tiêu đề, mô tả hoặc tiêu chí chấp nhận sẽ đánh dấu các test case đó. Sửa nội dung rồi **Save**.
+
+   ![Cảnh báo khi sửa yêu cầu](images/guide/b19-01-canh-bao-khi-sua.png)
+
+2. Trong ma trận, thẻ **Tests to check after a change** đếm số yêu cầu có test cần đối soát. Yêu cầu vừa sửa có nhãn **N test case(s) to check**, và từng test case có nhãn **Check** (rê chuột vào để xem yêu cầu đổi những gì, từ ngày nào).
+
+   ![Ma trận có cảnh báo](images/guide/b19-02-rtm-can-doi-soat.png)
+
+3. Tích ô **Only requirements with tests to check** để chỉ xem các yêu cầu còn việc phải làm.
+
+   ![Lọc các yêu cầu cần đối soát](images/guide/b19-03-loc-can-doi-soat.png)
+
+4. Mở một test case bị đánh dấu. Ở đầu cửa sổ có dải vàng nói yêu cầu nào đã đổi và đổi trường nào; mục **Requirements** liệt kê các yêu cầu liên quan, cái nào **To check since** ngày nào.
+
+   ![Chi tiết test case](images/guide/b19-04-chi-tiet-test-case.png)
+
+5. Đọc yêu cầu mới, sửa test case nếu cần, rồi bấm **Mark as reviewed**. Dải vàng biến mất, và dòng thời gian của test case ghi lại cả hai việc: yêu cầu đã đổi và bạn đã đối soát.
+
+   ![Lịch sử của test case](images/guide/b19-05-lich-su.png)
+
+6. Muốn xác nhận cả yêu cầu cùng lúc, bấm **All reviewed** ở dòng yêu cầu trong ma trận. Một test case riêng thì bấm **Mark as reviewed** ngay cạnh nhãn **Check**.
+
+> **Lưu ý:**
+> - Chỉ khi **tiêu đề, mô tả hoặc tiêu chí chấp nhận** thật sự đổi mới có dấu. Đổi mã, ưu tiên, milestone, hoặc lưu lại đúng nội dung cũ thì không.
+> - Dấu **không tự mất**, kể cả khi bạn sửa hay duyệt lại test case: chỉ bạn đọc yêu cầu mới biết test case đã khớp chưa. Cần quyền cập nhật test case để xác nhận.
+> - Dấu chỉ là **lời nhắc**: không đổi trạng thái phủ, kết quả chạy hay cổng chất lượng, và không chặn nghiệm thu. Test case ngừng dùng không được tính.
+> - Test case liên kết **sau khi** yêu cầu đổi, hoặc liên kết lại, được coi là đã khớp. Yêu cầu đổi **trước** khi có tính năng này không có dấu.
+> - Hệ thống chưa gửi thông báo cho ai: người phụ trách phải mở RTM hoặc chi tiết test case mới thấy.
+
 ## 5. Quy ước của đội
 
 > Đây là **đề xuất khởi đầu**. Cả đội thống nhất và chỉnh sửa trong buổi đầu, rồi cập nhật ngay vào mục này.
@@ -682,6 +715,7 @@ Bảng dưới là bộ quyền của **ba vai trò dùng trong các bài tập*
 |---|:---:|:---:|:---:|
 | Xem test case, plan, run, dashboard, truy vết | ✔ | ✔ | ✔ |
 | Xem khối lượng theo tester trên dashboard (`TestPlans.Manage`) | | ✔ | |
+| Xác nhận test case đã đối soát khi yêu cầu đổi (`TestCases.Update`) | ✔ | ✔ | |
 | Viết và sửa test case | ✔ | ✔ | |
 | Gợi ý bước bằng AI | ✔ | ✔ | |
 | Duyệt, xóa test case | | ✔ | |

@@ -76,7 +76,8 @@ public class TestCaseManagementApplicationAutoMapperProfile : Profile
 
         CreateMap<DefectLink, DefectLinkDto>();
 
-        CreateMap<Requirement, RequirementDto>();
+        CreateMap<Requirement, RequirementDto>()
+            .ForMember(d => d.SuspectTestCaseCount, o => o.Ignore());
 
         CreateMap<QualityGate, QualityGateDto>();
 

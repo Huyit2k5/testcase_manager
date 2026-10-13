@@ -1,5 +1,7 @@
+using Acme.TestCaseManagement.Enums;
 using Acme.TestCaseManagement.Projects;
 using Acme.TestCaseManagement.Repositories;
+using Acme.TestCaseManagement.TestCases;
 using Volo.Abp;
 using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
@@ -14,14 +16,17 @@ public class RequirementManager : DomainService
     private readonly ITestCaseRepository _testCaseRepository;
     private readonly IDataFilter _dataFilter;
     private readonly ProjectManager _projectManager;
+    private readonly TestCaseHistoryRecorder _history;
 
     public RequirementManager(
         IRepository<Requirement, Guid> requirementRepository,
         IRepository<RequirementTestCase> linkRepository,
         ITestCaseRepository testCaseRepository,
         IDataFilter dataFilter,
-        ProjectManager projectManager)
+        ProjectManager projectManager,
+        TestCaseHistoryRecorder history)
     {
+        _history = history;
         _projectManager = projectManager;
         _requirementRepository = requirementRepository;
         _linkRepository = linkRepository;
@@ -92,6 +97,68 @@ public class RequirementManager : DomainService
 
         await _linkRepository.DeleteAsync(link, autoSave: true);
         return true;
+    }
+
+    /// <summary>The fields of a requirement whose change makes its test cases suspect: what the tests verify against.</summary>
+    public static readonly IReadOnlyList<string> WatchedFields = new[] { "Title", "Description", "AcceptanceCriteria" };
+
+    /// <summary>
+    /// A requirement changed in <paramref name="changedFields"/>: every test case linked to it is to be checked against the new text.
+    /// Each link is marked (and the test case gets a line in its history); returns how many test cases that is.
+    /// </summary>
+    public virtual async Task<int> MarkLinksSuspectAsync(Requirement requirement, IReadOnlyCollection<string> changedFields)
+    {
+        if (changedFields.Count == 0)
+        {
+            return 0;
+        }
+
+        var links = await _linkRepository.GetListAsync(x => x.RequirementId == requirement.Id);
+        foreach (var link in links)
+        {
+            link.MarkSuspect(Clock.Now, changedFields);
+        }
+
+        await _linkRepository.UpdateManyAsync(links, autoSave: true);
+        foreach (var link in links)
+        {
+            await _history.RecordAsync(link.TestCaseId, TestCaseHistoryType.RequirementChanged, note: $"{requirement.Code}: {string.Join(", ", changedFields)}");
+        }
+
+        return links.Count;
+    }
+
+    /// <summary>Confirms that the test case still matches the requirement. Returns false when the link is not suspect (or does not exist).</summary>
+    public virtual async Task<bool> ReviewLinkAsync(Requirement requirement, Guid testCaseId)
+    {
+        var link = await _linkRepository.FindAsync(x => x.RequirementId == requirement.Id && x.TestCaseId == testCaseId);
+        if (link == null || !link.IsSuspect)
+        {
+            return false;
+        }
+
+        link.ClearSuspect();
+        await _linkRepository.UpdateAsync(link, autoSave: true);
+        await _history.RecordAsync(testCaseId, TestCaseHistoryType.RequirementReviewed, note: requirement.Code);
+        return true;
+    }
+
+    /// <summary>Confirms every suspect link of the requirement at once; returns how many.</summary>
+    public virtual async Task<int> ReviewAllLinksAsync(Requirement requirement)
+    {
+        var links = await _linkRepository.GetListAsync(x => x.RequirementId == requirement.Id && x.IsSuspect);
+        foreach (var link in links)
+        {
+            link.ClearSuspect();
+        }
+
+        await _linkRepository.UpdateManyAsync(links, autoSave: true);
+        foreach (var link in links)
+        {
+            await _history.RecordAsync(link.TestCaseId, TestCaseHistoryType.RequirementReviewed, note: requirement.Code);
+        }
+
+        return links.Count;
     }
 
     protected virtual async Task EnsureCodeIsUniqueAsync(string code, Guid? exceptRequirementId)

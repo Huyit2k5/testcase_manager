@@ -66,7 +66,7 @@ public class RtmAppService : TestCaseManagementAppService, IRtmAppService
         var rows = requirements
             .Select(requirement => BuildRow(
                 requirement,
-                links.Where(l => l.RequirementId == requirement.Id).Select(l => l.TestCaseId).ToList(),
+                links.Where(l => l.RequirementId == requirement.Id).ToList(),
                 testCases,
                 testCaseStatuses,
                 results,
@@ -74,6 +74,10 @@ public class RtmAppService : TestCaseManagementAppService, IRtmAppService
             .ToList();
 
         var filtered = input.Status.HasValue ? rows.Where(r => r.Status == input.Status).ToList() : rows;
+        if (input.OnlySuspect)
+        {
+            filtered = filtered.Where(r => r.SuspectTestCaseCount > 0).ToList();
+        }
 
         return new RtmMatrixDto
         {
@@ -100,13 +104,15 @@ public class RtmAppService : TestCaseManagementAppService, IRtmAppService
 
     private static RequirementCoverageDto BuildRow(
         Requirement requirement,
-        IReadOnlyCollection<Guid> linkedTestCaseIds,
+        IReadOnlyCollection<RequirementTestCase> requirementLinks,
         IReadOnlyDictionary<Guid, TestCases.TestCase> testCases,
         IReadOnlyDictionary<Guid, TestResultStatus> testCaseStatuses,
         ILookup<Guid, LatestTestResult> results,
         ILookup<Guid, DefectLinkWithContext> blockingDefects)
     {
-        var linked = linkedTestCaseIds
+        var suspectLinks = requirementLinks.ToDictionary(l => l.TestCaseId);
+        var linked = requirementLinks
+            .Select(l => l.TestCaseId)
             .Where(testCases.ContainsKey)
             .Select(id => testCases[id])
             .OrderBy(tc => tc.Code)
@@ -134,6 +140,9 @@ public class RtmAppService : TestCaseManagementAppService, IRtmAppService
                     CountsTowardCoverage = tc.Status != TestCaseStatus.Deprecated,
                     Result = testCaseStatuses[tc.Id],
                     LastExecutedTime = current.Count == 0 ? null : current.Max(r => r.ExecutedTime),
+                    IsSuspect = suspectLinks[tc.Id].IsSuspect,
+                    SuspectSince = suspectLinks[tc.Id].SuspectSince,
+                    SuspectReason = suspectLinks[tc.Id].SuspectReason,
                 };
             }).ToList(),
             BlockingDefects = counted
@@ -148,6 +157,7 @@ public class RtmAppService : TestCaseManagementAppService, IRtmAppService
                     Severity = d.Link.Severity,
                 }))
                 .ToList(),
+            SuspectTestCaseCount = counted.Count(tc => suspectLinks[tc.Id].IsSuspect),
         };
     }
 
@@ -163,6 +173,7 @@ public class RtmAppService : TestCaseManagementAppService, IRtmAppService
         return new RtmSummaryDto
         {
             TotalRequirements = total,
+            SuspectRequirements = rows.Count(r => r.SuspectTestCaseCount > 0),
             CoveredRequirements = total - uncovered,
             UncoveredRequirements = uncovered,
             CoveragePercentage = Percent(total - uncovered),

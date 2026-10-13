@@ -58,6 +58,18 @@ describe('the history of a test case', () => {
     ]);
   });
 
+  it('tells that a requirement changed, in what, and that someone checked the test case against it', () => {
+    const root = open([
+      line(TestCaseHistoryType.RequirementReviewed, { note: 'REQ-1' }),
+      line(TestCaseHistoryType.RequirementChanged, { note: 'REQ-1: Title, AcceptanceCriteria' }),
+    ]);
+
+    expect(texts(root)).toEqual([
+      'Checked against REQ-1: it still matches',
+      'Requirement REQ-1 changed (Title, Acceptance criteria): to be checked',
+    ]);
+  });
+
   it('names the person who did it when the host knows them, and says nothing when it does not', () => {
     const root = open([line(TestCaseHistoryType.Created, { creatorId: 'u1' }), line(TestCaseHistoryType.Edited, { note: 'Title', creatorId: 'nobody' })]);
 

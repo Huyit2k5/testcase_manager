@@ -63,6 +63,9 @@ public static class RequirementConsts
     public const int MaxCodeLength = 64;
     public const int MaxTitleLength = 256;
     public const int MaxTextLength = 4000;
+
+    /// <summary>The fields of a requirement that changed, as the link to a test case keeps them ("Title, AcceptanceCriteria").</summary>
+    public const int MaxSuspectReasonLength = 256;
 }
 
 public static class QualityGateConsts
