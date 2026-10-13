@@ -1,6 +1,6 @@
 # Hướng dẫn sử dụng Test Case Management
 
-Tài liệu thực hành cho cả đội: tester, QA lead và product owner. Đọc phần khái niệm mất khoảng 10 phút; làm hết 10 bài tập mất khoảng 60 phút.
+Tài liệu thực hành cho cả đội: tester, QA lead và product owner. Đọc phần khái niệm mất khoảng 10 phút; làm hết 12 bài tập mất khoảng 75 phút.
 
 **Mọi bài tập trong tài liệu này đã được làm thật, từng bước, trên giao diện, bằng đúng tài khoản của vai trò đó**, và các ảnh chụp lấy từ chính lần làm đó (ô vàng là chỗ cần chú ý).
 
@@ -9,7 +9,7 @@ Tài liệu thực hành cho cả đội: tester, QA lead và product owner. Đ�
 - [3. Trước khi bắt đầu](#3-trước-khi-bắt-đầu)
 - [4. Thực hành](#4-thực-hành)
   - [Phần A: Tester (Bài 1 đến 4)](#phần-a-tester)
-  - [Phần B: QA Lead (Bài 5 đến 10)](#phần-b-qa-lead)
+  - [Phần B: QA Lead (Bài 5 đến 12)](#phần-b-qa-lead)
 - [5. Quy ước của đội](#5-quy-ước-của-đội)
 - [6. Hỏi đáp và xử lý sự cố](#6-hỏi-đáp-và-xử-lý-sự-cố)
 - [Phụ lục: quyền theo vai trò](#phụ-lục-quyền-theo-vai-trò)
@@ -26,7 +26,7 @@ Tài liệu thực hành cho cả đội: tester, QA lead và product owner. Đ�
 | **Yêu cầu** (requirement) | Điều sản phẩm phải làm được, ví dụ "Ký số hóa đơn bằng chứng thư số hợp lệ". |
 | **Bộ test** (suite) | Thư mục chứa test case, lồng được nhiều cấp, chia theo luồng nghiệp vụ. |
 | **Test case** | Một kịch bản kiểm thử: các bước, kết quả mong đợi, dữ liệu thử. |
-| **Phiên bản** (version) | Mỗi lần test case được **duyệt** thì có một phiên bản. Sửa test case đã duyệt thì nó **quay về Under review** và chỉ có phiên bản mới khi được duyệt lại; các lần chạy cũ vẫn giữ nguyên bản đã chạy. |
+| **Phiên bản** (version) | Mỗi lần test case được **duyệt** thì có một phiên bản. Sửa test case đã duyệt thì nó **quay về Under review** và chỉ có phiên bản mới khi được duyệt lại; bản đã duyệt trước đó vẫn là bản đang dùng, nên các lần chạy cũ giữ nguyên bản đã chạy. |
 | **Bước dùng chung** | Đoạn bước dùng lại ở nhiều test case (ví dụ "Đăng nhập"). Sửa một chỗ, cập nhật được mọi nơi dùng. |
 | **Plan** | Một đợt kiểm thử, thường tương ứng một đợt phát hành. |
 | **Run** | Một lần chạy một nhóm test case trên một môi trường (Staging, UAT). Mỗi test case trong run là một **mục chạy**, được giao cho một người. |
@@ -63,7 +63,7 @@ stateDiagram-v2
     Deprecated --> Draft: Back to draft
 ```
 
-Chỉ test case **Approved** mới đưa được vào run. Sửa test case đã duyệt không làm hỏng các run cũ vì chúng giữ đúng phiên bản đã chạy.
+Chỉ test case **có phiên bản đã duyệt đang dùng** mới đưa được vào run: test case **Approved**, hoặc test case đã duyệt rồi bị sửa và đang **chờ duyệt lại** (run lấy bản đã duyệt, không lấy nội dung đang chờ). Sửa test case đã duyệt không làm hỏng các run cũ vì chúng giữ đúng phiên bản đã chạy.
 
 ### 2.3 Ai làm gì
 
@@ -272,7 +272,7 @@ Các mục trong thanh bên: **Dashboard**, **Test repository**, **Shared steps*
 
    ![Chuyển sang Active](images/guide/b7-02-chuyen-active.png)
 
-3. Bấm **+ New run**: nhập **Title** và **Environment**, chọn **Plan**. Trong danh sách test case (chỉ test case **Approved** mới hiện), gõ vào ô tìm kiếm để lọc rồi tích chọn các test case cần chạy (dòng "N selected" cho biết đã chọn bao nhiêu). Bấm **Create run**.
+3. Bấm **+ New run**: nhập **Title** và **Environment**, chọn **Plan**. Trong danh sách test case (chỉ test case **Approved** và test case **chờ duyệt lại** mới hiện; loại sau có nhãn "Chờ duyệt lại, chạy bản vN"), gõ vào ô tìm kiếm để lọc rồi tích chọn các test case cần chạy (dòng "N selected" cho biết đã chọn bao nhiêu). Bấm **Create run**.
 
    ![Chọn test case](images/guide/b7-03-chon-test-case.png)
 
@@ -398,7 +398,63 @@ Khi công ty có nhiều sản phẩm (ví dụ EasyInvoice và HRM), mỗi sả
 
    ![Lưu trữ dự án](images/guide/b10-08-luu-tru-du-an.png)
 
-> **Lưu ý:** mã test case và mã yêu cầu vẫn là duy nhất trong **cả hệ thống**, nên mỗi dự án dùng tiền tố riêng (`EINV-`, `HRM-`). Bước dùng chung và cổng chất lượng dùng chung cho mọi dự án. Hiện chưa phân quyền theo dự án: ai được xem test case thì xem được ở mọi dự án.
+> **Lưu ý:** mã test case và mã yêu cầu vẫn là duy nhất trong **cả hệ thống**, nên mỗi dự án dùng tiền tố riêng (`EINV-`, `HRM-`). Bước dùng chung và cổng chất lượng dùng chung cho mọi dự án. Mặc định ai được dùng module cũng thấy mọi dự án; muốn một dự án chỉ cho một nhóm người xem, xem **Bài 12**.
+
+#### Bài 11: Duyệt nhiều test case cùng lúc
+
+Khi chuyển test case từ file Excel cũ sang hệ thống (nút **Import** ở đầu trang Test repository), cả trăm test case vào ở trạng thái **Draft**. Thay vì duyệt từng cái, bạn duyệt **một lần**. Bài này dành cho người có quyền duyệt (QA Lead).
+
+1. Vào **Test repository**, chọn bộ test vừa nhập. Các test case còn là **Draft**, phiên bản **v0**.
+
+   ![Các bản nháp sau khi nhập](images/guide/b11-01-ban-nhap-sau-khi-nhap.png)
+
+2. Tích ô ở đầu cột để **chọn tất cả test case duyệt được** của trang (Draft và Under review; test case đã duyệt hoặc đã ngừng dùng không có ô tích), hoặc tích từng dòng. Thanh phía trên cho biết đã chọn bao nhiêu, kèm nút **Approve selected**.
+
+   ![Chọn các test case](images/guide/b11-02-chon-tat-ca.png)
+
+3. Bấm **Approve selected**. Hệ thống hỏi một **ghi chú chung** (không bắt buộc); ghi chú này nằm trên phiên bản của mọi test case được duyệt, ví dụ "Nhập từ file Excel cũ của đội".
+
+   ![Ghi chú chung](images/guide/b11-03-ghi-chu-chung.png)
+
+4. Mỗi test case được duyệt **đúng như khi duyệt riêng**: có phiên bản **v1** riêng và dòng trong lịch sử. Test case **không duyệt được** (thường là chưa có bước nào) được **giữ nguyên**, và hệ thống liệt kê mã cùng lý do. Các test case còn lại vẫn được duyệt.
+
+   ![Test case chưa duyệt được](images/guide/b11-04-test-case-chua-duyet-duoc.png)
+
+5. Đóng thông báo: các test case đã duyệt hiện **Approved, v1**; test case còn lại vẫn là Draft để bạn sửa rồi duyệt tiếp.
+
+   ![Sau khi duyệt](images/guide/b11-05-da-duyet.png)
+
+> **Lưu ý:** mỗi lần duyệt tối đa **200** test case. Quy tắc duyệt không đổi: cần quyền **Approve**, test case phải có ít nhất một bước, và tác giả được tự duyệt test case của mình (đội nào muốn người duyệt khác người viết thì thống nhất như một quy ước, xem mục 5).
+
+#### Bài 12: Dự án chỉ cho thành viên xem
+
+Mặc định mọi người dùng module đều thấy mọi dự án. Có dự án chỉ một nhóm nhỏ được xem (hồ sơ pháp chế, dự án chưa công bố) thì đặt dự án đó **chỉ cho thành viên**. Bài này dành cho người có quyền quản lý dự án.
+
+1. Vào trang **Projects** (nút **Manage projects**). Mỗi dự án có nút **Access**.
+
+   ![Nút Access](images/guide/b12-01-nut-access.png)
+
+2. Bấm **Access** ở dự án cần hạn chế. Tích **Only the members of this project can see it**, rồi chọn người trong ô **Choose a person to add** và bấm **Add**. Muốn bỏ ai thì bấm **Remove** bên cạnh tên. Bấm **Save**.
+
+   ![Chọn thành viên](images/guide/b12-02-chi-thanh-vien.png)
+
+3. Dự án có nhãn **Members only** và số thành viên.
+
+   ![Dự án chỉ cho thành viên](images/guide/b12-03-du-an-chi-thanh-vien.png)
+
+4. Người **không phải thành viên** (và không có quyền quản lý dự án) không thấy dự án trong ô **Project** ở đầu trang, và cũng không thấy gì nằm trong đó: bộ test, test case, plan, run, yêu cầu, báo cáo nghiệm thu đều biến mất khỏi danh sách, dashboard, truy vết và xuất dữ liệu.
+
+   ![Người ngoài không thấy dự án](images/guide/b12-04-nguoi-ngoai-khong-thay.png)
+
+5. **Thành viên** thấy dự án như mọi dự án khác.
+
+   ![Thành viên thấy dự án](images/guide/b12-05-thanh-vien-thay.png)
+
+> **Lưu ý:**
+> - Người có quyền **quản lý dự án** luôn thấy mọi dự án, kể cả dự án họ không là thành viên.
+> - Là thành viên chỉ cho phép **thấy** dự án. Việc được làm gì trong đó (viết, duyệt, chạy test...) vẫn theo **vai trò** của người đó trong cả hệ thống.
+> - Bỏ tích ô hạn chế thì dự án mở lại cho mọi người; danh sách thành viên được giữ nhưng không còn tác dụng.
+> - Đưa người vào dự án thì họ thấy ngay ở lần tải trang kế tiếp. Người đang mở trang có thể cần tải lại.
 
 ## 5. Quy ước của đội
 
@@ -442,11 +498,11 @@ Tài khoản chưa có quyền. Nhờ quản trị viên cấp quyền cho vai t
 **Tôi không thấy nút Approve (hoặc Create, Delete...).**
 Quyền duyệt, tạo, xóa được cấp riêng. Xem [phụ lục](#phụ-lục-quyền-theo-vai-trò) và nhờ quản trị viên điều chỉnh.
 
-**Tôi sửa test case đã duyệt, sao nó thành "Under review" và chưa thêm vào run được?**
-Đúng thiết kế: sửa test case đã duyệt thì nó phải được duyệt lại. Trong lúc chờ, các run đang có vẫn dùng bản đã duyệt cũ. Khi người có quyền duyệt bấm **Approve**, test case có phiên bản mới (Version 2, 3...) và dùng được cho run mới.
+**Tôi sửa test case đã duyệt, sao nó thành "Under review"?**
+Đúng thiết kế: sửa test case đã duyệt thì nó phải được duyệt lại. Trong lúc chờ, các run đang có vẫn dùng bản đã duyệt cũ, và test case vẫn đưa vào run mới được (run lấy bản đã duyệt, danh sách chọn ghi "Chờ duyệt lại, chạy bản vN"). Khi người có quyền duyệt bấm **Approve**, test case có phiên bản mới (Version 2, 3...) và run tạo sau đó lấy bản mới.
 
 **Tôi không thêm được test case vào run.**
-Chỉ test case ở trạng thái **Approved** mới được thêm. Một test case cũng chỉ xuất hiện **một lần** trong một run.
+Test case phải đã được duyệt: **Approved**, hoặc đã duyệt rồi và đang chờ duyệt lại sau khi sửa. Test case **Draft**, chưa từng được duyệt, đã trả về Draft hoặc **Deprecated** thì không thêm được. Một test case cũng chỉ xuất hiện **một lần** trong một run.
 
 **Cột Tester chỉ ghi "Assigned", không có tên người.**
 Bình thường với người không có quyền xem danh sách người dùng (ví dụ Tester). Bộ lọc **My tests** vẫn dùng được.
@@ -482,7 +538,7 @@ Bảng dưới là bộ quyền của **ba vai trò dùng trong các bài tập*
 | Gợi ý bước bằng AI | ✔ | ✔ | |
 | Duyệt, xóa test case | | ✔ | |
 | Quản lý bộ test, bước dùng chung | | ✔ | |
-| Tạo, đổi tên, lưu trữ dự án (`Projects.Manage`) | | ✔ | |
+| Tạo, đổi tên, lưu trữ dự án; chọn ai được xem dự án (`Projects.Manage`; người có quyền này thấy mọi dự án) | | ✔ | |
 | Chạy test, ghi kết quả, gắn lỗi, đính kèm | ✔ | ✔ | |
 | Lập plan và run, giao việc, hoàn tất run | | ✔ | |
 | Quản lý yêu cầu, gắn test case vào yêu cầu | | ✔ | ✔ |

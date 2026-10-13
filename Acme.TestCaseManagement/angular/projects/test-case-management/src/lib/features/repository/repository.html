@@ -58,11 +58,13 @@
       </div>
 
       @if (auth.can(perm.TestCases.Approve) && selected().size > 0) {
-        <div class="card row" data-test="bulk-bar" style="justify-content: space-between">
-          <span>{{ 'repo.selectedCount' | t: { n: selected().size } }}</span>
-          <div class="row">
-            <button type="button" class="btn sm" (click)="selected.set(emptySelection)">{{ 'picker.clear' | t }}</button>
-            <button type="button" class="btn primary sm" data-test="approve-selected" [disabled]="approving()" (click)="approveSelected()">{{ 'repo.approveSelected' | t: { n: selected().size } }}</button>
+        <div class="card" data-test="bulk-bar">
+          <div class="row" style="justify-content: space-between">
+            <span>{{ 'repo.selectedCount' | t: { n: selected().size } }}</span>
+            <div class="row">
+              <button type="button" class="btn sm" (click)="selected.set(emptySelection)">{{ 'picker.clear' | t }}</button>
+              <button type="button" class="btn primary sm" data-test="approve-selected" [disabled]="approving()" (click)="approveSelected()">{{ 'repo.approveSelected' | t: { n: selected().size } }}</button>
+            </div>
           </div>
         </div>
       }
