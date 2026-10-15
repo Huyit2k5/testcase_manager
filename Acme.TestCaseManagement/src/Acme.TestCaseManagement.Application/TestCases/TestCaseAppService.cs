@@ -352,6 +352,9 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
 
     public virtual async Task<TestCaseVersionDto> GetVersionAsync(Guid id, int versionNumber)
     {
+        // A version has no project of its own, so what the caller may see is decided by its test case: one in a project out of reach is not found.
+        await _testCaseRepository.GetAsync(id, includeDetails: false);
+
         var version = await _versionRepository.FindAsync(x => x.TestCaseId == id && x.VersionNumber == versionNumber);
         if (version == null)
         {

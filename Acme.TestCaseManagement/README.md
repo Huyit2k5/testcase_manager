@@ -339,7 +339,9 @@ Configure<AbpBlobStoringOptions>(options =>
     options.Containers.ConfigureDefault(container => container.UseFileSystem(fileSystem => fileSystem.BasePath = "/data/attachments")));
 ```
 
-(add `Volo.Abp.BlobStoring.FileSystem`; for S3, Azure or the database use the matching ABP provider.) A host that embeds the model in its own
+(add `Volo.Abp.BlobStoring.FileSystem`; for S3, Azure or the database use the matching ABP provider.) **In a container the folder must be a mounted volume**: a folder inside
+the image is gone with the container, while the records of the files stay, so every download then answers `AttachmentFileMissing`. Take the path from the configuration
+(`TestCaseManagement:AttachmentsPath`) and mount it in `docker-compose.yml`. A host that embeds the model in its own
 DbContext also needs `DbSet<Attachment>`. Limits are `TestCaseManagementAttachmentOptions`: 25 MB a file, 25 files an owner, and an extension
 whitelist (images, PDF, text and logs, archives, Office files, short videos; no SVG or HTML). A file follows the permission of what it is attached to:
 `TestCases` / `TestCases.Update` for a test case, `TestRuns` / `TestRuns.Execute` for an attempt. Downloads are always attachments with a fixed content type.

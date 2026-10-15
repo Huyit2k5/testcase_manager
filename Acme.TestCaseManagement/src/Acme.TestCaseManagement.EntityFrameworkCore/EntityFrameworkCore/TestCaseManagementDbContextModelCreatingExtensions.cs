@@ -124,7 +124,17 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
             b.ConfigureByConvention();
 
             b.Property(x => x.Name).IsRequired().HasMaxLength(TagConsts.MaxLength);
-            b.Property(x => x.NormalizedName).IsRequired().HasMaxLength(TagConsts.MaxLength);
+            var normalized = b.Property(x => x.NormalizedName).IsRequired().HasMaxLength(TagConsts.MaxLength);
+            if (IsMySql(context))
+            {
+                // MySQL compares text without regard to accents by default (utf8mb4_0900_ai_ci), so "tim" and "tìm", two words, would be one
+                // tag to the unique index below and the second would fail with a duplicate key. The name is compared exactly, as the code does.
+                // Each MySQL provider reads it its own way: the relational collation (Pomelo, and the providers that follow EF Core), and the annotations
+                // of the provider of Oracle (the one of ABP 9), which ignores the relational collation and strips a collation written in the column type.
+                normalized.UseCollation("utf8mb4_bin");
+                normalized.HasAnnotation("MySQL:CharSet", "utf8mb4");
+                normalized.HasAnnotation("MySQL:Collation", "utf8mb4_bin");
+            }
 
             // A test case has a tag once; and "the test cases with this tag" is the question a filter asks.
             b.HasIndex(x => new { x.TestCaseId, x.NormalizedName }).IsUnique();
@@ -434,6 +444,10 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
             b.HasIndex(x => new { x.TestExecutionId, x.StepId }).IsUnique();
         });
     }
+
+    /// <summary>Whether the DbContext runs on MySQL (the Oracle or the Pomelo provider); decided from the name of the provider.</summary>
+    private static bool IsMySql(ITestCaseManagementDbContext context) =>
+        context is DbContext dbContext && dbContext.Database.ProviderName?.Contains("MySql", StringComparison.OrdinalIgnoreCase) == true;
 
     /// <summary>
     /// Adds the project filter to the filter that ABP already put on the entity (soft delete, tenant): EF takes one such filter per

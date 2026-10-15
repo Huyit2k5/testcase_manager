@@ -33,6 +33,18 @@ public class SignOffManager : DomainService
     {
         var (userId, userName) = RequireUser();
 
+        // The project of the report is the project of its plan. One that the caller names must be that one: otherwise the report, with the figures
+        // of a plan, would be filed under a project that is not the plan's, and shown to its members instead of the plan's.
+        if (scope.TestPlanId.HasValue && scope.ProjectId.HasValue)
+        {
+            var plan = (await _gateManager.ResolvePlansAsync(scope)).First();
+            if (plan.ProjectId != scope.ProjectId.Value)
+            {
+                throw new BusinessException(TestCaseManagementErrorCodes.SignOffProjectMismatch)
+                    .WithData("PlanId", plan.Id);
+            }
+        }
+
         var evaluation = await _gateManager.EvaluateAsync(scope, gateId);
         if (!evaluation.Passed)
         {

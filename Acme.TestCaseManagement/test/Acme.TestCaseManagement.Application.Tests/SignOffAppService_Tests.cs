@@ -310,6 +310,21 @@ public class SignOffAppService_Tests : TestCaseManagementApplicationTestBase
     }
 
     [Fact]
+    public async Task A_Sign_Off_Takes_The_Project_Of_Its_Plan_And_Refuses_To_Be_Filed_Under_Another_One()
+    {
+        var (plan, _) = await PlanWithResultsAsync("Sprint 30", Results(passed: 10));
+        var other = await GetRequiredService<Projects.IProjectAppService>().CreateAsync(new Projects.CreateProjectDto { Key = "OTHR", Name = "Other" });
+
+        using var _ = ChangeUser(_qaLead, "qa.lead");
+
+        (await Should.ThrowAsync<BusinessException>(() => _signOff.SignOffAsync(new StartSignOffDto { TestPlanId = plan.Id, ProjectId = other.Id })))
+            .Code.ShouldBe(TestCaseManagementErrorCodes.SignOffProjectMismatch);
+
+        (await _signOff.SignOffAsync(new StartSignOffDto { TestPlanId = plan.Id, ProjectId = plan.ProjectId })).ProjectId.ShouldBe(plan.ProjectId);
+        (await _signOff.SignOffAsync(new StartSignOffDto { TestPlanId = plan.Id })).ProjectId.ShouldBe(plan.ProjectId);
+    }
+
+    [Fact]
     public async Task Sign_Off_Rejects_A_Missing_Scope_An_Unknown_Plan_And_An_Unknown_Gate()
     {
         var (plan, _) = await PlanWithResultsAsync("Sprint 24", Results(passed: 10));

@@ -46,7 +46,7 @@ public class TestCaseManager : DomainService
         await _projectManager.EnsureSuiteIsOpenAsync(suiteId);
         if (string.IsNullOrWhiteSpace(code))
         {
-            code = await _projectManager.GenerateTestCaseCodeAsync(suiteId, async candidate => await _testCaseRepository.FindByCodeAsync(candidate) != null);
+            code = await _projectManager.GenerateTestCaseCodeAsync(suiteId, async candidate => await FindByCodeInEveryProjectAsync(candidate) != null);
         }
         else
         {
@@ -177,17 +177,35 @@ public class TestCaseManager : DomainService
             return;
         }
 
-        var existing = await _testCaseRepository.FindByAutomationIdAsync(normalized);
+        // Every project is looked at, not only those the caller sees: an Automation ID names one test case of the library.
+        TestCase? existing;
+        using (ProjectAccessScope.Unrestrict())
+        {
+            existing = await _testCaseRepository.FindByAutomationIdAsync(normalized);
+        }
+
         if (existing != null && existing.Id != exceptTestCaseId)
         {
             throw new BusinessException(TestCaseManagementErrorCodes.DuplicateAutomationId).WithData("AutomationId", normalized);
         }
     }
 
+    /// <summary>
+    /// A code names one test case of the whole library, so the project filter is left out here: someone who cannot see another project must
+    /// still not be able to make a second test case with a code that is taken there (and is told only that the code is taken).
+    /// </summary>
+    protected virtual async Task<TestCase?> FindByCodeInEveryProjectAsync(string code)
+    {
+        using (ProjectAccessScope.Unrestrict())
+        {
+            return await _testCaseRepository.FindByCodeAsync(code);
+        }
+    }
+
     protected virtual async Task EnsureCodeIsUniqueAsync(string code, Guid? exceptTestCaseId)
     {
         var normalized = code?.Trim() ?? string.Empty;
-        var existing = await _testCaseRepository.FindByCodeAsync(normalized);
+        var existing = await FindByCodeInEveryProjectAsync(normalized);
 
         if (existing != null && existing.Id != exceptTestCaseId)
         {

@@ -164,7 +164,13 @@ public class RequirementManager : DomainService
     protected virtual async Task EnsureCodeIsUniqueAsync(string code, Guid? exceptRequirementId)
     {
         var lowered = code.ToLowerInvariant();
-        var existing = await _requirementRepository.FindAsync(x => x.Code.ToLower() == lowered);
+        // Every project is looked at, not only those the caller sees: a requirement code names one requirement of the library.
+        Requirement? existing;
+        using (ProjectAccessScope.Unrestrict())
+        {
+            existing = await _requirementRepository.FindAsync(x => x.Code.ToLower() == lowered);
+        }
+
 
         if (existing != null && existing.Id != exceptRequirementId)
         {

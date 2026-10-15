@@ -70,6 +70,7 @@
     "TestCaseManagement:QualityGateNotPassed": "Quality gate '{GateName}' was not passed, so the sign-off cannot proceed. Failed criteria: {FailedCriteria}.",
     "TestCaseManagement:DuplicateQualityGateName": "A quality gate named '{Name}' already exists.",
     "TestCaseManagement:InvalidSignOffScope": "Specify exactly one of test plan or milestone.",
+    "TestCaseManagement:SignOffProjectMismatch": "The test plan does not belong to the project given. A sign-off takes the project of its plan: leave the project out or give the plan's own.",
     "TestCaseManagement:SignOffScopeEmpty": "Milestone '{MilestoneId}' has no test plan, so there is nothing to evaluate.",
     "TestCaseManagement:SignOffRequiresUser": "A sign-off must be given by an authenticated user.",
     "TestCaseManagement:SignOffNotPending": "Sign-off '{Title}' is {Status} and can no longer receive approvals.",

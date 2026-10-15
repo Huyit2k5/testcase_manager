@@ -93,10 +93,33 @@ public class ProjectAccess_Tests : TestCaseManagementApplicationTestBase
             await Should.ThrowAsync<EntityNotFoundException>(() => _plans.GetAsync(hidden.Plan.Id));
             await Should.ThrowAsync<EntityNotFoundException>(() => _requirements.GetAsync(hidden.Requirement.Id));
             await Should.ThrowAsync<EntityNotFoundException>(() => _testCases.GetHistoryAsync(hidden.TestCase.Id));
+            await Should.ThrowAsync<EntityNotFoundException>(() => _testCases.GetVersionsAsync(hidden.TestCase.Id));
+            await Should.ThrowAsync<EntityNotFoundException>(() => _testCases.GetVersionAsync(hidden.TestCase.Id, 1));
         }
 
         // Out of the scope, every project is in reach again.
         (await _testCases.GetListAsync(new GetTestCaseListInput())).Items.Count.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task A_Code_Or_An_Automation_Id_Taken_In_A_Project_Out_Of_Reach_Is_Still_Taken()
+    {
+        var open = await MakeAsync("OPEN");
+        var hidden = await MakeAsync("HIDE");
+        await _testCases.UpdateAsync(hidden.TestCase.Id, new CreateUpdateTestCaseDto
+        {
+            SuiteId = hidden.Suite.Id, Code = "HIDE-001", Title = "Test HIDE", AutomationId = "auto.hidden", Steps = { new TestStepDto { Action = "Do", ExpectedResult = "Done" } },
+        });
+
+        using (ProjectAccessScope.Restrict(new[] { open.Project.Id }))
+        {
+            (await Should.ThrowAsync<Volo.Abp.BusinessException>(() => _testCases.CreateAsync(new CreateUpdateTestCaseDto { SuiteId = open.Suite.Id, Code = "HIDE-001", Title = "Same code" })))
+                .Code.ShouldBe(TestCaseManagementErrorCodes.DuplicateTestCaseCode);
+            (await Should.ThrowAsync<Volo.Abp.BusinessException>(() => _testCases.CreateAsync(new CreateUpdateTestCaseDto { SuiteId = open.Suite.Id, Code = "OPEN-NEW", Title = "Same id", AutomationId = "AUTO.HIDDEN" })))
+                .Code.ShouldBe(TestCaseManagementErrorCodes.DuplicateAutomationId);
+            (await Should.ThrowAsync<Volo.Abp.BusinessException>(() => _requirements.CreateAsync(new CreateUpdateRequirementDto { Code = "hide-r1", Title = "Same code", ProjectId = open.Project.Id })))
+                .Code.ShouldBe(TestCaseManagementErrorCodes.DuplicateRequirementCode);
+        }
     }
 
     [Fact]

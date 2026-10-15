@@ -42,6 +42,7 @@ public static class TestCaseManagementErrorCodes
     public const string QualityGateNotPassed = "TestCaseManagement:QualityGateNotPassed";
     public const string DuplicateQualityGateName = "TestCaseManagement:DuplicateQualityGateName";
     public const string InvalidSignOffScope = "TestCaseManagement:InvalidSignOffScope";
+    public const string SignOffProjectMismatch = "TestCaseManagement:SignOffProjectMismatch";
     public const string SignOffScopeEmpty = "TestCaseManagement:SignOffScopeEmpty";
     public const string SignOffRequiresUser = "TestCaseManagement:SignOffRequiresUser";
     public const string SignOffNotPending = "TestCaseManagement:SignOffNotPending";

@@ -424,3 +424,14 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 - [x] T176 Tried: net10 Domain 226, Application 461, HttpApi 85; net9 Domain 226, Application 461; the API of the application (28 of 29 checks, the 29th a wrong route in the script); the Angular application built on Angular 20 and run in a browser.
 - [x] T178 The sample host and HttpApi.Tests built for .NET 9 too (Swagger filters and security definitions under `#if`); all three test projects pass on .NET 9 against MySQL 8.0; the application's own tests (57) pass with the module wired in; the user directory of the ABP adapter asks the permission before the request.
 - [x] T177 `version-compare.ts` without `@else if (...; as x)` (Angular 20); the README: both builds, the blob provider of a host that has none, the explicit DbSet, Angular 20; the plan (4.34).
+
+---
+
+## Phase 36: Findings of a review in the company application
+
+- [x] T179 `GetVersionAsync` loads the test case through the project filter; a test (test case versions of a project out of reach are not found); a probe of every endpoint that takes an id, as a non-member, on the running application.
+- [x] T180 The path of the attachment folder from `TestCaseManagement:AttachmentsPath` (company application), mounted in `docker-compose.yml`; the README says it must be a volume.
+- [x] T181 `NormalizedName` of a tag compared exactly on MySQL (`UseCollation` and the annotations of the provider of Oracle); a test (tags that differ by accents) on MySQL 8.0 with both providers; the migration of the company application.
+- [x] T182 A sign-off takes the project of its plan, another is refused (`SignOffProjectMismatch`, en and vi); a test.
+- [x] T183 The uniqueness of a test case code, an Automation ID and a requirement code is checked in every project; a test.
+- [x] T184 Domain 226, Application 464, HttpApi 85 on .NET 10 with SQLite and on .NET 9 with MySQL 8.0.

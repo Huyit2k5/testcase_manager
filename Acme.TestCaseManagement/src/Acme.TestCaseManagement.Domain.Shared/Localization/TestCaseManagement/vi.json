@@ -70,6 +70,7 @@
     "TestCaseManagement:QualityGateNotPassed": "Quality gate '{GateName}' chưa đạt nên không thể sign-off. Tiêu chí chưa đạt: {FailedCriteria}.",
     "TestCaseManagement:DuplicateQualityGateName": "Đã tồn tại quality gate tên '{Name}'.",
     "TestCaseManagement:InvalidSignOffScope": "Chỉ định đúng một trong hai: test plan hoặc milestone.",
+    "TestCaseManagement:SignOffProjectMismatch": "Test plan không thuộc dự án đã nêu. Biên bản nghiệm thu lấy dự án của plan: hãy bỏ trống dự án hoặc nêu đúng dự án của plan.",
     "TestCaseManagement:SignOffScopeEmpty": "Milestone '{MilestoneId}' chưa có test plan nên không có gì để đánh giá.",
     "TestCaseManagement:SignOffRequiresUser": "Sign-off phải do người dùng đã đăng nhập thực hiện.",
     "TestCaseManagement:SignOffNotPending": "Sign-off '{Title}' đang ở trạng thái {Status} nên không nhận thêm phê duyệt.",

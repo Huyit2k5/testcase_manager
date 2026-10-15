@@ -365,7 +365,16 @@ public class TestCaseTransferAppService : TestCaseManagementAppService, ITestCas
         }
 
         var unchanged = plan.Existing != null && string.Equals(plan.Existing.AutomationId, automationId, StringComparison.Ordinal);
-        var owner = unchanged ? null : await _testCaseRepository.FindByAutomationIdAsync(automationId);
+        TestCase? owner = null;
+        if (!unchanged)
+        {
+            // Every project is looked at: an Automation ID names one test case of the library.
+            using (ProjectAccessScope.Unrestrict())
+            {
+                owner = await _testCaseRepository.FindByAutomationIdAsync(automationId);
+            }
+        }
+
         var takenInFile = seen.TryGetValue(automationId, out var otherCode) && !string.Equals(otherCode, plan.Draft.Code, StringComparison.OrdinalIgnoreCase);
 
         var taken = owner != null && owner.Id != plan.Existing?.Id;

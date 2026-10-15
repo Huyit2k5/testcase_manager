@@ -251,4 +251,18 @@ public class TestCaseTags_Tests : TestCaseManagementApplicationTestBase
         clash.Imported.ShouldBeFalse();
         clash.Items.Single().Messages.ShouldContain(m => m.Contains("Tags"));
     }
+
+    [Fact]
+    public async Task Tags_That_Differ_Only_By_Accents_Are_Different_Tags_Because_They_Are_Different_Words()
+    {
+        // "tim" and "tìm" are two words; a database that ignores accents (MySQL by default) must not make them one tag.
+        var both = await _testCases.CreateAsync(await NewAsync("ACC-1", new[] { "dang nhap", "đăng nhập" }));
+        both.Tags.ShouldBe(new[] { "dang nhap", "đăng nhập" }, ignoreOrder: true);
+
+        await _testCases.CreateAsync(await NewAsync("ACC-2", new[] { "tim" }));
+        await _testCases.CreateAsync(await NewAsync("ACC-3", new[] { "tìm" }));
+
+        (await _testCases.GetListAsync(new GetTestCaseListInput { Tags = new List<string> { "tim" } })).Items.Select(t => t.Code).ShouldBe(new[] { "ACC-2" });
+        (await _testCases.GetListAsync(new GetTestCaseListInput { Tags = new List<string> { "tìm" } })).Items.Select(t => t.Code).ShouldBe(new[] { "ACC-3" });
+    }
 }
