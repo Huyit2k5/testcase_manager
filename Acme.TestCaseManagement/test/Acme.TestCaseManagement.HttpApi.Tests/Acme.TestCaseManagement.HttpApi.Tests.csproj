@@ -1,7 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <!-- The sample host it starts uses the OpenAPI 2 and ABP 10 APIs, so this one stays on .NET 10. -->
-    <TargetFrameworks>net10.0</TargetFrameworks>
     <RootNamespace>Acme.TestCaseManagement</RootNamespace>
   </PropertyGroup>
 

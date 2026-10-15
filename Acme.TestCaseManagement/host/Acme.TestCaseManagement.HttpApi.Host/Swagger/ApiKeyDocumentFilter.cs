@@ -1,4 +1,8 @@
+#if NET10_0_OR_GREATER
 using Microsoft.OpenApi;
+#else
+using Microsoft.OpenApi.Models;
+#endif
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Acme.TestCaseManagement.Swagger;
@@ -20,11 +24,20 @@ public class ApiKeyDocumentFilter : IDocumentFilter
                 continue;
             }
 
+#if NET10_0_OR_GREATER
             operation.Security = new List<OpenApiSecurityRequirement>
             {
                 new() { [new OpenApiSecuritySchemeReference("Bearer", swaggerDoc)] = new List<string>() },
                 new() { [new OpenApiSecuritySchemeReference("ApiKey", swaggerDoc)] = new List<string>() },
             };
+#else
+            OpenApiSecurityScheme Scheme(string id) => new() { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = id } };
+            operation.Security = new List<OpenApiSecurityRequirement>
+            {
+                new() { [Scheme("Bearer")] = new List<string>() },
+                new() { [Scheme("ApiKey")] = new List<string>() },
+            };
+#endif
         }
     }
 }

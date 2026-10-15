@@ -157,8 +157,9 @@ messages and errors appear in the host's toaster. The pages keep their own light
 
 The six `src/` projects target `net10.0` and `net9.0`; `Directory.Packages.props` picks ABP 10.6.1 for the first and ABP 9.3.2 (with
 EF Core and Microsoft.Extensions 9.0.5) for the second. The code is the same for both, except one line that reads the query filter of an
-entity (`GetDeclaredQueryFilters` exists in EF Core 10 only; `#if NET10_0_OR_GREATER`). The Domain and Application tests are built for both and pass on both
-(Domain 226, Application 461). The HTTP tests and the sample host stay on .NET 10: the host uses the OpenAPI 2 and ABP 10 APIs.
+entity (`GetDeclaredQueryFilters` exists in EF Core 10 only; `#if NET10_0_OR_GREATER`). The Domain, Application and HTTP tests and the sample host are built for both and pass on both
+(Domain 226, Application 461, HttpApi 85), on SQLite and on MySQL 8.0 (the company application's version) for .NET 9. The sample host and the HTTP tests differ between the two only
+where the OpenAPI library does (Microsoft.OpenApi 2 on .NET 10, 1.x on .NET 9: the Swagger filters, and the check that parses the document, which runs on .NET 10 only).
 
 A host whose own DbContext already has a `DbSet` named like one of the module's (the company application has `Projects` for
 Bitbucket projects) implements that member of `ITestCaseManagementDbContext` explicitly:

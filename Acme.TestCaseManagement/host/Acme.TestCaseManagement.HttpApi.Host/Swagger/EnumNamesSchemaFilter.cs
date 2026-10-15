@@ -1,5 +1,10 @@
+#if NET10_0_OR_GREATER
 using System.Text.Json.Nodes;
 using Microsoft.OpenApi;
+#else
+using Microsoft.OpenApi.Any;
+using Microsoft.OpenApi.Models;
+#endif
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Acme.TestCaseManagement.Swagger;
@@ -10,6 +15,7 @@ namespace Acme.TestCaseManagement.Swagger;
 /// </summary>
 public class EnumNamesSchemaFilter : ISchemaFilter
 {
+#if NET10_0_OR_GREATER
     public void Apply(IOpenApiSchema schema, SchemaFilterContext context)
     {
         if (!context.Type.IsEnum || schema is not OpenApiSchema enumSchema)
@@ -28,4 +34,24 @@ public class EnumNamesSchemaFilter : ISchemaFilter
         enumSchema.Extensions["x-enum-varnames"] = new JsonNodeExtension(
             new JsonArray(names.Select(name => (JsonNode?)JsonValue.Create(name)).ToArray()));
     }
+#else
+    public void Apply(OpenApiSchema schema, SchemaFilterContext context)
+    {
+        if (!context.Type.IsEnum)
+        {
+            return;
+        }
+
+        var names = Enum.GetNames(context.Type);
+        var members = names.Select(name => $"{Convert.ToInt64(Enum.Parse(context.Type, name))} = {name}");
+
+        schema.Description = string.IsNullOrEmpty(schema.Description)
+            ? $"Values: {string.Join(", ", members)}."
+            : $"{schema.Description} Values: {string.Join(", ", members)}.";
+
+        var varNames = new OpenApiArray();
+        varNames.AddRange(names.Select(name => (IOpenApiAny)new OpenApiString(name)));
+        schema.Extensions["x-enum-varnames"] = varNames;
+    }
+#endif
 }

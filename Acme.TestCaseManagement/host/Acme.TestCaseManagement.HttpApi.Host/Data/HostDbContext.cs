@@ -69,7 +69,9 @@ public class HostDbContext : AbpDbContext<HostDbContext>, ITestCaseManagementDbC
     public DbSet<PermissionGroupDefinitionRecord> PermissionGroups { get; set; } = null!;
     public DbSet<PermissionDefinitionRecord> Permissions { get; set; } = null!;
     public DbSet<PermissionGrant> PermissionGrants { get; set; } = null!;
+#if NET10_0_OR_GREATER
     public DbSet<ResourcePermissionGrant> ResourcePermissionGrants { get; set; } = null!;
+#endif
 
     public HostDbContext(DbContextOptions<HostDbContext> options)
         : base(options)

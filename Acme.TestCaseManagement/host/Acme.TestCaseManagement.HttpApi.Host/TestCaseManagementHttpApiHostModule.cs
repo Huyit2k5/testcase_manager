@@ -6,7 +6,11 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+#if NET10_0_OR_GREATER
 using Microsoft.OpenApi;
+#else
+using Microsoft.OpenApi.Models;
+#endif
 using Volo.Abp;
 using Volo.Abp.Autofac;
 using Volo.Abp.BlobStoring;
@@ -193,10 +197,17 @@ public class TestCaseManagementHttpApiHostModule : AbpModule
                 Name = ApiKeyDefaults.HeaderName,
                 Description = "An API key created on the Automation page or with POST /api/test-case-management/api-keys. It can only publish automation results.",
             });
+#if NET10_0_OR_GREATER
             options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
             {
                 [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>(),
             });
+#else
+            options.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                [new OpenApiSecurityScheme { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" } }] = new List<string>(),
+            });
+#endif
 
             // Descriptions of DTO members come from the XML documentation of the module assemblies.
             foreach (var xmlFile in Directory.EnumerateFiles(AppContext.BaseDirectory, "Acme.TestCaseManagement.*.xml"))

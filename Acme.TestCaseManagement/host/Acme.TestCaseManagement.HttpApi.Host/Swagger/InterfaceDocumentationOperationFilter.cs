@@ -1,6 +1,10 @@
 using System.Reflection;
 using System.Xml.Linq;
+#if NET10_0_OR_GREATER
 using Microsoft.OpenApi;
+#else
+using Microsoft.OpenApi.Models;
+#endif
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Acme.TestCaseManagement.Swagger;

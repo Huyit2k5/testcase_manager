@@ -1,7 +1,9 @@
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Acme.TestCaseManagement.Enums;
+#if NET10_0_OR_GREATER
 using Microsoft.OpenApi;
+#endif
 using Shouldly;
 using Xunit;
 
@@ -156,9 +158,12 @@ public class OpenApiContract_Tests
     {
         var document = await GetDocumentAsync();
 
+#if NET10_0_OR_GREATER
+        // The OpenAPI reader of Microsoft.OpenApi 2; on .NET 9 (ABP 9.3, Swashbuckle 6) the checks below on the references and the operations stand alone.
         var parsed = OpenApiDocument.Parse(document.ToJsonString(), "json");
         parsed.Document.ShouldNotBeNull();
         (parsed.Diagnostic?.Errors.Select(error => error.ToString()) ?? Enumerable.Empty<string>()).ShouldBeEmpty();
+#endif
 
         ((string?)document["openapi"]).ShouldNotBeNull().ShouldStartWith("3.");
         ((string?)document["info"]?["title"]).ShouldBe(TestCaseManagementHttpApiHostModule.ApiTitle);
