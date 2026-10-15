@@ -79,10 +79,14 @@ export class I18nService {
     try { localStorage.setItem(STORAGE_KEY, lang); } catch { /* storage may be unavailable */ }
   }
 
-  /** The text of a key with {placeholders} filled in; an unknown key is returned as it is, so a gap stays visible. */
+  /** The text of a key with {placeholders} and {count?singular|plural} filled in; an unknown key is returned as it is, so a gap stays visible. */
   t(key: string, params?: MessageParams): string {
     const text = MESSAGES[this.lang()][key] ?? en[key as keyof typeof en] ?? key;
-    return params ? text.replace(/\{(\w+)\}/g, (_, name: string) => String(params[name] ?? '')) : text;
+    if (!params) { return text; }
+    // {count?one|other} picks the singular when the number is 1 ("1 run", "2 runs"); languages without a plural simply do not use it.
+    return text
+      .replace(/\{(\w+)\?([^|{}]*)\|([^{}]*)\}/g, (_, name: string, one: string, other: string) => (Number(params[name]) === 1 ? one : other))
+      .replace(/\{(\w+)\}/g, (_, name: string) => String(params[name] ?? ''));
   }
 
   /** The name of an enum member in the current language (UnderReview becomes "Under review" / "Chờ duyệt"). */

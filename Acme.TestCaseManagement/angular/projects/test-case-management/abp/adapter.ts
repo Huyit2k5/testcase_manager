@@ -3,12 +3,16 @@ import { EnvironmentInjector, EnvironmentProviders, Injectable, computed, inject
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ConfigStateService, EnvironmentService, PermissionService, RoutesService, SessionStateService, eLayoutType } from '@abp/ng.core';
 import { ToasterService } from '@abp/ng.theme.shared';
-import { Observable, catchError, map } from 'rxjs';
-import { AuthService, TCM_API_URL, TCM_BASE_PATH, TCM_LANGUAGE, TCM_FEATURES, TCM_NOTIFIER, TCM_USER_DIRECTORY, TcmDirectoryUser, TcmUser, TcmUserDirectory, errorInterceptor, tcmMenu } from 'test-case-management';
+import { NavigationEnd, Router } from '@angular/router';
+import { Observable, catchError, filter, map } from 'rxjs';
+import { AuthService, TCM_API_URL, TCM_BASE_PATH, TCM_EMBEDDED, TCM_LANGUAGE, TCM_FEATURES, TCM_NOTIFIER, TCM_USER_DIRECTORY, TcmDirectoryUser, TcmUser, TcmUserDirectory, errorInterceptor, tcmMenu } from 'test-case-management';
 
 /** Where the module is mounted in the ABP application's router (see the route in app.routes.ts). */
 export const TCM_ABP_BASE_PATH = '/test-case-management';
 const ROOT_MENU = 'TestCaseManagement::Menu:TestCaseManagement';
+const PROJECTS_MENU = 'TestCaseManagement::Menu:Projects';
+const RUN_MENU = 'TestCaseManagement::Menu:Run';
+const RUN_DETAIL = /^\/test-case-management\/runs\/[^/?#]+/;
 
 /** Who is signed in and what they may do, read from what ABP already knows (its application configuration). */
 @Injectable()
@@ -75,6 +79,7 @@ export function provideTestCaseManagementForAbp(): EnvironmentProviders {
     { provide: HTTP_INTERCEPTORS, useClass: TcmErrorInterceptor, multi: true },
     { provide: TCM_API_URL, useFactory: () => inject(EnvironmentService).getApiUrl(undefined).replace(/\/+$/, '') },
     { provide: TCM_BASE_PATH, useValue: TCM_ABP_BASE_PATH },
+    { provide: TCM_EMBEDDED, useValue: true },
     { provide: TCM_USER_DIRECTORY, useFactory: abpUserDirectory },
     {
       provide: TCM_LANGUAGE,
@@ -108,7 +113,17 @@ export function provideTestCaseManagementMenu(): EnvironmentProviders {
           layout: eLayoutType.application,
           requiredPolicy: item.policy,
         })),
+        // The projects are managed by few: their page is in the sidebar for them. The page of a run has no entry; the sidebar and the breadcrumb still need to know where it is, so it has a hidden one.
+        { path: `${TCM_ABP_BASE_PATH}/projects`, name: PROJECTS_MENU, parentName: ROOT_MENU, order: 90, layout: eLayoutType.application, requiredPolicy: 'TestCaseManagement.Projects.Manage' },
+        { path: `${TCM_ABP_BASE_PATH}/runs/-`, name: RUN_MENU, parentName: ROOT_MENU, order: 91, invisible: true, layout: eLayoutType.application, requiredPolicy: 'TestCaseManagement.TestPlans' },
       ]);
+
+      // The page of a run has an address per run: the hidden entry takes the address of the run that is open.
+      const router = inject(Router);
+      router.events.pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd)).subscribe(e => {
+        const url = e.urlAfterRedirects.split(/[?#]/)[0];
+        if (RUN_DETAIL.test(url)) { routes.patch(RUN_MENU, { path: url }); }
+      });
     }),
   ]);
 }

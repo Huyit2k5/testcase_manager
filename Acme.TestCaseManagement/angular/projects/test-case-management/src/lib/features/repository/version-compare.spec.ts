@@ -11,7 +11,7 @@ const version = (n: number, title: string, steps: TestStep[], extra: Partial<Tes
 });
 
 describe('the comparison of two versions', () => {
-  beforeEach(() => TestBed.resetTestingModule());
+  beforeEach(() => { localStorage.clear(); TestBed.resetTestingModule(); });
 
   const open = (versions: TestCaseVersion[]) => {
     const fixture = TestBed.createComponent(VersionCompareComponent);

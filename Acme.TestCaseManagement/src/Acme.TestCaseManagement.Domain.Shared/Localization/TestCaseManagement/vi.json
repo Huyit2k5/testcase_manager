@@ -8,6 +8,8 @@
     "Menu:Runs": "Test plan và run",
     "Menu:Traceability": "Truy vết",
     "Menu:Quality": "Quality và sign-off",
+    "Menu:Projects": "Dự án",
+    "Menu:Run": "Chi tiết run",
     "Menu:Automation": "Tự động hóa",
     "Permission:TestCaseManagement": "Quản lý Test Case",
     "Permission:TestCases": "Test case",

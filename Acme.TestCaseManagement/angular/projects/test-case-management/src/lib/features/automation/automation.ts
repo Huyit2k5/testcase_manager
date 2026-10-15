@@ -1,3 +1,4 @@
+import { ProjectSwitchComponent } from '../projects/project-switch';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService, Permissions } from '../../core/auth';
@@ -46,7 +47,7 @@ export function githubActionsExample(origin: string): string {
 
 @Component({
   selector: 'app-automation',
-  imports: [FormsModule, FormatDatePipe, TranslatePipe, ModalComponent],
+  imports: [ProjectSwitchComponent, FormsModule, FormatDatePipe, TranslatePipe, ModalComponent],
   templateUrl: './automation.html',
 })
 export class AutomationComponent implements OnInit {

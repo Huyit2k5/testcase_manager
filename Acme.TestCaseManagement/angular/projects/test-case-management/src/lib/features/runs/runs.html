@@ -1,6 +1,9 @@
 <div class="page">
   <div class="page-head">
-    <h1>{{ 'runs.title' | t }}</h1>
+    <div class="title-row">
+      <h1>{{ 'runs.title' | t }}</h1>
+      <app-project-switch />
+    </div>
     <div class="row">
       <div class="segmented" role="group" [attr.aria-label]="'runs.view' | t" data-test="run-view">
         <button type="button" class="btn sm" [class.primary]="view() === 'plan'" [attr.aria-pressed]="view() === 'plan'" (click)="setView('plan')">{{ 'runs.viewByPlan' | t }}</button>
@@ -110,7 +113,7 @@
         }
       </section>
     }
-    @if (!plans().length) { <div class="card"><div class="empty">{{ 'runs.noPlan' | t }}</div></div> } @else if (!filteredPlans().length) { <div class="card"><div class="empty">{{ 'runs.noPlanMatches' | t }}</div></div> }
+    @if (!plans().length) { <div class="card"><div class="empty rich">{{ 'runs.noPlan' | t }}@if (auth.can(perm.TestPlans.Manage)) { <div><button type="button" class="btn primary" (click)="newPlan()">{{ 'runs.newPlan' | t }}</button></div> }</div></div> } @else if (!filteredPlans().length) { <div class="card"><div class="empty">{{ 'runs.noPlanMatches' | t }}</div></div> }
 
     @if (noPlanTotal() > 0) {
       <section class="card flush group" data-test="no-plan-group">
@@ -152,7 +155,13 @@
     </div>
     <div class="card flush">
       <ng-container [ngTemplateOutlet]="runTable" [ngTemplateOutletContext]="{ $implicit: runs(), withPlan: true }" />
-      @if (!runs().length) { <div class="empty">{{ (runTotal() === 0 && !runSearch && !runPlan && runStatus === '' && !runEnvironment ? 'runs.noRun' : 'runs.noRunMatches') | t }}</div> }
+      @if (!runs().length) {
+        @let noRuns = runTotal() === 0 && !runSearch && !runPlan && runStatus === '' && !runEnvironment;
+        <div class="empty" [class.rich]="noRuns">
+          {{ (noRuns ? 'runs.noRun' : 'runs.noRunMatches') | t }}
+          @if (noRuns && auth.can(perm.TestPlans.Manage)) { <div><button type="button" class="btn primary" (click)="newRun()">{{ 'runs.newRun' | t }}</button></div> }
+        </div>
+      }
     </div>
     <div class="row" style="justify-content: space-between; margin-top: 8px" data-test="run-pager">
       <span class="muted">{{ 'runs.showing' | t: { from: runRange().from, to: runRange().to, total: runTotal() } }}</span>
@@ -180,7 +189,7 @@
           }
         </tbody>
       </table>
-      @if (!plans().length) { <div class="empty">{{ 'runs.noPlan' | t }}</div> } @else if (!filteredPlans().length) { <div class="empty">{{ 'runs.noPlanMatches' | t }}</div> }
+      @if (!plans().length) { <div class="empty rich">{{ 'runs.noPlan' | t }}@if (auth.can(perm.TestPlans.Manage)) { <div><button type="button" class="btn primary" (click)="newPlan()">{{ 'runs.newPlan' | t }}</button></div> }</div> } @else if (!filteredPlans().length) { <div class="empty">{{ 'runs.noPlanMatches' | t }}</div> }
     </div>
     <ng-container [ngTemplateOutlet]="planPager" />
   }

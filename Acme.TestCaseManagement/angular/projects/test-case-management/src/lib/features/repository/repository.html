@@ -1,10 +1,11 @@
 <div class="page">
   <div class="page-head">
-    <h1>{{ 'repo.title' | t }}</h1>
+    <div class="title-row">
+      <h1>{{ 'repo.title' | t }}</h1>
+      <app-project-switch />
+    </div>
     <div class="row">
-      <button type="button" class="btn" [title]="'transfer.exportHint' | t" (click)="exportCases(formats.Xlsx)">{{ 'transfer.exportExcel' | t }}</button>
-      <button type="button" class="btn" [title]="'transfer.exportHint' | t" (click)="exportCases(formats.Csv)">{{ 'transfer.exportCsv' | t }}</button>
-      @if (auth.can(perm.TestCases.Create)) { <button type="button" class="btn" (click)="importOpen.set(true)">{{ 'transfer.import' | t }}</button> }
+      <app-row-menu [text]="'transfer.menu' | t" [label]="'transfer.menu' | t" [heading]="'transfer.menu' | t" [items]="transferItems()" (chosen)="onTransfer($event)" data-test="transfer-menu" />
       @if (auth.can(perm.TestSuites.Manage)) { <button type="button" class="btn" (click)="openSuiteDialog()">{{ 'repo.newSuite' | t }}</button> }
       @if (auth.can(perm.TestCases.Create)) { <button type="button" class="btn primary" [disabled]="suites().length === 0" (click)="newCase()">{{ 'repo.newCase' | t }}</button> }
     </div>
@@ -84,8 +85,8 @@
                 }
                 <td class="mono nowrap">{{ tc.code }}</td>
                 <td>{{ tc.title }}@if (tc.tags.length) { <div class="chips">@for (t of tc.tags; track t) { <span class="chip small">{{ t }}</span> }</div> }</td>
-                <td><span class="badge" [class]="badgeOf('priority', tc.priority)">{{ label(priorityEnum, tc.priority) }}</span></td>
-                <td><span class="badge" [class]="badgeOf('severity', tc.severity)">{{ label(severityEnum, tc.severity) }}</span></td>
+                <td>@if (tc.priority === priorityEnum.Medium) { <span class="level-plain">{{ label(priorityEnum, tc.priority) }}</span> } @else { <span class="badge" [class]="badgeOf('priority', tc.priority)">{{ label(priorityEnum, tc.priority) }}</span> }</td>
+                <td>@if (tc.severity === severityEnum.Medium) { <span class="level-plain">{{ label(severityEnum, tc.severity) }}</span> } @else { <span class="badge" [class]="badgeOf('severity', tc.severity)">{{ label(severityEnum, tc.severity) }}</span> }</td>
                 <td><span class="badge" [class]="badgeOf('case', tc.status)">{{ label(statusEnum, tc.status) }}</span></td>
                 <td>v{{ tc.currentVersion }}</td>
               </tr>
@@ -93,7 +94,10 @@
           </tbody>
         </table>
         @if (!cases().length) {
-          <div class="empty">{{ (loading() ? 'common.loading' : 'repo.noMatch') | t }}</div>
+          <div class="empty" [class.rich]="!loading() && noFilters()">
+            {{ (loading() ? 'common.loading' : (noFilters() ? 'repo.none' : 'repo.noMatch')) | t }}
+            @if (!loading() && noFilters() && auth.can(perm.TestCases.Create) && suites().length) { <div><button type="button" class="btn primary" (click)="newCase()">{{ 'repo.newCase' | t }}</button></div> }
+          </div>
         }
       </div>
 

@@ -185,7 +185,7 @@ describe('the page that manages projects', () => {
   const rowOf = (key: string) => [...element().querySelectorAll('[data-test=project-row]')].find(r => r.textContent?.includes(key))!;
 
   it('lists the projects with what is in them, and offers deleting only an empty one', () => {
-    expect(rowOf('EINV').textContent).toContain('10 test case(s)');
+    expect(rowOf('EINV').textContent).toContain('10 test cases');
     expect(rowOf('EINV').querySelector('button[tcmIcon="trash"]')).toBeNull();
     expect(rowOf('HRM').querySelector('button[tcmIcon="trash"]')).not.toBeNull();
   });
@@ -220,11 +220,11 @@ describe('the page that manages projects', () => {
 
   it('archives a project only after a question, and says so to the bar above', () => {
     vi.stubGlobal('confirm', () => false);
-    (rowOf('EINV').querySelectorAll('button.btn')[0] as HTMLButtonElement).click();
+    (rowOf('EINV').querySelector('button[aria-label=Archive]') as HTMLButtonElement).click();
     http.expectNone(`${ROOT}/projects/p1/archive`);
 
     vi.stubGlobal('confirm', () => true);
-    (rowOf('EINV').querySelectorAll('button.btn')[0] as HTMLButtonElement).click();
+    (rowOf('EINV').querySelector('button[aria-label=Archive]') as HTMLButtonElement).click();
     const request = http.expectOne(`${ROOT}/projects/p1/archive`);
     expect(request.request.method).toBe('POST');
     request.flush(project({ isArchived: true }));

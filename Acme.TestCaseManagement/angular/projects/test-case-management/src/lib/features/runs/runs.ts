@@ -1,3 +1,4 @@
+import { ProjectSwitchComponent } from '../projects/project-switch';
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -25,7 +26,7 @@ interface RunForm { testPlanId: string; title: string; environment: string; test
 
 @Component({
   selector: 'app-runs',
-  imports: [NgTemplateOutlet, FormsModule, RouterLink, FormatDatePipe, TranslatePipe, ModalComponent, CasePickerComponent, IconButtonComponent, RowMenuComponent],
+  imports: [ProjectSwitchComponent, NgTemplateOutlet, FormsModule, RouterLink, FormatDatePipe, TranslatePipe, ModalComponent, CasePickerComponent, IconButtonComponent, RowMenuComponent],
   templateUrl: './runs.html',
 })
 export class RunsComponent implements OnInit {

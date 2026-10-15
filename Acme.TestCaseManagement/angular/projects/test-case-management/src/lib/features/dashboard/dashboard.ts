@@ -1,3 +1,4 @@
+import { ProjectSwitchComponent } from '../projects/project-switch';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService, Permissions } from '../../core/auth';
@@ -11,7 +12,7 @@ import { CHART, burnDownChart, trendChart, velocityChart } from './chart';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [FormsModule, FormatDatePipe, TranslatePipe],
+  imports: [ProjectSwitchComponent, FormsModule, FormatDatePipe, TranslatePipe],
   templateUrl: './dashboard.html',
 })
 export class DashboardComponent implements OnInit {
@@ -132,6 +133,28 @@ export class DashboardComponent implements OnInit {
 
   /** "Mar 5" in the language of the screen, from the date part of an ISO text. */
   protected shortDate(iso: string): string { return this.i18n.date(iso, this.i18n.lang() === 'vi' ? 'd/M' : 'MMM d'); }
+
+  /** The pace and the day the rest would be done: the tooltip of the burn-down line, not a paragraph. */
+  protected paceText(b: { itemsPerDay: number; projectedFinish: string | null }): string {
+    const pace = this.i18n.t('dash.pace', { pace: b.itemsPerDay });
+    return b.projectedFinish ? `${pace} ${this.i18n.t('dash.projected', { date: this.i18n.date(b.projectedFinish, 'mediumDate') })}` : pace;
+  }
+
+  protected velocityText(v: { totalAttempts: number; averagePerDay: number }, days: number): string {
+    return this.i18n.t('dash.velocityLine', { total: v.totalAttempts, avg: v.averagePerDay, days });
+  }
+
+  /** What the table of the trend leaves out of a row (the defects and their density), as the tooltip of the row. */
+  protected sprintTip(p: { defects: number; openDefects: number; defectsPer100Executed: number | null }): string {
+    return this.i18n.t('dash.sprintTip', {
+      defects: p.defects, open: p.openDefects, per: p.defectsPer100Executed === null ? this.i18n.t('common.na') : p.defectsPer100Executed,
+    });
+  }
+
+  /** What the table of the workload leaves out of a row (blocked or skipped, the tests run, the days worked), as the tooltip of the row. */
+  protected testerTip(t: { blocked: number; skipped: number; itemsExecuted: number; activeDays: number }): string {
+    return this.i18n.t('dash.testerTip', { other: t.blocked + t.skipped, items: t.itemsExecuted, days: t.activeDays });
+  }
 
   protected percent(value: number | null): string { return value === null ? this.i18n.t('common.na') : `${value}%`; }
 

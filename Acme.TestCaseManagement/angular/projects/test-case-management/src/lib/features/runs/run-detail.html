@@ -9,11 +9,7 @@
         <span class="badge" [class]="badgeOf('run', r.status)" style="margin-left: 8px">{{ label(runEnum, r.status) }}</span>
       </div>
       <div class="row">
-        <button type="button" class="btn" (click)="exportResults(formats.Xlsx)">{{ 'transfer.exportExcel' | t }}</button>
-        <button type="button" class="btn" (click)="exportResults(formats.Csv)">{{ 'transfer.exportCsv' | t }}</button>
-        @if (isOpen(r) && auth.can(perm.TestRuns.Execute)) {
-          <button type="button" class="btn" (click)="importOpen.set(true)">{{ 'transfer.importResults' | t }}</button>
-        }
+        <app-row-menu [text]="'transfer.menu' | t" [label]="'transfer.menu' | t" [heading]="'transfer.menu' | t" [items]="transferItems(r)" (chosen)="onTransfer($event)" data-test="transfer-menu" />
         @if (isOpen(r) && auth.can(perm.TestPlans.Manage)) {
           <button type="button" class="btn" (click)="addForm.set({ testCaseIds: [], assignedUserId: '' })">{{ 'run.addCases' | t }}</button>
           <button type="button" class="btn primary" (click)="complete()">{{ 'run.complete' | t }}</button>
@@ -23,9 +19,9 @@
 
     <div class="stats">
       <div class="stat"><b>{{ r.summary.totalItems }}</b><span>{{ 'run.items' | t }}</span></div>
-      <div class="stat"><b style="color: var(--ok)">{{ r.summary.passed }}</b><span>{{ label(resultEnum, resultEnum.Passed) }}</span></div>
-      <div class="stat"><b style="color: var(--bad)">{{ r.summary.failed }}</b><span>{{ label(resultEnum, resultEnum.Failed) }}</span></div>
-      <div class="stat"><b style="color: var(--warn)">{{ r.summary.blocked }}</b><span>{{ label(resultEnum, resultEnum.Blocked) }}</span></div>
+      <div class="stat" data-tone="ok"><b style="color: var(--ok)">{{ r.summary.passed }}</b><span>{{ label(resultEnum, resultEnum.Passed) }}</span></div>
+      <div class="stat" data-tone="bad"><b style="color: var(--bad)">{{ r.summary.failed }}</b><span>{{ label(resultEnum, resultEnum.Failed) }}</span></div>
+      <div class="stat" data-tone="warn"><b style="color: var(--warn)">{{ r.summary.blocked }}</b><span>{{ label(resultEnum, resultEnum.Blocked) }}</span></div>
       <div class="stat"><b>{{ r.summary.skipped }}</b><span>{{ label(resultEnum, resultEnum.Skipped) }}</span></div>
       <div class="stat"><b>{{ r.summary.untested }}</b><span>{{ label(resultEnum, resultEnum.Untested) }}</span></div>
       <div class="stat">

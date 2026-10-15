@@ -57,6 +57,14 @@ describe('I18nService', () => {
     expect(i18n.t('repo.page', { page: 3 })).toBe('Trang 3');
   });
 
+  it('picks the singular for one and the plural for the rest, and a language with no plural is not touched', () => {
+    expect(i18n.t('rtm.toCheck', { n: 1 })).toBe('1 test case to check');
+    expect(i18n.t('rtm.toCheck', { n: 2 })).toBe('2 test cases to check');
+    expect(i18n.t('rtm.toCheck', { n: 0 })).toBe('0 test cases to check');
+    i18n.use('vi');
+    expect(i18n.t('rtm.toCheck', { n: 1 })).toBe(i18n.t('rtm.toCheck', { n: 2 }).replace('2', '1'));
+  });
+
   it('returns an unknown key as it is, so that a gap stays visible', () => {
     expect(i18n.t('no.such.key')).toBe('no.such.key');
   });

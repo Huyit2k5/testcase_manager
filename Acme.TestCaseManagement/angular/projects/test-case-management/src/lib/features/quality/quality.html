@@ -1,5 +1,8 @@
 <div class="page">
-  <div class="page-head"><h1>{{ 'qg.title' | t }}</h1></div>
+  <div class="page-head"><div class="title-row">
+      <h1>{{ 'qg.title' | t }}</h1>
+      <app-project-switch />
+    </div></div>
 
   <section class="card">
     <h2>{{ 'qg.evaluateTitle' | t }}</h2>
@@ -87,10 +90,9 @@
 
   <section class="card">
     <div class="row" style="justify-content: space-between; margin-bottom: 8px">
-      <h2 style="margin: 0">{{ 'qg.gates' | t }}</h2>
+      <h2 style="margin: 0">{{ 'qg.gates' | t }} <i class="hint" tabindex="0" role="img" [attr.aria-label]="'qg.rulesNote' | t" [attr.title]="'qg.rulesNote' | t">i</i></h2>
       @if (auth.can(perm.QualityGates.Manage)) { <button type="button" class="btn" (click)="newGate()">{{ 'qg.newGate' | t }}</button> }
     </div>
-    <p class="muted">{{ 'qg.rulesNote' | t }}</p>
     <table>
       <thead><tr><th>{{ 'common.name' | t }}</th><th>{{ 'qg.colMinPassRate' | t }}</th><th>{{ 'qg.colApprovals' | t }}</th><th>{{ 'qg.colDefault' | t }}</th><th></th></tr></thead>
       <tbody>
@@ -110,7 +112,7 @@
         }
       </tbody>
     </table>
-    @if (!gates().length) { <div class="empty">{{ 'qg.noGates' | t }}</div> }
+    @if (!gates().length) { <div class="empty rich">{{ 'qg.noGates' | t }}@if (auth.can(perm.QualityGates.Manage)) { <div><button type="button" class="btn primary" (click)="newGate()">{{ 'qg.newGate' | t }}</button></div> }</div> }
   </section>
 </div>
 

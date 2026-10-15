@@ -8,6 +8,8 @@
     "Menu:Runs": "Plans and runs",
     "Menu:Traceability": "Traceability",
     "Menu:Quality": "Quality and sign-off",
+    "Menu:Projects": "Projects",
+    "Menu:Run": "Run",
     "Menu:Automation": "Automation",
     "Permission:TestCaseManagement": "Test Case Management",
     "Permission:TestCases": "Test cases",

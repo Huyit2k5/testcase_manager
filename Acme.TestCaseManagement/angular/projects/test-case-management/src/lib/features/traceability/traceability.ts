@@ -1,3 +1,4 @@
+import { ProjectSwitchComponent } from '../projects/project-switch';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ModalComponent } from '../../core/modal';
@@ -22,7 +23,7 @@ interface RequirementForm {
 
 @Component({
   selector: 'app-traceability',
-  imports: [FormsModule, TranslatePipe, ModalComponent, CasePickerComponent, IconButtonComponent],
+  imports: [ProjectSwitchComponent, FormsModule, TranslatePipe, ModalComponent, CasePickerComponent, IconButtonComponent],
   templateUrl: './traceability.html',
 })
 export class TraceabilityComponent implements OnInit {
@@ -78,6 +79,9 @@ export class TraceabilityComponent implements OnInit {
       onlySuspect: this.onlySuspect ? true : null,
     }).subscribe(m => { if (request === this.matrixRequest) { this.matrix.set(m); } });
   }
+
+  /** No search, plan, environment, status or "to check" is asked for: an empty matrix is then empty, not filtered. */
+  protected noFilters(): boolean { return !this.search && !this.planId && !this.environment && this.status === '' && !this.onlySuspect; }
 
   protected newRequirement(): void {
     this.form.set({ id: null, code: '', title: '', description: '', acceptanceCriteria: '', priority: PriorityLevel.Medium, milestoneId: '', linkedTests: 0 });

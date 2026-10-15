@@ -34,7 +34,14 @@ describe('duplicating a test case', () => {
     fixture.detectChanges();
     return fixture;
   };
-  const click = (fixture: ReturnType<typeof open>) => (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-test=duplicate]')!.click();
+  /** The copy is one of the choices under "more" at the foot of the dialog: open the menu, then look for it. */
+  const menuItem = (fixture: ReturnType<typeof open>) => {
+    const element = fixture.nativeElement as HTMLElement;
+    element.querySelector<HTMLButtonElement>('app-row-menu button')?.click();
+    fixture.detectChanges();
+    return [...element.querySelectorAll<HTMLButtonElement>('.row-menu-item')].find(item => item.textContent!.includes('Duplicate')) ?? null;
+  };
+  const click = (fixture: ReturnType<typeof open>) => menuItem(fixture)!.click();
 
   beforeEach(() => localStorage.clear());
   afterEach(() => vi.unstubAllGlobals());
@@ -63,8 +70,8 @@ describe('duplicating a test case', () => {
 
   it('is offered only to who may create test cases', () => {
     const allowed = open(['TestCaseManagement.TestCases', 'TestCaseManagement.TestCases.Update']);
-    expect((allowed.nativeElement as HTMLElement).querySelector('[data-test=duplicate]')).toBeNull();
-    expect((open().nativeElement as HTMLElement).querySelector('[data-test=duplicate]')).not.toBeNull();
+    expect(menuItem(allowed)).toBeNull();
+    expect(menuItem(open())).not.toBeNull();
   });
 });
 

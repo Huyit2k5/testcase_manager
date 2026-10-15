@@ -181,6 +181,43 @@ describe('the trend and the workload on the dashboard', () => {
     expect(element().querySelector('[data-test=trend]')).not.toBeNull();
   });
 
+  it('does not begin the summary with a separator when the only thing to say is the average, and keeps no dash for a missing date', () => {
+    setup();
+    http.expectOne(r => r.url === `${ROOT}/dashboard/trend`).flush(trend([point('Solo', 50, { startDate: null })]));
+    answerOthers();
+    fixture.detectChanges();
+
+    const summary = element().querySelector('[data-test=trend-summary]')!.textContent!.trim();
+    expect(summary.startsWith('·')).toBe(false);
+    expect(summary).toContain('70%');
+    const plan = element().querySelector('[data-test=trend-table] tbody td')!.textContent!;
+    expect(plan).not.toContain('-');
+    expect(plan).not.toMatch(/^\s*·/);
+  });
+
+  it('says nothing in the summary line when there is nothing to summarise', () => {
+    setup();
+    http.expectOne(r => r.url === `${ROOT}/dashboard/trend`).flush({ ...trend([point('Solo', 50)]), averagePassRate: null });
+    answerOthers();
+    fixture.detectChanges();
+
+    expect(element().querySelector('[data-test=trend-summary]')).toBeNull();
+  });
+
+  it('keeps what the tables leave out in the tooltip of the row', () => {
+    setup();
+    http.expectOne(r => r.url === `${ROOT}/dashboard/trend`).flush(trend([point('Sprint 1', 60)]));
+    http.expectOne(r => r.url === `${ROOT}/dashboard/workload`).flush(workload([tester('u1', 6)]));
+    answerOthers();
+    fixture.detectChanges();
+
+    expect(element().querySelector('[data-test=trend-table] tbody tr')!.getAttribute('title')).toContain('Defects 3 (1 open)');
+    const tip = element().querySelector('[data-test=workload-table] tbody tr')!.getAttribute('title')!;
+    expect(tip).toContain('Blocked or skipped 1');
+    expect(tip).toContain('Tests run 3');
+    expect(tip).toContain('Days worked 2');
+  });
+
   it('writes a time, a change and its colour in a form that reads at a glance', () => {
     answerOthers();
     http.match(() => true);

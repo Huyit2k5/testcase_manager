@@ -10,6 +10,7 @@ import { TCM_BASE_PATH } from '../../core/host';
 import { FormatDatePipe, I18nService, TranslatePipe } from '../../core/i18n/i18n';
 import { badge } from '../../core/ui';
 import { UserNames } from '../../core/users';
+import { RowMenuComponent, RowMenuItem } from '../../core/row-menu';
 import { AddDefect, DefectLink, TestExecution, TestRun, TestRunItem, TestStep } from '../../proxy/dtos';
 import { AttachmentOwnerType, RunStatus, SeverityLevel, TestResultStatus, TransferFormat, enumOptions } from '../../proxy/enums';
 import { TestCaseService, TestRunService } from '../../proxy/services';
@@ -28,7 +29,7 @@ interface StepRow { id: string; order: number; action: string; expectedResult: s
 
 @Component({
   selector: 'app-run-detail',
-  imports: [FormsModule, RouterLink, FormatDatePipe, TranslatePipe, ModalComponent, CasePickerComponent, ImportDialogComponent, AttachmentsComponent],
+  imports: [RowMenuComponent, FormsModule, RouterLink, FormatDatePipe, TranslatePipe, ModalComponent, CasePickerComponent, ImportDialogComponent, AttachmentsComponent],
   templateUrl: './run-detail.html',
 })
 export class RunDetailComponent {
@@ -271,6 +272,18 @@ export class RunDetailComponent {
   }
 
   // ---- import and export of the results
+  protected transferItems(run: TestRun): RowMenuItem[] {
+    const items: RowMenuItem[] = [{ value: 0, text: this.i18n.t('transfer.exportExcel') }, { value: 1, text: this.i18n.t('transfer.exportCsv') }];
+    if (this.isOpen(run) && this.auth.can(Permissions.TestRuns.Execute)) { items.push({ value: 2, text: this.i18n.t('transfer.importResults') }); }
+    return items;
+  }
+
+  protected onTransfer(choice: number): void {
+    if (choice === 0) { this.exportResults(TransferFormat.Xlsx); }
+    else if (choice === 1) { this.exportResults(TransferFormat.Csv); }
+    else { this.importOpen.set(true); }
+  }
+
   protected exportResults(format: TransferFormat): void {
     this.transfer.exportResults(this.id(), format).subscribe(file => {
       saveFile(file);

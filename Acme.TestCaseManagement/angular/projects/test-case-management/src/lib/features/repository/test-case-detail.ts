@@ -14,21 +14,23 @@ import { AttachmentOwnerType } from '../../proxy/enums';
 import { RequirementService, SharedStepGroupService, TestCaseService } from '../../proxy/services';
 import { AttachmentsComponent } from '../attachments/attachments';
 import { TagInputComponent } from '../tags/tag-input';
+import { RowMenuComponent, RowMenuItem } from '../../core/row-menu';
 import { ConfirmService } from '../../core/confirm';
 import { TestCaseTimelineComponent } from './test-case-timeline';
 import { VersionCompareComponent } from './version-compare';
 
+type DetailTab = 'overview' | 'steps' | 'links' | 'history';
+
 @Component({
   selector: 'app-test-case-detail',
-  imports: [FormsModule, ModalComponent, FormatDatePipe, TranslatePipe, AttachmentsComponent, TagInputComponent, VersionCompareComponent, TestCaseTimelineComponent],
+  imports: [FormsModule, ModalComponent, FormatDatePipe, TranslatePipe, AttachmentsComponent, TagInputComponent, VersionCompareComponent, TestCaseTimelineComponent, RowMenuComponent],
   template: `
     <app-modal [side]="true" [title]="testCase().code + ' - ' + testCase().title" [wide]="true" (closed)="closed.emit()">
-      <div class="row" style="margin-bottom:12px">
+      <div class="detail-meta">
         <span class="badge" [class]="badgeOf('case', testCase().status)">{{ label(statuses, testCase().status) }}</span>
         <span class="badge" [class]="badgeOf('priority', testCase().priority)">{{ 'detail.priorityBadge' | t: { value: label(priorities, testCase().priority) } }}</span>
         <span class="badge" [class]="badgeOf('severity', testCase().severity)">{{ 'detail.severityBadge' | t: { value: label(severities, testCase().severity) } }}</span>
-        <span class="muted">{{ label(kinds, testCase().kind) }} / {{ label(layers, testCase().layer) }} / {{ label(executions, testCase().executionType) }}</span>
-        <span class="muted">{{ 'detail.version' | t: { n: testCase().currentVersion } }}</span>
+        <span class="muted">{{ label(kinds, testCase().kind) }} · {{ label(layers, testCase().layer) }} · {{ label(executions, testCase().executionType) }} · {{ 'detail.version' | t: { n: testCase().currentVersion } }}</span>
       </div>
 
       @if (waitingForReview()) {
@@ -38,142 +40,168 @@ import { VersionCompareComponent } from './version-compare';
         <p class="alert warn" data-test="requirement-banner">{{ 'detail.reqChanged' | t: { code: link.code, fields: fields(link.suspectReason) } }}</p>
       }
 
-      <div class="field">
-        <label>{{ 'tags.title' | t }}</label>
-        <app-tag-input [tags]="tags()" (tagsChange)="tags.set($event)" (edited)="saveTags($event)" [suggestions]="suggestions()" [readonly]="!auth.can(perm.TestCases.Update)" />
+      <div class="tabs" role="tablist" data-test="detail-tabs">
+        @for (t of tabs(); track t.id) {
+          <button type="button" role="tab" [attr.aria-selected]="tab() === t.id" [attr.data-tab]="t.id" (click)="tab.set(t.id)">
+            {{ t.text }}@if (t.count) { <span class="count">{{ t.count }}</span> }
+          </button>
+        }
       </div>
 
-      @if (testCase().description) { <p>{{ testCase().description }}</p> }
-      <div class="grid-2">
-        <div><label>{{ 'form.preconditions' | t }}</label><p>{{ testCase().preconditions || '-' }}</p></div>
-        <div><label>{{ 'form.postconditions' | t }}</label><p>{{ testCase().postconditions || '-' }}</p></div>
-      </div>
+      <section [hidden]="tab() !== 'overview'" data-panel="overview">
+        <div class="field">
+          <label>{{ 'tags.title' | t }}</label>
+          <app-tag-input [tags]="tags()" (tagsChange)="tags.set($event)" (edited)="saveTags($event)" [suggestions]="suggestions()" [readonly]="!auth.can(perm.TestCases.Update)" />
+        </div>
 
-      <h3>{{ 'common.steps' | t }}</h3>
-      <table>
-        <thead><tr><th style="width:36px">#</th><th>{{ 'form.action' | t }}</th><th>{{ 'form.expected' | t }}</th><th>{{ 'form.testData' | t }}</th></tr></thead>
-        <tbody>
-          @for (step of testCase().steps; track step.id) {
-            <tr>
-              <td>{{ step.stepOrder }}</td>
-              <td>
-                @if (step.sharedStepGroupId && step.sharedStepGroupName) { <span class="chip small">{{ 'shared.fromGroup' | t: { name: step.sharedStepGroupName } }}</span> }
-                {{ step.action }}
-              </td>
-              <td>{{ step.expectedResult }}</td><td>{{ step.testData }}</td>
-            </tr>
+        @if (testCase().description) { <p>{{ testCase().description }}</p> }
+        @if (testCase().preconditions || testCase().postconditions) {
+          <div class="grid-2">
+            <div><label>{{ 'form.preconditions' | t }}</label><p>{{ testCase().preconditions || '-' }}</p></div>
+            <div><label>{{ 'form.postconditions' | t }}</label><p>{{ testCase().postconditions || '-' }}</p></div>
+          </div>
+        }
+
+        @if (testCase().steps.length) {
+          <h3>{{ 'common.steps' | t }}</h3>
+          <ol class="step-preview" data-test="step-preview">
+            @for (step of testCase().steps.slice(0, 3); track step.id) { <li>{{ step.action }}</li> }
+          </ol>
+          @if (testCase().steps.length > 3) {
+            <button type="button" class="link" data-test="show-all-steps" (click)="tab.set('steps')">{{ 'detail.showAllSteps' | t: { n: testCase().steps.length } }}</button>
           }
-        </tbody>
-      </table>
+        }
 
-      @if (canSeeRequirements) {
-        <h3>{{ 'detail.reqTitle' | t }}</h3>
-        @if (requirementLinks().length) {
-          <table data-test="requirement-links">
+        <h3>{{ 'att.title' | t }}</h3>
+        <app-attachments [ownerType]="ownerType" [ownerId]="testCase().id" [canWrite]="auth.can(perm.TestCases.Update)" />
+      </section>
+
+      <section [hidden]="tab() !== 'steps'" data-panel="steps">
+        <table>
+          <thead><tr><th style="width:36px">#</th><th>{{ 'form.action' | t }}</th><th>{{ 'form.expected' | t }}</th><th>{{ 'form.testData' | t }}</th></tr></thead>
+          <tbody>
+            @for (step of testCase().steps; track step.id) {
+              <tr>
+                <td>{{ step.stepOrder }}</td>
+                <td>
+                  @if (step.sharedStepGroupId && step.sharedStepGroupName) { <span class="chip small">{{ 'shared.fromGroup' | t: { name: step.sharedStepGroupName } }}</span> }
+                  {{ step.action }}
+                </td>
+                <td>{{ step.expectedResult }}</td><td>{{ step.testData }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+
+        @if (groupsUsed().length) {
+          <h3>{{ 'shared.sectionTitle' | t }}</h3>
+          <table>
             <tbody>
-              @for (link of requirementLinks(); track link.requirementId) {
+              @for (g of groupsUsed(); track g.id) {
                 <tr>
-                  <td><span class="mono">{{ link.code }}</span> {{ link.title }}</td>
-                  <td>
-                    @if (link.isSuspect) {
-                      <span class="badge warn">{{ 'detail.reqToCheck' | t: { date: link.suspectSince ? (link.suspectSince | fdate: 'mediumDate') : '' } }}</span>
-                      <div class="muted">{{ fields(link.suspectReason) }}</div>
-                    } @else {
-                      <span class="badge ok">{{ 'detail.reqUpToDate' | t }}</span>
-                    }
-                  </td>
+                  <td>{{ g.name }}<div class="muted">{{ 'shared.copiedLine' | t: { count: g.count, revision: g.revision } }}</div></td>
+                  <td><span class="badge" [class]="g.outdated ? 'warn' : 'ok'">{{ (g.outdated ? 'shared.behind' : 'shared.upToDate') | t }}</span></td>
                   <td class="right nowrap">
-                    @if (link.isSuspect && auth.can(perm.TestCases.Update)) { <button type="button" class="btn sm primary" (click)="reviewRequirement(link)" data-test="review-requirement">{{ 'rtm.markReviewed' | t }}</button> }
+                    @if (auth.can(perm.TestCases.Update)) {
+                      @if (g.outdated) { <button type="button" class="btn sm primary" (click)="refreshGroup(g.id)">{{ 'shared.update' | t }}</button> }
+                      <button type="button" class="btn sm" (click)="detachGroup(g.id)">{{ 'shared.detach' | t }}</button>
+                    }
                   </td>
                 </tr>
               }
             </tbody>
           </table>
-        } @else {
-          <p class="muted">{{ 'detail.noRequirements' | t }}</p>
         }
-      }
+        @if (auth.can(perm.TestCases.Update) && auth.can(perm.SharedSteps.Default) && library().length) {
+          <div class="row" style="margin-top: 12px">
+            <select [(ngModel)]="pick" name="pick" [attr.aria-label]="'shared.pick' | t" style="width: auto; min-width: 220px">
+              <option value="">{{ 'shared.pickPlaceholder' | t }}</option>
+              @for (g of library(); track g.id) { <option [value]="g.id">{{ g.name }} ({{ 'shared.stepsCount' | t: { n: g.stepCount } }})</option> }
+            </select>
+            <button type="button" class="btn" [disabled]="!pick" (click)="insertGroup()">{{ 'shared.insert' | t }}</button>
+          </div>
+        }
+      </section>
 
-      <h3>{{ 'shared.sectionTitle' | t }}</h3>
-      @if (groupsUsed().length) {
-        <table>
-          <tbody>
-            @for (g of groupsUsed(); track g.id) {
-              <tr>
-                <td>{{ g.name }}<div class="muted">{{ 'shared.copiedLine' | t: { count: g.count, revision: g.revision } }}</div></td>
-                <td><span class="badge" [class]="g.outdated ? 'warn' : 'ok'">{{ (g.outdated ? 'shared.behind' : 'shared.upToDate') | t }}</span></td>
-                <td class="right nowrap">
-                  @if (auth.can(perm.TestCases.Update)) {
-                    @if (g.outdated) { <button type="button" class="btn sm primary" (click)="refreshGroup(g.id)">{{ 'shared.update' | t }}</button> }
-                    <button type="button" class="btn sm" (click)="detachGroup(g.id)">{{ 'shared.detach' | t }}</button>
-                  }
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      } @else {
-        <p class="muted">{{ 'shared.notUsed' | t }}</p>
-      }
-      @if (auth.can(perm.TestCases.Update) && auth.can(perm.SharedSteps.Default) && library().length) {
-        <div class="row">
-          <select [(ngModel)]="pick" name="pick" [attr.aria-label]="'shared.pick' | t" style="width: auto; min-width: 220px">
-            <option value="">{{ 'shared.pickPlaceholder' | t }}</option>
-            @for (g of library(); track g.id) { <option [value]="g.id">{{ g.name }} ({{ 'shared.stepsCount' | t: { n: g.stepCount } }})</option> }
-          </select>
-          <button type="button" class="btn" [disabled]="!pick" (click)="insertGroup()">{{ 'shared.insert' | t }}</button>
-        </div>
-      }
+      <section [hidden]="tab() !== 'links'" data-panel="links">
+        @if (canSeeRequirements) {
+          <h3>{{ 'detail.reqTitle' | t }}</h3>
+          @if (requirementLinks().length) {
+            <table data-test="requirement-links">
+              <tbody>
+                @for (link of requirementLinks(); track link.requirementId) {
+                  <tr>
+                    <td><span class="mono">{{ link.code }}</span> {{ link.title }}</td>
+                    <td>
+                      @if (link.isSuspect) {
+                        <span class="badge warn">{{ 'detail.reqToCheck' | t: { date: link.suspectSince ? (link.suspectSince | fdate: 'mediumDate') : '' } }}</span>
+                        <div class="muted">{{ fields(link.suspectReason) }}</div>
+                      } @else {
+                        <span class="badge ok">{{ 'detail.reqUpToDate' | t }}</span>
+                      }
+                    </td>
+                    <td class="right nowrap">
+                      @if (link.isSuspect && auth.can(perm.TestCases.Update)) { <button type="button" class="btn sm primary" (click)="reviewRequirement(link)" data-test="review-requirement">{{ 'rtm.markReviewed' | t }}</button> }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          } @else {
+            <p class="muted">{{ 'detail.noRequirements' | t }}</p>
+          }
+        }
 
-      <h3>{{ 'detail.history' | t }}</h3>
-      @if (versions().length) {
-        <table>
-          <thead><tr><th>{{ 'common.version' | t }}</th><th>{{ 'detail.frozenTitle' | t }}</th><th>{{ 'common.steps' | t }}</th><th>{{ 'detail.change' | t }}</th><th>{{ 'detail.created' | t }}</th></tr></thead>
-          <tbody>
-            @for (v of versions(); track v.id) {
-              <tr><td>v{{ v.versionNumber }}</td><td>{{ v.title }}</td><td>{{ v.steps.length }}</td><td>{{ v.changeSummary || '-' }}</td><td>{{ v.creationTime | fdate: 'short' }}</td></tr>
-            }
-          </tbody>
-        </table>
-      } @else {
-        <p class="muted">{{ 'detail.noVersion' | t }}</p>
-      }
+        <h3>{{ 'detail.defects' | t }}</h3>
+        @if (defects().length) {
+          <table>
+            <thead><tr><th>{{ 'detail.issue' | t }}</th><th>{{ 'common.severity' | t }}</th><th>{{ 'detail.state' | t }}</th><th>{{ 'detail.run' | t }}</th><th>{{ 'detail.attempt' | t }}</th></tr></thead>
+            <tbody>
+              @for (d of defects(); track d.defectLinkId) {
+                <tr>
+                  <td>@if (d.issueUrl) { <a [href]="d.issueUrl" target="_blank" rel="noopener">{{ d.externalSystem }} {{ d.issueKey }}</a> } @else { {{ d.externalSystem }} {{ d.issueKey }} }</td>
+                  <td><span class="badge" [class]="badgeOf('severity', d.severity)">{{ label(severities, d.severity) }}</span></td>
+                  <td><span class="badge" [class]="d.isResolved ? 'ok' : 'bad'">{{ (d.isResolved ? 'common.resolved' : 'common.open') | t }}</span></td>
+                  <td>{{ d.testRunTitle }} ({{ d.environment }})</td>
+                  <td>{{ 'detail.attemptOn' | t: { n: d.attemptNumber, version: d.versionNumber } }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <p class="muted">{{ 'common.none' | t }}</p>
+        }
+      </section>
 
-      <h3>{{ 'compare.title' | t }}</h3>
-      <app-version-compare [versions]="versions()" />
+      <section [hidden]="tab() !== 'history'" data-panel="history">
+        <h3>{{ 'history.timeline' | t }}</h3>
+        <app-test-case-timeline [testCaseId]="testCase().id" [version]="[testCase(), reviews()]" />
 
-      <h3>{{ 'history.timeline' | t }}</h3>
-      <app-test-case-timeline [testCaseId]="testCase().id" [version]="[testCase(), reviews()]" />
+        <h3>{{ 'detail.history' | t }}</h3>
+        @if (versions().length) {
+          <table>
+            <thead><tr><th>{{ 'common.version' | t }}</th><th>{{ 'detail.frozenTitle' | t }}</th><th>{{ 'common.steps' | t }}</th><th>{{ 'detail.change' | t }}</th><th>{{ 'detail.created' | t }}</th></tr></thead>
+            <tbody>
+              @for (v of versions(); track v.id) {
+                <tr><td>v{{ v.versionNumber }}</td><td>{{ v.title }}</td><td>{{ v.steps.length }}</td><td>{{ v.changeSummary || '-' }}</td><td>{{ v.creationTime | fdate: 'short' }}</td></tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <p class="muted">{{ 'detail.noVersion' | t }}</p>
+        }
 
-      <h3>{{ 'att.title' | t }}</h3>
-      <app-attachments [ownerType]="ownerType" [ownerId]="testCase().id" [canWrite]="auth.can(perm.TestCases.Update)" />
-
-      <h3>{{ 'detail.defects' | t }}</h3>
-      @if (defects().length) {
-        <table>
-          <thead><tr><th>{{ 'detail.issue' | t }}</th><th>{{ 'common.severity' | t }}</th><th>{{ 'detail.state' | t }}</th><th>{{ 'detail.run' | t }}</th><th>{{ 'detail.attempt' | t }}</th></tr></thead>
-          <tbody>
-            @for (d of defects(); track d.defectLinkId) {
-              <tr>
-                <td>@if (d.issueUrl) { <a [href]="d.issueUrl" target="_blank" rel="noopener">{{ d.externalSystem }} {{ d.issueKey }}</a> } @else { {{ d.externalSystem }} {{ d.issueKey }} }</td>
-                <td><span class="badge" [class]="badgeOf('severity', d.severity)">{{ label(severities, d.severity) }}</span></td>
-                <td><span class="badge" [class]="d.isResolved ? 'ok' : 'bad'">{{ (d.isResolved ? 'common.resolved' : 'common.open') | t }}</span></td>
-                <td>{{ d.testRunTitle }} ({{ d.environment }})</td>
-                <td>{{ 'detail.attemptOn' | t: { n: d.attemptNumber, version: d.versionNumber } }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      } @else {
-        <p class="muted">{{ 'common.none' | t }}</p>
-      }
+        <h3>{{ 'compare.title' | t }}</h3>
+        <app-version-compare [versions]="versions()" />
+      </section>
 
       <ng-container slot="footer">
-        @for (target of transitions(); track target) {
+        @for (target of mainTransitions(); track target) {
           <button type="button" class="btn" (click)="changeStatus(target)">{{ actionLabel(target) }}</button>
         }
-        @if (auth.can(perm.TestCases.Delete)) { <button type="button" class="btn danger" (click)="remove()">{{ 'common.delete' | t }}</button> }
-        @if (auth.can(perm.TestCases.Create)) { <button type="button" class="btn" (click)="duplicate()" data-test="duplicate">{{ 'detail.duplicate' | t }}</button> }
+        @if (moreItems().length) {
+          <app-row-menu [label]="'detail.more' | t" [heading]="'detail.more' | t" [items]="moreItems()" (chosen)="onMore($event)" data-test="more-actions" />
+        }
         @if (auth.can(perm.TestCases.Update)) { <button type="button" class="btn primary" (click)="edit.emit(testCase())">{{ 'common.edit' | t }}</button> }
       </ng-container>
     </app-modal>
@@ -283,6 +311,31 @@ export class TestCaseDetailComponent {
       error: () => this.tags.set([...this.testCase().tags]),
     });
   }
+
+  protected readonly tab = signal<DetailTab>('overview');
+  protected readonly tabs = computed(() => [
+    { id: 'overview' as DetailTab, text: this.i18n.t('detail.tab.overview'), count: 0 },
+    { id: 'steps' as DetailTab, text: this.i18n.t('detail.tab.steps'), count: this.testCase().steps.length },
+    { id: 'links' as DetailTab, text: this.i18n.t('detail.tab.links'), count: this.requirementLinks().length + this.defects().length },
+    { id: 'history' as DetailTab, text: this.i18n.t('detail.tab.history'), count: this.versions().length },
+  ]);
+
+  /** The step forward in the life of a test case (submit, approve) stays on the bar; the other moves, the copy and the delete are under "more". */
+  protected mainTransitions(): TestCaseStatus[] {
+    return this.transitions().filter(target => target === TestCaseStatus.UnderReview || target === TestCaseStatus.Approved);
+  }
+
+  private readonly moreActions = computed(() => {
+    const items: { text: string; run: () => void; badge?: string }[] = [];
+    for (const target of this.transitions().filter(t => t !== TestCaseStatus.UnderReview && t !== TestCaseStatus.Approved)) {
+      items.push({ text: this.actionLabel(target), run: () => this.changeStatus(target) });
+    }
+    if (this.auth.can(Permissions.TestCases.Create)) { items.push({ text: this.i18n.t('detail.duplicate'), run: () => this.duplicate() }); }
+    if (this.auth.can(Permissions.TestCases.Delete)) { items.push({ text: this.i18n.t('common.delete'), run: () => this.remove(), badge: 'bad' }); }
+    return items;
+  });
+  protected readonly moreItems = computed<RowMenuItem[]>(() => this.moreActions().map((a, value) => ({ value, text: a.text, badge: a.badge })));
+  protected onMore(index: number): void { this.moreActions()[index]?.run(); }
 
   /** The moves the domain allows, minus those the permissions rule out (approving needs its own permission). */
   protected transitions(): TestCaseStatus[] {

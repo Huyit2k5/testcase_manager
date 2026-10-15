@@ -1,22 +1,24 @@
 // The colours of the module, as custom properties. The module's pages read them through var(--name).
+/* In an application that defines the RnDAdmin tokens (--rnd-*) the pages take their colours from them; anywhere else the second value of each
+   var() is used, which is the module's own palette. --muted stays darker than the host's label colour: that one is too pale for text. */
 @mixin light {
-  --bg: #f4f6fa;
+  --bg: var(--rnd-slate-100, #f4f6fa);
   --surface: #ffffff;
-  --surface-2: #f8fafc;
-  --text: #0f172a;
+  --surface-2: var(--rnd-slate-50, #f8fafc);
+  --text: var(--rnd-slate-800, #0f172a);
   --muted: #64748b;
-  --border: #e2e8f0;
-  --primary: #2563eb;
+  --border: var(--rnd-slate-200, #e2e8f0);
+  --primary: var(--rnd-primary, #2563eb);
   --primary-contrast: #ffffff;
-  --ok: #15803d;
-  --ok-bg: #dcfce7;
-  --bad: #b91c1c;
-  --bad-bg: #fee2e2;
-  --warn: #b45309;
+  --ok: var(--rnd-success-dark, #15803d);
+  --ok-bg: var(--rnd-success-100, #dcfce7);
+  --bad: var(--rnd-danger-dark, #b91c1c);
+  --bad-bg: var(--rnd-danger-100, #fee2e2);
+  --warn: var(--rnd-warning-dark, #b45309);
   --warn-bg: #fef3c7;
   --info: #1d4ed8;
-  --info-bg: #dbeafe;
-  --muted-bg: #e2e8f0;
+  --info-bg: var(--rnd-primary-light, #dbeafe);
+  --muted-bg: var(--rnd-slate-200, #e2e8f0);
   --shadow-lg: 0 20px 50px rgba(15, 23, 42, .25);
   color-scheme: light;
 }

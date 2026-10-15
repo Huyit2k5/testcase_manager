@@ -1,3 +1,4 @@
+import { ProjectSwitchComponent } from '../projects/project-switch';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AuthService, Permissions } from '../../core/auth';
@@ -17,7 +18,7 @@ interface UsageDialog { group: SharedStepGroupSummary; items: SharedStepUsage[];
 /** The library of reusable groups of steps: write a group once, see who uses it, and bring the test cases that are behind up to date. */
 @Component({
   selector: 'app-shared-steps',
-  imports: [FormsModule, TranslatePipe, ModalComponent, IconButtonComponent],
+  imports: [ProjectSwitchComponent, FormsModule, TranslatePipe, ModalComponent, IconButtonComponent],
   templateUrl: './shared-steps.html',
 })
 export class SharedStepsComponent implements OnInit {

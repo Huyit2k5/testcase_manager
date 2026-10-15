@@ -1,3 +1,4 @@
+import { ProjectSwitchComponent } from '../projects/project-switch';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ModalComponent } from '../../core/modal';
@@ -10,6 +11,7 @@ import { PriorityLevel, SeverityLevel, TestCaseStatus, TransferFormat, enumOptio
 import { TestCaseService, TestSuiteService } from '../../proxy/services';
 import { TransferService, saveFile } from '../../proxy/transfer';
 import { ImportDialogComponent } from '../transfer/import-dialog';
+import { RowMenuComponent, RowMenuItem } from '../../core/row-menu';
 import { SuiteNodeComponent } from './suite-node';
 import { SuiteOption, flattenSuites } from './suite-options';
 import { TestCaseDetailComponent } from './test-case-detail';
@@ -22,7 +24,7 @@ const PAGE_SIZE = 20;
 
 @Component({
   selector: 'app-repository',
-  imports: [FormsModule, TranslatePipe, ModalComponent, ImportDialogComponent, SuiteNodeComponent, TestCaseDetailComponent, TestCaseFormComponent],
+  imports: [ProjectSwitchComponent, FormsModule, TranslatePipe, ModalComponent, ImportDialogComponent, SuiteNodeComponent, TestCaseDetailComponent, TestCaseFormComponent, RowMenuComponent],
   templateUrl: './repository.html',
 })
 export class RepositoryComponent implements OnInit {
@@ -214,6 +216,19 @@ export class RepositoryComponent implements OnInit {
 
   // ---- import and export
   /** Downloads what the filters show, from every page, and not just the page that is on screen. */
+  /** Export (what the filters show) and import: one menu instead of three buttons. */
+  protected transferItems(): RowMenuItem[] {
+    const items: RowMenuItem[] = [{ value: 0, text: this.i18n.t('transfer.exportExcel') }, { value: 1, text: this.i18n.t('transfer.exportCsv') }];
+    if (this.auth.can(Permissions.TestCases.Create)) { items.push({ value: 2, text: this.i18n.t('transfer.import') }); }
+    return items;
+  }
+
+  protected onTransfer(choice: number): void {
+    if (choice === 0) { this.exportCases(TransferFormat.Xlsx); }
+    else if (choice === 1) { this.exportCases(TransferFormat.Csv); }
+    else { this.importOpen.set(true); }
+  }
+
   protected exportCases(format: TransferFormat): void {
     this.transfer.exportTestCases({
       format,
@@ -274,6 +289,9 @@ export class RepositoryComponent implements OnInit {
   protected open(testCase: TestCase): void {
     this.caseService.get(testCase.id).subscribe(full => this.detail.set(full));
   }
+
+  /** No search, priority, status or tag is asked for: an empty list is then empty, not filtered. */
+  protected noFilters(): boolean { return !this.search && this.priority === '' && this.status === '' && !this.tag; }
 
   protected newCase(): void {
     this.form.set({ existing: null });

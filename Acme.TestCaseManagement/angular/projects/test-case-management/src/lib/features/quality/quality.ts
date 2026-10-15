@@ -1,3 +1,4 @@
+import { ProjectSwitchComponent } from '../projects/project-switch';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ModalComponent } from '../../core/modal';
@@ -18,7 +19,7 @@ interface ApprovalForm { report: SignOffReport | null; role: string; comment: st
 
 @Component({
   selector: 'app-quality',
-  imports: [FormsModule, FormatDatePipe, TranslatePipe, ModalComponent, IconButtonComponent],
+  imports: [ProjectSwitchComponent, FormsModule, FormatDatePipe, TranslatePipe, ModalComponent, IconButtonComponent],
   templateUrl: './quality.html',
 })
 export class QualityComponent implements OnInit {

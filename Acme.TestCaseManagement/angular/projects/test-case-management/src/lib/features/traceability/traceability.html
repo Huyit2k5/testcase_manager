@@ -1,6 +1,9 @@
 <div class="page">
   <div class="page-head">
-    <h1>{{ 'rtm.title' | t }}</h1>
+    <div class="title-row">
+      <h1>{{ 'rtm.title' | t }}</h1>
+      <app-project-switch />
+    </div>
     @if (auth.can(perm.Requirements.Manage)) { <button type="button" class="btn primary" (click)="newRequirement()">{{ 'rtm.newRequirement' | t }}</button> }
   </div>
 
@@ -8,12 +11,12 @@
     <div class="stats">
       <div class="stat"><b>{{ m.summary.totalRequirements }}</b><span>{{ 'rtm.requirements' | t }}</span></div>
       <div class="stat"><b>{{ m.summary.coveragePercentage }}%</b><span>{{ 'rtm.covered' | t }}</span></div>
-      <div class="stat"><b style="color: var(--ok)">{{ m.summary.passedPercentage }}%</b><span>{{ label(coverageEnum, coverageEnum.Passed) }}</span></div>
-      <div class="stat"><b style="color: var(--bad)">{{ m.summary.failedRequirements }}</b><span>{{ label(coverageEnum, coverageEnum.Failed) }}</span></div>
-      <div class="stat"><b style="color: var(--warn)">{{ m.summary.blockedRequirements }}</b><span>{{ label(coverageEnum, coverageEnum.Blocked) }}</span></div>
+      <div class="stat" data-tone="ok"><b style="color: var(--ok)">{{ m.summary.passedPercentage }}%</b><span>{{ label(coverageEnum, coverageEnum.Passed) }}</span></div>
+      <div class="stat" data-tone="bad"><b style="color: var(--bad)">{{ m.summary.failedRequirements }}</b><span>{{ label(coverageEnum, coverageEnum.Failed) }}</span></div>
+      <div class="stat" data-tone="warn"><b style="color: var(--warn)">{{ m.summary.blockedRequirements }}</b><span>{{ label(coverageEnum, coverageEnum.Blocked) }}</span></div>
       <div class="stat"><b>{{ m.summary.notRunRequirements }}</b><span>{{ label(coverageEnum, coverageEnum.NotRun) }}</span></div>
       <div class="stat"><b>{{ m.summary.uncoveredRequirements }}</b><span>{{ label(coverageEnum, coverageEnum.Uncovered) }}</span></div>
-      <div class="stat" data-test="suspect-stat"><b style="color: var(--warn)">{{ m.summary.suspectRequirements }}</b><span>{{ 'rtm.needReview' | t }}</span></div>
+      <div class="stat" data-tone="warn" data-test="suspect-stat"><b style="color: var(--warn)">{{ m.summary.suspectRequirements }}</b><span>{{ 'rtm.needReview' | t }}</span></div>
     </div>
   }
 
@@ -80,7 +83,7 @@
             </td>
             <td class="right nowrap">
               @if (auth.can(perm.Requirements.Manage)) {
-                <button type="button" class="btn sm" (click)="openLink(row)">{{ 'rtm.linkTests' | t }}</button>
+                <button type="button" tcmIcon="link" [attr.aria-label]="'rtm.linkTests' | t" [attr.title]="'rtm.linkTests' | t" (click)="openLink(row)"></button>
                 <button type="button" tcmIcon="edit" [attr.aria-label]="'common.edit' | t" [attr.title]="'common.edit' | t" (click)="editRequirement(row)"></button>
                 <button type="button" tcmIcon="trash" [attr.aria-label]="'common.delete' | t" [attr.title]="'common.delete' | t" (click)="deleteRequirement(row)"></button>
               }
@@ -89,7 +92,12 @@
         }
       </tbody>
     </table>
-    @if (!(matrix()?.requirements?.length)) { <div class="empty">{{ 'rtm.noMatch' | t }}</div> }
+    @if (!(matrix()?.requirements?.length)) {
+      <div class="empty" [class.rich]="noFilters()">
+        {{ (noFilters() ? 'rtm.none' : 'rtm.noMatch') | t }}
+        @if (noFilters() && auth.can(perm.Requirements.Manage)) { <div><button type="button" class="btn primary" (click)="newRequirement()">{{ 'rtm.newRequirement' | t }}</button></div> }
+      </div>
+    }
   </div>
 </div>
 

@@ -31,6 +31,9 @@ export function apiRoot(): string {
 /** True when the pages should switch to the dark colours with the operating system (the standalone app does; an ABP theme owns its colours). */
 export const TCM_FOLLOW_OS_THEME = new InjectionToken<boolean>('TCM_FOLLOW_OS_THEME', { providedIn: 'root', factory: () => false });
 
+/** True when the pages run inside a host application's own layout (an ABP theme): they then take its spacing, and no page margin of their own. */
+export const TCM_EMBEDDED = new InjectionToken<boolean>('TCM_EMBEDDED', { providedIn: 'root', factory: () => false });
+
 /** A person a test can be assigned to. */
 export interface TcmDirectoryUser { id: string; userName: string; displayName: string }
 

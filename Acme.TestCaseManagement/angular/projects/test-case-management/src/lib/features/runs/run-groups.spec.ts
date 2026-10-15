@@ -48,7 +48,7 @@ describe('the runs under their plans', () => {
 
     expect(groups().length).toBe(3);
     expect(groups()[0].querySelector('.group-name')?.textContent).toContain('Plan 1');
-    expect(groups()[0].textContent).toContain('2 run(s)');
+    expect(groups()[0].textContent).toContain('2 runs');
     expect(groups()[0].querySelector('.group-toggle')?.getAttribute('aria-expanded')).toBe('true');
     expect([...groups()[0].querySelectorAll('tbody tr')].map(r => r.textContent)).toEqual([expect.stringContaining('Run a'), expect.stringContaining('Run b')]);
     expect(groups()[0].textContent).toContain('The first one');
@@ -99,7 +99,7 @@ describe('the runs under their plans', () => {
     open(2);
     const loose = element().querySelector('[data-test=no-plan-group]')!;
     expect(loose.textContent).toContain('Runs without a plan');
-    expect(loose.textContent).toContain('2 run(s)');
+    expect(loose.textContent).toContain('2 runs');
   });
 
   it('switches to the list and remembers the choice', () => {

@@ -11,11 +11,18 @@ export interface RowMenuItem { value: number; text: string; badge?: string }
   selector: 'app-row-menu',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <button #trigger type="button" class="icon-action" aria-haspopup="menu" [attr.aria-expanded]="open()" [attr.aria-label]="label()" [attr.title]="label()" (click)="toggle(trigger)">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true" focusable="false">
-        <circle cx="5" cy="12" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="19" cy="12" r="1.8" />
-      </svg>
-    </button>
+    @if (text()) {
+      <button #trigger type="button" class="btn menu-button" aria-haspopup="menu" [attr.aria-expanded]="open()" [attr.title]="label()" (click)="toggle(trigger)">
+        {{ text() }}
+        <svg viewBox="0 0 12 8" width="10" height="7" aria-hidden="true" focusable="false"><path d="M1 1.5l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      </button>
+    } @else {
+      <button #trigger type="button" class="icon-action" aria-haspopup="menu" [attr.aria-expanded]="open()" [attr.aria-label]="label()" [attr.title]="label()" (click)="toggle(trigger)">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true" focusable="false">
+          <circle cx="5" cy="12" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="19" cy="12" r="1.8" />
+        </svg>
+      </button>
+    }
     @if (open()) {
       <div class="row-menu" role="menu" [attr.aria-label]="label()" [style.top.px]="above() ? null : edge()" [style.bottom.px]="above() ? edge() : null" [style.right.px]="right()">
         <div class="row-menu-title">{{ heading() }}</div>
@@ -35,6 +42,8 @@ export class RowMenuComponent {
   /** What the button is called for people who do not see it ("Change status"). */
   readonly label = input.required<string>();
   readonly heading = input('');
+  /** A word on the button ("Export / Import"); without one the button is a row of three dots. */
+  readonly text = input('');
   readonly items = input.required<RowMenuItem[]>();
   readonly chosen = output<number>();
 

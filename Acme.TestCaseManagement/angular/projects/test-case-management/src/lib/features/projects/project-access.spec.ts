@@ -48,7 +48,7 @@ describe('who may see a project', () => {
   it('marks a restricted project with its members, and offers the access dialog only to someone who manages projects', () => {
     const manager = open(users, '*');
     expect(root(manager).querySelectorAll('[data-test=restricted-badge]').length).toBe(1);
-    expect(root(manager).querySelector('[data-test=restricted-badge]')?.textContent).toContain('2 member(s)');
+    expect(root(manager).querySelector('[data-test=restricted-badge]')?.textContent).toContain('2 members');
     expect(root(manager).querySelectorAll('[data-test=project-access]').length).toBe(2);
 
     const reader = open(users, Permissions.Projects.Default);

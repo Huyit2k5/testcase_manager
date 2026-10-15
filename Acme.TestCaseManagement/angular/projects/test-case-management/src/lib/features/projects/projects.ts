@@ -21,13 +21,11 @@ interface ProjectForm { id: string | null; key: string; name: string; descriptio
   template: `
     <div class="page">
       <div class="page-head">
-        <h1>{{ 'project.title' | t }}</h1>
-        <button type="button" class="btn primary" (click)="newProject()" data-test="new-project">{{ 'project.new' | t }}</button>
-      </div>
-      <p class="muted">{{ 'project.intro' | t }}</p>
-
-      <div class="card">
-        <label class="row"><input type="checkbox" name="archived" [ngModel]="showArchived" (ngModelChange)="toggleArchived($event)" /> {{ 'project.showArchived' | t }}</label>
+        <h1>{{ 'project.title' | t }} <i class="hint" tabindex="0" role="img" [attr.aria-label]="'project.intro' | t" [attr.title]="'project.intro' | t">i</i></h1>
+        <div class="row">
+          <label class="inline"><input type="checkbox" name="archived" [ngModel]="showArchived" (ngModelChange)="toggleArchived($event)" /> {{ 'project.showArchived' | t }}</label>
+          <button type="button" class="btn primary" (click)="newProject()" data-test="new-project">{{ 'project.new' | t }}</button>
+        </div>
       </div>
 
       <div class="card flush">
@@ -53,14 +51,14 @@ interface ProjectForm { id: string | null; key: string; name: string; descriptio
                 <td class="right nowrap">
                   <button type="button" tcmIcon="edit" [attr.aria-label]="'common.edit' | t" [attr.title]="'common.edit' | t" (click)="edit(project)"></button>
                   @if (project.isArchived) {
-                    <button type="button" class="btn sm" (click)="restore(project)">{{ 'project.restore' | t }}</button>
+                    <button type="button" tcmIcon="restore" [attr.aria-label]="'project.restore' | t" [attr.title]="'project.restore' | t" (click)="restore(project)"></button>
                   } @else {
-                    <button type="button" class="btn sm" (click)="archive(project)">{{ 'project.archive' | t }}</button>
+                    <button type="button" tcmIcon="archive" [attr.aria-label]="'project.archive' | t" [attr.title]="'project.archive' | t" (click)="archive(project)"></button>
                   }
                   @if (isEmpty(project)) {
                     <button type="button" tcmIcon="trash" [attr.aria-label]="'common.delete' | t" [attr.title]="'common.delete' | t" (click)="remove(project)"></button>
                   }
-                  @if (auth.can(perm.Projects.Manage)) { <button type="button" class="btn sm" data-test="project-access" (click)="openAccess(project)">{{ 'project.access' | t }}</button> }
+                  @if (auth.can(perm.Projects.Manage)) { <button type="button" tcmIcon="users" data-test="project-access" [attr.aria-label]="'project.access' | t" [attr.title]="'project.access' | t" (click)="openAccess(project)"></button> }
                 </td>
               </tr>
             }

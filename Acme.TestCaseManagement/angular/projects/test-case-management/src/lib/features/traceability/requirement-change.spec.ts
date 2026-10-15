@@ -61,7 +61,7 @@ describe('the requirements whose tests are to be checked, on the traceability pa
     expect(element().querySelector('[data-test=suspect-stat] b')!.textContent!.trim()).toBe('1');
     const badges = element().querySelectorAll('[data-test=suspect-badge]');
     expect(badges.length).toBe(1);
-    expect(badges[0].textContent).toContain('1 test case(s) to check');
+    expect(badges[0].textContent).toContain('1 test case to check');
     const mark = element().querySelectorAll('[data-test=suspect-link]');
     expect(mark.length).toBe(1);
     expect(mark[0].getAttribute('title')).toContain('Title, Acceptance criteria');
@@ -132,7 +132,7 @@ describe('the requirements whose tests are to be checked, on the traceability pa
     });
     fixture.detectChanges();
 
-    expect(element().querySelector('[data-test=change-warning]')!.textContent).toContain('2 linked test case(s)');
+    expect(element().querySelector('[data-test=change-warning]')!.textContent).toContain('2 linked test cases');
   });
 
   it('does not warn for a new requirement, nor for one with no test linked', () => {

@@ -1,6 +1,9 @@
 <div class="page">
   <div class="page-head">
-    <h1>{{ 'auto.title' | t }}</h1>
+    <div class="title-row">
+      <h1>{{ 'auto.title' | t }}</h1>
+      <app-project-switch />
+    </div>
     @if (auth.can(perm.ApiKeys.Manage)) {
       <button type="button" class="btn primary" (click)="newKey()">{{ 'auto.newKey' | t }}</button>
     }

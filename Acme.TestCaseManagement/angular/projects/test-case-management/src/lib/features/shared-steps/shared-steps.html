@@ -1,13 +1,15 @@
 <div class="page">
   <div class="page-head">
-    <h1>{{ 'shared.title' | t }}</h1>
+    <div class="title-row">
+      <h1>{{ 'shared.title' | t }} <i class="hint" tabindex="0" role="img" [attr.aria-label]="'shared.intro' | t" [attr.title]="'shared.intro' | t">i</i></h1>
+      <app-project-switch />
+    </div>
     @if (auth.can(perm.SharedSteps.Manage)) {
       <button type="button" class="btn primary" (click)="newGroup()">{{ 'shared.newGroup' | t }}</button>
     }
   </div>
 
   <section class="card">
-    <p class="muted">{{ 'shared.intro' | t }}</p>
     <form class="row" (ngSubmit)="reload()">
       <input class="grow" name="search" [(ngModel)]="search" [placeholder]="'shared.searchPlaceholder' | t" [attr.aria-label]="'common.search' | t" />
       <button type="submit" class="btn">{{ 'common.search' | t }}</button>
@@ -40,7 +42,10 @@
       </tbody>
     </table>
     @if (!groups().length) {
-      <div class="empty">{{ (loading() ? 'common.loading' : 'shared.none') | t }}</div>
+      <div class="empty" [class.rich]="!loading()">
+        {{ (loading() ? 'common.loading' : 'shared.none') | t }}
+        @if (!loading() && auth.can(perm.SharedSteps.Manage)) { <div><button type="button" class="btn primary" (click)="newGroup()">{{ 'shared.newGroup' | t }}</button></div> }
+      </div>
     }
   </div>
 </div>
