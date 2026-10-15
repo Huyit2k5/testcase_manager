@@ -10,8 +10,8 @@
   @if (matrix(); as m) {
     <div class="stats">
       <div class="stat"><b>{{ m.summary.totalRequirements }}</b><span>{{ 'rtm.requirements' | t }}</span></div>
-      <div class="stat"><b>{{ m.summary.coveragePercentage }}%</b><span>{{ 'rtm.covered' | t }}</span></div>
-      <div class="stat" data-tone="ok"><b style="color: var(--ok)">{{ m.summary.passedPercentage }}%</b><span>{{ label(coverageEnum, coverageEnum.Passed) }}</span></div>
+      <div class="stat"><b>{{ pct(m.summary.coveragePercentage) }}</b><span>{{ 'rtm.covered' | t }}</span></div>
+      <div class="stat" data-tone="ok"><b style="color: var(--ok)">{{ pct(m.summary.passedPercentage) }}</b><span>{{ label(coverageEnum, coverageEnum.Passed) }}</span></div>
       <div class="stat" data-tone="bad"><b style="color: var(--bad)">{{ m.summary.failedRequirements }}</b><span>{{ label(coverageEnum, coverageEnum.Failed) }}</span></div>
       <div class="stat" data-tone="warn"><b style="color: var(--warn)">{{ m.summary.blockedRequirements }}</b><span>{{ label(coverageEnum, coverageEnum.Blocked) }}</span></div>
       <div class="stat"><b>{{ m.summary.notRunRequirements }}</b><span>{{ label(coverageEnum, coverageEnum.NotRun) }}</span></div>
@@ -55,8 +55,9 @@
             </td>
             <td><span class="badge" [class]="badgeOf('rtm', row.status)">{{ label(coverageEnum, row.status) }}</span></td>
             <td>
+              <div class="linked">
               @for (tc of row.testCases; track tc.testCaseId) {
-                <div class="row" style="margin-bottom: 2px" [style.opacity]="tc.countsTowardCoverage ? 1 : .55">
+                <div class="row" [style.opacity]="tc.countsTowardCoverage ? 1 : .55">
                   <span class="mono">{{ tc.code }}</span>
                   <span class="badge" [class]="badgeOf('result', tc.result)">{{ label(resultEnum, tc.result) }}</span>
                   @if (!tc.countsTowardCoverage) { <span class="muted">{{ 'rtm.deprecated' | t }}</span> }
@@ -69,14 +70,15 @@
                   }
                 </div>
               }
+              </div>
               @if (!row.testCases.length) { <span class="muted">{{ 'rtm.noneLinked' | t }}</span> }
             </td>
             <td>
               @for (d of row.blockingDefects; track d.testExecutionId + d.issueKey) {
                 <div>
-                  <span class="badge" [class]="badgeOf('severity', d.severity)">{{ label(severityEnum, d.severity) }}</span>
+                  <span class="badge" [class]="badgeOf('severity', d.severity)">{{ label(severityEnum, d.severity) }}</span>&nbsp;
                   @if (d.issueUrl) { <a [href]="d.issueUrl" target="_blank" rel="noopener">{{ d.issueKey }}</a> } @else { {{ d.issueKey }} }
-                  <span class="muted">{{ 'rtm.via' | t: { code: d.testCaseCode } }}</span>
+                  <span class="muted">&nbsp;{{ 'rtm.via' | t: { code: d.testCaseCode } }}</span>
                 </div>
               }
               @if (!row.blockingDefects.length) { <span class="muted">-</span> }

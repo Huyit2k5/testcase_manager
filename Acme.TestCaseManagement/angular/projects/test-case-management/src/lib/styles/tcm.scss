@@ -73,6 +73,12 @@
   details.more-options > summary { cursor: pointer; font-weight: 600; color: var(--muted); padding: 6px 0; margin-bottom: 8px; }
   details.more-options > summary:hover { color: var(--text); }
   .level-plain { color: var(--muted); }
+  /* The test cases linked to a requirement run on, instead of one under the other. */
+  .linked { display: flex; flex-wrap: wrap; gap: 2px 14px; }
+  .linked > .row { margin: 0; }
+  /* A choice inside a table row is quiet until the pointer is on the row, like the buttons of the row. */
+  td select { border-color: transparent; background-color: transparent; }
+  tr:hover td select, td select:focus { border-color: var(--border); background-color: var(--surface); }
   .step-preview { margin: 0 0 8px; padding-left: 22px; list-style: decimal; }
   .step-preview li { margin-bottom: 2px; }
   &.tcm-embedded { .page { max-width: none; margin: 0; padding: 16px 0 40px; } .project-bar { max-width: none; margin: 0; padding: 0; } }
@@ -94,15 +100,15 @@
 
   .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(108px, 1fr)); gap: 10px; margin-bottom: 16px; }
   .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 8px 12px; box-shadow: var(--rnd-shadow-sm, none); }
-  .stat b { display: block; font-size: 1.35rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.2; }
+  .stat b { display: block; font-size: 1.35rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.2; white-space: nowrap; }
   .stat span { color: var(--muted); font-size: .78rem; }
   /* The tile carries a small icon in a tinted square, as the host's metric cards do; the tone (data-tone) sets its colour and its picture. */
   .stat {
     --tone: var(--primary); --tone-bg: var(--info-bg);
     --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20V10M10 20V4M16 20v-7M22 20H2'/%3E%3C/svg%3E");
-    position: relative; padding-right: 42px;
+    position: relative; padding-right: 40px;
   }
-  .stat::before, .stat::after { content: ''; position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; border-radius: var(--r-sm); }
+  .stat::before, .stat::after { content: ''; position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: var(--r-sm); }
   .stat::after { background: var(--tone-bg); }
   .stat::before { z-index: 1; background: var(--tone); -webkit-mask: var(--icon) center / 14px no-repeat; mask: var(--icon) center / 14px no-repeat; }
   .stat[data-tone=ok] { --tone: var(--ok); --tone-bg: var(--ok-bg);

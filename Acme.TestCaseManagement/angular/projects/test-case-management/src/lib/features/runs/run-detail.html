@@ -25,10 +25,10 @@
       <div class="stat"><b>{{ r.summary.skipped }}</b><span>{{ label(resultEnum, resultEnum.Skipped) }}</span></div>
       <div class="stat"><b>{{ r.summary.untested }}</b><span>{{ label(resultEnum, resultEnum.Untested) }}</span></div>
       <div class="stat">
-        <b>{{ r.summary.completionPercentage }}%</b><span>{{ 'run.executed' | t }}</span>
+        <b>{{ pct(r.summary.completionPercentage) }}</b><span>{{ 'run.executed' | t }}</span>
       </div>
       <div class="stat">
-        <b>{{ r.summary.firstTimePassRate === null ? '-' : r.summary.firstTimePassRate + '%' }}</b><span>{{ 'run.firstPass' | t }}</span>
+        <b>{{ pct(r.summary.firstTimePassRate) }}</b><span>{{ 'run.firstPass' | t }}</span>
       </div>
     </div>
 

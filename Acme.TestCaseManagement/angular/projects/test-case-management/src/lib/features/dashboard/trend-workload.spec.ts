@@ -4,6 +4,7 @@ import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { grant } from '../../core/auth-testing';
 import { Dashboard, FlakyTestList, SprintTrend, SprintTrendPoint, Workload } from '../../proxy/dtos';
+import { pct } from '../../core/ui';
 import { trendChart } from './chart';
 import { DashboardComponent } from './dashboard';
 
@@ -142,7 +143,7 @@ describe('the trend and the workload on the dashboard', () => {
     expect(rows[0].textContent).toContain('3 / 4');
     expect(rows[0].textContent).toContain('6');
     expect(rows[0].textContent).toContain('1h 15m');
-    expect(rows[0].textContent).toContain('66.66%');
+    expect(rows[0].textContent).toContain('66.7%');
     expect(rows[1].textContent).toContain('Pipeline or unknown');
     expect(element().querySelector('[data-test=workload-unassigned]')!.textContent).toContain('3 of 12');
     expect(element().querySelector('[data-test=workload-unassigned]')!.textContent).toContain('2 of them');
@@ -216,6 +217,10 @@ describe('the trend and the workload on the dashboard', () => {
     expect(tip).toContain('Blocked or skipped 1');
     expect(tip).toContain('Tests run 3');
     expect(tip).toContain('Days worked 2');
+  });
+
+  it('writes a percentage with at most one decimal, and a dash for none', () => {
+    expect([64.2857, 100, 0, 16.67, 69.35, null, undefined].map(v => pct(v))).toEqual(['64.3%', '100%', '0%', '16.7%', '69.4%', '-', '-']);
   });
 
   it('writes a time, a change and its colour in a form that reads at a glance', () => {

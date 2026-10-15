@@ -6,7 +6,7 @@ import { AuthService, Permissions } from '../../core/auth';
 import { ToastService } from '../../core/core';
 import { fieldList } from '../../core/field-names';
 import { I18nService, TranslatePipe } from '../../core/i18n/i18n';
-import { badge } from '../../core/ui';
+import { badge, pct } from '../../core/ui';
 import { RtmMatrix, RtmRow, RtmTestCase, TestPlan } from '../../proxy/dtos';
 import { PriorityLevel, RequirementCoverageStatus, SeverityLevel, TestResultStatus, enumOptions } from '../../proxy/enums';
 import { RequirementService, RtmService, TestPlanService } from '../../proxy/services';
@@ -81,6 +81,8 @@ export class TraceabilityComponent implements OnInit {
   }
 
   /** No search, plan, environment, status or "to check" is asked for: an empty matrix is then empty, not filtered. */
+  protected readonly pct = pct;
+
   protected noFilters(): boolean { return !this.search && !this.planId && !this.environment && this.status === '' && !this.onlySuspect; }
 
   protected newRequirement(): void {

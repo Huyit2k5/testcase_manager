@@ -29,6 +29,11 @@ export function badge(kind: 'result' | 'case' | 'plan' | 'run' | 'rtm' | 'signof
   }
 }
 
+/** A percentage as it is shown: at most one decimal (64.2857 is 64.3), so that it fits a figure tile. */
+export function pct(value: number | null | undefined): string {
+  return value === null || value === undefined ? '-' : `${Math.round(value * 10) / 10}%`;
+}
+
 /** Splits a camel/Pascal-case member name into words: UnderReview becomes "Under review". */
 export function words(name: string): string {
   const spaced = name.replace(/([a-z])([A-Z])/g, '$1 $2');

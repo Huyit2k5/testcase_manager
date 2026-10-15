@@ -5,6 +5,7 @@ import { AuthService, Permissions } from '../../core/auth';
 import { ToastService } from '../../core/core';
 import { FormatDatePipe, I18nService, TranslatePipe } from '../../core/i18n/i18n';
 import { UserNames } from '../../core/users';
+import { pct } from '../../core/ui';
 import { Dashboard, FlakyTestList, SprintTrend, TestPlan, TesterWorkload, Workload } from '../../proxy/dtos';
 import { FlakinessLevel } from '../../proxy/enums';
 import { DashboardService, FlakyTestService, TestPlanService } from '../../proxy/services';
@@ -156,7 +157,7 @@ export class DashboardComponent implements OnInit {
     return this.i18n.t('dash.testerTip', { other: t.blocked + t.skipped, items: t.itemsExecuted, days: t.activeDays });
   }
 
-  protected percent(value: number | null): string { return value === null ? this.i18n.t('common.na') : `${value}%`; }
+  protected percent(value: number | null): string { return value === null ? this.i18n.t('common.na') : pct(value); }
 
   protected levelClass(level: number): string {
     return level === FlakinessLevel.Flaky ? 'bad' : level === FlakinessLevel.Watch ? 'warn' : 'muted';
