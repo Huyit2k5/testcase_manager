@@ -4,7 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ConfigStateService, EnvironmentService, PermissionService, RoutesService, SessionStateService, eLayoutType } from '@abp/ng.core';
 import { ToasterService } from '@abp/ng.theme.shared';
 import { NavigationEnd, Router } from '@angular/router';
-import { Observable, catchError, filter, map } from 'rxjs';
+import { Observable, catchError, filter, map, of } from 'rxjs';
 import { AuthService, TCM_API_URL, TCM_BASE_PATH, TCM_EMBEDDED, TCM_LANGUAGE, TCM_FEATURES, TCM_NOTIFIER, TCM_USER_DIRECTORY, TcmDirectoryUser, TcmUser, TcmUserDirectory, errorInterceptor, tcmMenu } from 'test-case-management';
 
 /** Where the module is mounted in the ABP application's router (see the route in app.routes.ts). */
@@ -56,16 +56,23 @@ export class TcmErrorInterceptor implements HttpInterceptor {
 export function abpUserDirectory(): TcmUserDirectory {
   const http = inject(HttpClient);
   const api = inject(EnvironmentService).getApiUrl(undefined).replace(/\/+$/, '');
+  const permissions = inject(PermissionService);
   type Person = { id: string; userName: string; name?: string | null; surname?: string | null; isActive?: boolean };
   const params = { maxResultCount: 100, sorting: 'userName' };
   const people = (items: Person[]): TcmDirectoryUser[] => items
     .filter(u => u.isActive !== false)
     .map(u => ({ id: u.id, userName: u.userName, displayName: [u.name, u.surname].filter(Boolean).join(' ').trim() || u.userName }));
+  const ask = (path: string) => http.get<{ items: Person[] }>(`${api}${path}`, { params }).pipe(map(result => people(result.items)));
   return {
-    list: () => http.get<{ items: Person[] }>(`${api}/api/identity/users/lookup/search`, { params }).pipe(
-      map(result => people(result.items)),
-      catchError(() => http.get<{ items: Person[] }>(`${api}/api/identity/users`, { params }).pipe(map(result => people(result.items)))),
-    ),
+    // The permission is asked first, so that a request that is known to be refused is not made (the browser would show every one as an error).
+    list: () => {
+      const canLookUp = permissions.getGrantedPolicy('AbpIdentity.UserLookup');
+      const canList = permissions.getGrantedPolicy('AbpIdentity.Users');
+      if (canLookUp) {
+        return ask('/api/identity/users/lookup/search').pipe(catchError(() => (canList ? ask('/api/identity/users') : of([] as TcmDirectoryUser[]))));
+      }
+      return canList ? ask('/api/identity/users') : of([] as TcmDirectoryUser[]);
+    },
   };
 }
 
