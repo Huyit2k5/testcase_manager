@@ -38,6 +38,8 @@ export interface TestCase {
   priority: PriorityLevel; severity: SeverityLevel; status: TestCaseStatus; executionType: ExecutionType;
   kind: TestKind; layer: TestLayer; automationId: string | null; isFlaky: boolean; currentVersion: number;
   tags: string[]; steps: TestStep[]; creationTime: string; lastModificationTime: string | null;
+  /** Changes with every save: sent back when updating, so that the save is refused if someone else saved first. */
+  concurrencyStamp?: string | null;
 }
 
 export interface SaveTestCase {
@@ -45,6 +47,8 @@ export interface SaveTestCase {
   preconditions?: string | null; postconditions?: string | null;
   priority: PriorityLevel; severity: SeverityLevel; executionType: ExecutionType; kind: TestKind; layer: TestLayer;
   automationId?: string | null; isFlaky: boolean; tags?: string[] | null; steps: TestStep[]; changeSummary?: string | null;
+  /** On update: the stamp of the test case as it was opened (leave it out to save without the check). */
+  concurrencyStamp?: string | null;
 }
 
 /** What a copy of a test case may be given; all optional. */

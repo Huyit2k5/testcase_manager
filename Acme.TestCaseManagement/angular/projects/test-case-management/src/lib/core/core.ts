@@ -38,6 +38,10 @@ export function describeError(error: HttpErrorResponse, i18n: I18nService): stri
       .map((v: { message: string; members?: string[] }) => (v.members?.length ? `${v.members.join(', ')}: ${v.message}` : v.message))
       .join('\n');
   }
+  // 409 is what the server answers when what the person was changing has been changed by someone else first.
+  if (error.status === 409) {
+    return i18n.t('error.conflict');
+  }
   if (info?.message) {
     return info.message;
   }

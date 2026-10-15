@@ -5,6 +5,8 @@ using Acme.TestCaseManagement.Requirements;
 using Acme.TestCaseManagement.Requirements.Dtos;
 using Acme.TestCaseManagement.Runs;
 using Acme.TestCaseManagement.Runs.Dtos;
+using Acme.TestCaseManagement.SharedSteps;
+using Acme.TestCaseManagement.SharedSteps.Dtos;
 using Acme.TestCaseManagement.Suites;
 using Acme.TestCaseManagement.Suites.Dtos;
 using Acme.TestCaseManagement.TestCases;
@@ -119,6 +121,31 @@ public class ProjectAccess_Tests : TestCaseManagementApplicationTestBase
                 .Code.ShouldBe(TestCaseManagementErrorCodes.DuplicateAutomationId);
             (await Should.ThrowAsync<Volo.Abp.BusinessException>(() => _requirements.CreateAsync(new CreateUpdateRequirementDto { Code = "hide-r1", Title = "Same code", ProjectId = open.Project.Id })))
                 .Code.ShouldBe(TestCaseManagementErrorCodes.DuplicateRequirementCode);
+        }
+    }
+
+    [Fact]
+    public async Task A_Shared_Step_Group_Used_Only_In_A_Project_Out_Of_Reach_Cannot_Be_Deleted_By_Someone_Who_Cannot_See_The_Use()
+    {
+        var open = await MakeAsync("OPEN");
+        var hidden = await MakeAsync("HIDE");
+        var groups = GetRequiredService<ISharedStepGroupAppService>();
+        var group = await groups.CreateAsync(new CreateUpdateSharedStepGroupDto { Name = "Log in", Steps = { new SharedStepDto { Action = "Sign in", ExpectedResult = "Ok" } } });
+        await _testCases.InsertSharedStepsAsync(hidden.TestCase.Id, new InsertSharedStepsDto { SharedStepGroupId = group.Id });
+
+        using (ProjectAccessScope.Restrict(new[] { open.Project.Id }))
+        {
+            (await groups.GetUsageAsync(group.Id)).ShouldBeEmpty();   // what the person sees: nobody uses it
+            (await Should.ThrowAsync<Volo.Abp.BusinessException>(() => groups.DeleteAsync(group.Id)))
+                .Code.ShouldBe(TestCaseManagementErrorCodes.SharedStepGroupInUse);
+        }
+
+        // Out of the scope the use is seen, and still refuses; a group that nobody uses is deleted.
+        (await Should.ThrowAsync<Volo.Abp.BusinessException>(() => groups.DeleteAsync(group.Id))).Code.ShouldBe(TestCaseManagementErrorCodes.SharedStepGroupInUse);
+        var unused = await groups.CreateAsync(new CreateUpdateSharedStepGroupDto { Name = "Unused", Steps = { new SharedStepDto { Action = "x", ExpectedResult = "y" } } });
+        using (ProjectAccessScope.Restrict(new[] { open.Project.Id }))
+        {
+            await groups.DeleteAsync(unused.Id);
         }
     }
 

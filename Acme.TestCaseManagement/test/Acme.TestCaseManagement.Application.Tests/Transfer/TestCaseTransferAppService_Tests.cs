@@ -636,4 +636,45 @@ public class TestCaseTransferAppService_Tests : TestCaseManagementApplicationTes
         var csv = Encoding.UTF8.GetString(await BytesOf(await _transfer.ExportAsync(new ExportTestCasesInput { Format = TransferFormat.Csv })));
         csv.ShouldContain("'=HYPERLINK");
     }
+
+    [Theory]
+    [InlineData(ImportConflictMode.Skip, true)]
+    [InlineData(ImportConflictMode.Update, true)]
+    [InlineData(ImportConflictMode.Update, false)]
+    public async Task A_Code_That_Belongs_To_Another_Project_Is_Refused_By_The_Check_And_By_The_Import_And_The_Test_Case_Is_Left_As_It_Is(ImportConflictMode mode, bool dryRun)
+    {
+        var projects = GetRequiredService<Projects.IProjectAppService>();
+        var projectA = await projects.CreateAsync(new Projects.CreateProjectDto { Key = "PRA", Name = "A" });
+        var projectB = await projects.CreateAsync(new Projects.CreateProjectDto { Key = "PRB", Name = "B" });
+        var suiteA = await _suites.CreateAsync(new CreateTestSuiteDto { Name = "Suite A", ProjectId = projectA.Id });
+        var suiteB = await _suites.CreateAsync(new CreateTestSuiteDto { Name = "Suite B", ProjectId = projectB.Id });
+        var inA = await CreateCaseAsync(suiteA.Id, "SHARED-1");
+
+        var input = Csv(Header + "Suite B,SHARED-1,Changed by an import into B,High,Do,Done,\n", mode, dryRun, suiteB.Id);
+        input.ProjectId = projectB.Id;
+        var report = await _transfer.ImportAsync(input);
+
+        report.Invalid.ShouldBe(1);
+        report.Imported.ShouldBeFalse();
+        report.Items.Single().Messages.Single().ShouldContain("another project");
+        (await _testCases.GetAsync(inA.Id)).Title.ShouldBe("Title of SHARED-1");
+        (await _testCases.GetListAsync(new GetTestCaseListInput { ProjectId = projectB.Id })).Items.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task A_Code_That_Belongs_To_The_Same_Project_Is_Still_Updated_By_An_Import()
+    {
+        var projects = GetRequiredService<Projects.IProjectAppService>();
+        var project = await projects.CreateAsync(new Projects.CreateProjectDto { Key = "PRC", Name = "C" });
+        var suite = await _suites.CreateAsync(new CreateTestSuiteDto { Name = "Suite C", ProjectId = project.Id });
+        var existing = await CreateCaseAsync(suite.Id, "OWN-1");
+
+        var input = Csv(Header + "Suite C,OWN-1,Updated in its own project,High,Do,Done,\n", ImportConflictMode.Update, false, suite.Id);
+        input.ProjectId = project.Id;
+        var report = await _transfer.ImportAsync(input);
+
+        report.Invalid.ShouldBe(0);
+        report.Updated.ShouldBe(1);
+        (await _testCases.GetAsync(existing.Id)).Title.ShouldBe("Updated in its own project");
+    }
 }

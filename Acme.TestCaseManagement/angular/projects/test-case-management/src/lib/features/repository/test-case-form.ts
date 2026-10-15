@@ -17,6 +17,9 @@ import { TCM_FEATURES } from '../../core/host';
   template: `
     <app-modal [side]="true" [title]="existing() ? ('form.editCase' | t: { code: existing()!.code }) : ('form.newCase' | t)" [wide]="true" (closed)="closed.emit()">
       <form id="tc-form" (ngSubmit)="save()">
+        @if (conflict()) {
+          <p class="alert bad" role="alert" data-test="conflict-banner">{{ 'form.conflict' | t }}</p>
+        }
         <div class="form-grid">
           <div class="field">
             <label for="tc-suite">{{ 'form.suite' | t }}</label>
@@ -151,6 +154,8 @@ export class TestCaseFormComponent implements OnInit {
   readonly closed = output<void>();
 
   protected readonly saving = signal(false);
+  /** The save was refused because someone else changed the test case first. */
+  protected readonly conflict = signal(false);
   protected readonly priorities = enumOptions(PriorityLevel);
   protected readonly priorityEnum = PriorityLevel;
   protected readonly severityEnum = SeverityLevel;
@@ -182,7 +187,7 @@ export class TestCaseFormComponent implements OnInit {
         suiteId: existing.suiteId, code: existing.code, title: existing.title, description: existing.description,
         preconditions: existing.preconditions, postconditions: existing.postconditions, priority: existing.priority,
         severity: existing.severity, executionType: existing.executionType, kind: existing.kind, layer: existing.layer,
-        automationId: existing.automationId, isFlaky: existing.isFlaky, changeSummary: '',
+        automationId: existing.automationId, isFlaky: existing.isFlaky, changeSummary: '', concurrencyStamp: existing.concurrencyStamp ?? null,
         steps: existing.steps.map(s => ({
           id: s.id, action: s.action, expectedResult: s.expectedResult, testData: s.testData,
           sharedStepGroupId: s.sharedStepGroupId, sharedStepGroupName: s.sharedStepGroupName,
@@ -246,7 +251,11 @@ export class TestCaseFormComponent implements OnInit {
         this.toast.success(this.i18n.t(existing ? 'form.updated' : 'form.created'));
         this.saved.emit(saved);
       },
-      error: () => this.saving.set(false),
+      error: (error: { status?: number }) => {
+        this.saving.set(false);
+        // Someone saved this test case after it was opened here: nothing was saved, and what was typed stays on the screen to be copied.
+        if (error?.status === 409) { this.conflict.set(true); }
+      },
     });
   }
 }

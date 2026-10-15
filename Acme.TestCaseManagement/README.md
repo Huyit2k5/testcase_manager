@@ -170,6 +170,12 @@ DbSet<Acme.TestCaseManagement.Projects.Project> ITestCaseManagementDbContext.Pro
 
 The table names carry the prefix `Tcm`, so they do not meet the host's tables.
 
+## Saving a test case that someone else changed
+
+`GET test-cases/{id}` and every answer that carries a test case have a `concurrencyStamp`. Send it back in `PUT test-cases/{id}`: if the test case was saved by someone
+else in the meantime, the answer is **409** and nothing is changed, instead of one person silently removing what the other did. Without the stamp the update works as it
+always did (an import, a script): the last save wins. The pages of the module send it; a change of the tags or of the shared steps gives a new stamp, which the page takes over.
+
 ## HTTP API
 
 All routes start with `api/test-case-management/`.

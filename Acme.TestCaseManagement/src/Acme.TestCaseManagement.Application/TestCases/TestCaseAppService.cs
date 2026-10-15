@@ -145,6 +145,12 @@ public class TestCaseAppService : TestCaseManagementAppService, ITestCaseAppServ
         var testCase = await _testCaseRepository.GetAsync(id);
         var before = TestCaseContentSnapshot.Of(testCase);
 
+        // The person edited the test case as it was when the stamp was read: the save is refused (409) if it has changed since.
+        if (!string.IsNullOrEmpty(input.ConcurrencyStamp))
+        {
+            testCase.ConcurrencyStamp = input.ConcurrencyStamp;
+        }
+
         if (!string.IsNullOrWhiteSpace(input.Code))
         {
             await _testCaseManager.ChangeCodeAsync(testCase, input.Code);

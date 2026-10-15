@@ -51,6 +51,13 @@ public class CreateUpdateTestCaseDto
     /// <summary>The complete ordered step list. On update, steps that are omitted are removed.</summary>
     public List<TestStepDto> Steps { get; set; } = new();
 
+    /// <summary>
+    /// On update: the <c>ConcurrencyStamp</c> of the test case as the person opened it. When it is no longer the stamp of the test case (someone
+    /// saved a change in the meantime) the update is refused with HTTP 409 instead of silently overwriting that change. Leave it out to save
+    /// without the check (an import, a script): the last save wins.
+    /// </summary>
+    public string? ConcurrencyStamp { get; set; }
+
     /// <summary>Not used any more: editing an approved test case sends it back to review, and the note is given when it is approved again.</summary>
     [StringLength(TestCaseConsts.MaxChangeSummaryLength)]
     public string? ChangeSummary { get; set; }

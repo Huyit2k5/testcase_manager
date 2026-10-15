@@ -96,6 +96,7 @@
     "TestCaseManagement:SharedStepsUpdatedSummary": "Shared steps '{0}' updated to revision {1}.",
     "TestCaseManagement:InvalidTag": "The tag '{Tag}' cannot be used. A tag has 1 to {Max} characters and no comma, semicolon or control character.",
     "TestCaseManagement:TooManyTags": "A test case can have at most {Max} tags, and this one has {Count}.",
+    "Import:CodeInAnotherProject": "The code {Code} is already used by a test case of another project. A code names one test case of the library: give this one another code.",
     "Import:InvalidTag": "Column Tags: the tag '{Tag}' cannot be used. A tag has 1 to {Max} characters and no comma, semicolon or control character.",
     "Import:TooManyTags": "Column Tags: a test case can have at most {Max} tags, and this one has {Count}.",
     "TestCaseManagement:AttachmentEmpty": "The file is empty.",

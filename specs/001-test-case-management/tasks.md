@@ -435,3 +435,7 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 - [x] T182 A sign-off takes the project of its plan, another is refused (`SignOffProjectMismatch`, en and vi); a test.
 - [x] T183 The uniqueness of a test case code, an Automation ID and a requirement code is checked in every project; a test.
 - [x] T184 Domain 226, Application 464, HttpApi 85 on .NET 10 with SQLite and on .NET 9 with MySQL 8.0.
+- [x] T185 A shared step group in use in a project out of reach is not deleted (use counted in every project); a test.
+- [x] T186 The check of an import refuses a code of another project like the import does; the import works on the test cases of its own project; tests (check and import, three cases, and the same project still updates).
+- [x] T187 `ConcurrencyStamp` in `TestCaseDto` and `CreateUpdateTestCaseDto`; the update is refused with 409 when the test case changed since it was read; tests (Application 5, HTTP 2); the form sends the stamp, shows a banner and keeps what was typed on 409; the detail dialog hands over the test case after the tags are saved; `error.conflict` in describeError (Angular 6 tests).
+- [x] T188 Whole-system check: Domain 226, Application 474, HttpApi 87 on .NET 10 with SQLite and on .NET 9 with MySQL 8.0; Angular 281; the 57 tests of the company application; the application run with a browser (two people editing, tags then edit, plain edit, create, all screens in English and Vietnamese: no error) and with probes of the API (a person outside a restricted project, the sign-off, the codes, the tags).

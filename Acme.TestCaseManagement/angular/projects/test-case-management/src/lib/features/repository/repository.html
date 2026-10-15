@@ -152,7 +152,7 @@
 }
 
 @if (detail(); as testCase) {
-  <app-test-case-detail [testCase]="testCase" (edit)="editCase($event)" (copied)="onCopied($event)" (changed)="onChanged()" (tagsSaved)="loadCases(); loadTagsList()" (stepsChanged)="detail.set($event); loadCases()" (closed)="detail.set(null)" />
+  <app-test-case-detail [testCase]="testCase" (edit)="editCase($event)" (copied)="onCopied($event)" (changed)="onChanged()" (tagsSaved)="detail.set($event); loadCases(); loadTagsList()" (stepsChanged)="detail.set($event); loadCases()" (closed)="detail.set(null)" />
 }
 
 @if (form(); as f) {

@@ -225,7 +225,7 @@ export class TestCaseDetailComponent {
   /** The test case after its shared steps were inserted, refreshed or detached; the dialog shows it. */
   readonly stepsChanged = output<TestCase>();
   /** The tags were saved; the list behind the dialog shows them. */
-  readonly tagsSaved = output<void>();
+  readonly tagsSaved = output<TestCase>();
   readonly closed = output<void>();
 
   protected readonly library = signal<SharedStepGroupSummary[]>([]);
@@ -307,7 +307,7 @@ export class TestCaseDetailComponent {
   /** Tags are labels: saved on their own, with no new version, and the dialog stays open. */
   protected saveTags(tags: string[]): void {
     this.service.setTags(this.testCase().id, tags).subscribe({
-      next: saved => { this.tags.set(saved.tags); this.tagsSaved.emit(); },
+      next: saved => { this.tags.set(saved.tags); this.tagsSaved.emit(saved); },
       error: () => this.tags.set([...this.testCase().tags]),
     });
   }

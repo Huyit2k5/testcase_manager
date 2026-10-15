@@ -119,7 +119,7 @@ public class TestCaseTransferAppService : TestCaseManagementAppService, ITestCas
         }
 
         // Pass 1: check every test case against the library. Nothing is written.
-        var plans = await PlanAsync(sheet, tree, input, messages, SafeFileName(Path.GetFileName(input.File.FileName ?? string.Empty)));
+        var plans = await PlanAsync(sheet, tree, input, messages, SafeFileName(Path.GetFileName(input.File.FileName ?? string.Empty)), project.Id);
 
         foreach (var plan in plans)
         {
@@ -192,15 +192,25 @@ public class TestCaseTransferAppService : TestCaseManagementAppService, ITestCas
 
     /// <summary>Decides, for every test case of the file, what the import would do and why it cannot.</summary>
     private async Task<List<CasePlan>> PlanAsync(
-        ParsedSheet sheet, SuiteTree tree, ImportTestCasesInput input, TransferMessages messages, string fileName)
+        ParsedSheet sheet, SuiteTree tree, ImportTestCasesInput input, TransferMessages messages, string fileName, Guid projectId)
     {
         var canCreateSuites = await AuthorizationService.IsGrantedAsync(TestCaseManagementPermissions.TestSuites.Manage);
         var canUpdate = await AuthorizationService.IsGrantedAsync(TestCaseManagementPermissions.TestCases.Update);
 
         var codes = sheet.Drafts.Select(d => d.Code).Where(c => c.Length > 0).Distinct().ToList();
-        var existing = (await _testCaseRepository.GetListAsync(x => codes.Contains(x.Code), includeDetails: true))
+        // The codes are looked up in every project: an import works on the test cases of its own project, and a code that belongs to another one
+        // (seen by the caller or not) is refused here, in the check, so that the check and the import say the same thing.
+        List<TestCase> sameCode;
+        using (ProjectAccessScope.Unrestrict())
+        {
+            sameCode = await _testCaseRepository.GetListAsync(x => codes.Contains(x.Code), includeDetails: true);
+        }
+
+        var existing = sameCode
+            .Where(x => x.ProjectId == projectId)
             .GroupBy(x => x.Code, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+        var inAnotherProject = sameCode.Where(x => x.ProjectId != projectId).Select(x => x.Code).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         var plans = new List<CasePlan>();
         var automationIds = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -220,6 +230,13 @@ public class TestCaseTransferAppService : TestCaseManagementAppService, ITestCas
 
             existing.TryGetValue(draft.Code, out var current);
             plan.Existing = current;
+
+            if (current == null && inAnotherProject.Contains(draft.Code))
+            {
+                plan.Messages.Add(messages.Get("Import:CodeInAnotherProject", ("Code", draft.Code)));
+                plan.Outcome = ImportOutcome.Invalid;
+                continue;
+            }
 
             if (current == null || input.OnExisting == ImportConflictMode.Update)
             {

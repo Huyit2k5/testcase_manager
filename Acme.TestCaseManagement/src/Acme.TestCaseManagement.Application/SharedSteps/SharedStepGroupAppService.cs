@@ -1,3 +1,4 @@
+using Acme.TestCaseManagement.Projects;
 using Acme.TestCaseManagement.Enums;
 using Acme.TestCaseManagement.Permissions;
 using Acme.TestCaseManagement.Repositories;
@@ -88,7 +89,14 @@ public class SharedStepGroupAppService : TestCaseManagementAppService, ISharedSt
     public virtual async Task DeleteAsync(Guid id)
     {
         var group = await _groups.GetAsync(id);
-        var usage = await _testCases.GetSharedStepUsageCountsAsync();
+
+        // The use is counted in every project, not only in those the caller sees: a group that a test case of a project out of reach still uses
+        // must not be deleted by someone who cannot see that use (the steps would keep a link to a group that is gone).
+        Dictionary<Guid, int> usage;
+        using (ProjectAccessScope.Unrestrict())
+        {
+            usage = await _testCases.GetSharedStepUsageCountsAsync();
+        }
 
         if (usage.GetValueOrDefault(id) > 0)
         {

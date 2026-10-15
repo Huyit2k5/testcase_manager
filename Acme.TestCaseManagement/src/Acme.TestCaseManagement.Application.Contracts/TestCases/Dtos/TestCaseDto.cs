@@ -7,6 +7,9 @@ public class TestCaseDto : AuditedEntityDto<Guid>
 {
     public Guid SuiteId { get; set; }
 
+    /// <summary>Changes with every save of the test case; send it back when updating to be told when someone else changed it first.</summary>
+    public string? ConcurrencyStamp { get; set; }
+
     public string Code { get; set; } = string.Empty;
 
     public string Title { get; set; } = string.Empty;
