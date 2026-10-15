@@ -13,7 +13,7 @@ import { ProjectBarComponent } from './features/projects/project-bar';
   selector: 'tcm-shell',
   imports: [RouterOutlet, ConfirmHostComponent, ProjectBarComponent],
   encapsulation: ViewEncapsulation.None,
-  styleUrl: './styles/tcm.scss',
+  styleUrls: ['./styles/tcm.scss', './styles/tcm-tables.scss', './styles/tcm-charts.scss'],
   // The page is built once the projects are known, and again when the project changes: a page asks for its data when it is built, so it
   // then asks for the data of the new project. (A new outlet shows the route that is already active.)
   template: `
