@@ -3,6 +3,15 @@
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
   <!-- Everything under src/ is a NuGet package; test/ and host/ projects are not (see their own props). -->
+  <!--
+    The packages are built for .NET 10 (ABP 10.x) and for .NET 9 (ABP 9.3.x), so that an application on either one can use them.
+    Directory.Packages.props picks the ABP and Microsoft.Extensions versions by target framework.
+  -->
+  <PropertyGroup>
+    <TargetFramework></TargetFramework>
+    <TargetFrameworks>net10.0;net9.0</TargetFrameworks>
+  </PropertyGroup>
+
   <PropertyGroup>
     <IsPackable>true</IsPackable>
     <PackageReadmeFile>README.md</PackageReadmeFile>

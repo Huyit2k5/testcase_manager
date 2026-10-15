@@ -1299,6 +1299,16 @@ A test case is written from a requirement; when the requirement changes the test
 
 ---
 
+### 4.34. Phase 35: the module on the company application (.NET 9, ABP 9.3.2)
+
+The company application (RnDAdmin) is on ABP 9.3.2, .NET 9, Angular 20 and MySQL 8.0 plus MongoDB, one project, while the module was on .NET 10, ABP 10.6.1 and Angular 22.
+- **Both builds.** `src/` targets `net10.0;net9.0` with versions chosen by target framework; the only code difference is the query filter read (`#if NET10_0_OR_GREATER`, with the same in `Foundation_Tests`).
+  Domain.Tests and Application.Tests are built for both; HttpApi.Tests and the host stay on .NET 10 (OpenAPI 2, `ResourcePermissionGrant`). Result: net10 226 / 461 / 85, net9 226 / 461 (the .NET 9 runtime is not installed, so the net9 build ran on the .NET 10 runtime with `DOTNET_ROLL_FORWARD=Major`; the ABP, EF and Extensions assemblies are the 9.x ones).
+- **Wiring.** Six project references and `Volo.Abp.BlobStoring.FileSystem`; three modules and `AbpBlobStoringFileSystemModule` in `RnDAdminModule`; `RnDAdminDbContext` implements `ITestCaseManagementDbContext` with `[ReplaceDbContext]` (the `Projects` member explicitly, the application has its own), `builder.ConfigureTestCaseManagement(this)`; migration `AddedTestCaseManagement` (24 `Tcm*` tables, additions only); the Angular library copied to `WebApp/ui/projects`, the two paths in `tsconfig.json`, the providers in `app.config.ts`, the route in `app.routes.ts`.
+- **Found on the way.** No blob provider: the first upload answered 500 until the file system module was added (README now says so). Angular 20 refuses `@else if (diff(); as d)` (NG5002): `version-compare.ts` nests an `@if`. The application's own migration chain stops on an empty database at `AddedClaudeTeamsToRole` (NullReference of the MySQL provider on an extension property of `AbpRoles`); the application without the module does the same, so it is not caused by the module. The test database was brought past it by hand.
+- **Tried.** The API of the application (published to a folder with its secrets file emptied, local MySQL 8.0 and MongoDB, connection strings by environment variables): 28 of 29 checks of a flow (the 29th was a wrong route of the script) covering projects, generated codes, copies, bulk approval, requirements, runs and results by step, suspect links, trend, workload, PDF and Excel of a sign-off, an attachment up and down; the Angular application on Angular 20.0.7 built and run in a browser (menu group with six entries, repository, runs, traceability, dashboard and quality pages).
+- **Not tried.** A database with the application's real data; the HTTP tests on .NET 9; the run page, the detail of a test case and the results by step in the browser; the Vietnamese texts; the application's own tests.
+
 ## 5. Security, RBAC & Permissions
 
 Defined in `TestCaseManagementPermissions`:

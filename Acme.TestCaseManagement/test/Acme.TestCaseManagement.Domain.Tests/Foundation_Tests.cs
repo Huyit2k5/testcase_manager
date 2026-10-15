@@ -45,9 +45,14 @@ public class Foundation_Tests : TestCaseManagementDomainTestBase
         }
 
         // ABP registers one query filter per entity that is IMultiTenant and/or ISoftDelete.
-        model.FindEntityType(typeof(Suites.TestSuite))!.GetDeclaredQueryFilters().ShouldNotBeEmpty();
-        model.FindEntityType(typeof(TestCases.TestCase))!.GetDeclaredQueryFilters().ShouldNotBeEmpty();
-        model.FindEntityType(typeof(TestCases.TestCaseVersion))!.GetDeclaredQueryFilters().ShouldNotBeEmpty();
+        foreach (var type in new[] { typeof(Suites.TestSuite), typeof(TestCases.TestCase), typeof(TestCases.TestCaseVersion) })
+        {
+#if NET10_0_OR_GREATER
+            model.FindEntityType(type)!.GetDeclaredQueryFilters().ShouldNotBeEmpty();
+#else
+            model.FindEntityType(type)!.GetQueryFilter().ShouldNotBeNull();
+#endif
+        }
     }
 
     [Theory]

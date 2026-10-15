@@ -415,3 +415,11 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 - [x] T172 Tests: Application 12, the contract and the flow over HTTP, Angular 15.
 - [x] T173 Migration `AddSuspectLinks` on the sandbox; tried in the browser; module tests on SQLite and MySQL 8.4.11 (Domain 226, Application 461, HttpApi 85) and Angular 259; the documentation (business analysis 1.8, README, plan 4.33, spec FR-035, exercise 19 of the guide).
 
+---
+
+## Phase 35: The module on the company application (.NET 9, ABP 9.3.2)
+
+- [x] T174 `src/` built for `net10.0` and `net9.0` (versions by target framework in `Directory.Packages.props`; the query filter read under `#if NET10_0_OR_GREATER`); Domain.Tests and Application.Tests built for both, HttpApi.Tests and the host on .NET 10 only.
+- [x] T175 Wired into the company application (`rndadmin-system_prod`): references, modules, the DbContext (explicit `Projects`), the file system blob provider, migration `AddedTestCaseManagement`, the Angular library, route and providers.
+- [x] T176 Tried: net10 Domain 226, Application 461, HttpApi 85; net9 Domain 226, Application 461; the API of the application (28 of 29 checks, the 29th a wrong route in the script); the Angular application built on Angular 20 and run in a browser.
+- [x] T177 `version-compare.ts` without `@else if (...; as x)` (Angular 20); the README: both builds, the blob provider of a host that has none, the explicit DbSet, Angular 20; the plan (4.34).

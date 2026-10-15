@@ -5,3 +5,6 @@ sandbox/
 .env
 .env.*
 !.env.example
+
+# A copy of the company application the module is tried in (its code is not ours; never commit it).
+/rndadmin-system_prod@5a93e117dae/

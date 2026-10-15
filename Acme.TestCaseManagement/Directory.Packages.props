@@ -4,6 +4,15 @@
     <AbpVersion>10.6.1</AbpVersion>
     <EfCoreVersion>10.0.12</EfCoreVersion>
     <AspNetCoreVersion>10.0.12</AspNetCoreVersion>
+    <ExtensionsVersion>10.0.9</ExtensionsVersion>
+  </PropertyGroup>
+
+  <!-- The .NET 9 build of the packages uses the ABP and Microsoft.Extensions versions of the applications that are still on .NET 9. -->
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net9.0'">
+    <AbpVersion>9.3.2</AbpVersion>
+    <EfCoreVersion>9.0.5</EfCoreVersion>
+    <AspNetCoreVersion>9.0.5</AspNetCoreVersion>
+    <ExtensionsVersion>9.0.5</ExtensionsVersion>
   </PropertyGroup>
 
   <ItemGroup Label="ABP">
@@ -22,8 +31,8 @@
     <PackageVersion Include="Volo.Abp.BlobStoring.FileSystem" Version="$(AbpVersion)" />
     <PackageVersion Include="DocumentFormat.OpenXml" Version="3.3.0" />
     <PackageVersion Include="PDFsharp-MigraDoc" Version="6.2.4" />
-    <PackageVersion Include="Microsoft.Extensions.FileProviders.Embedded" Version="10.0.9" />
-    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.FileProviders.Embedded" Version="$(ExtensionsVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="$(ExtensionsVersion)" />
   </ItemGroup>
 
   <ItemGroup Label="Host (host/ and the HTTP tests only; never a dependency of the packed projects)">

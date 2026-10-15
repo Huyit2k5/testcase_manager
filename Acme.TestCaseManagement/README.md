@@ -1,6 +1,6 @@
 # Acme.TestCaseManagement
 
-A reusable [ABP Framework](https://abp.io) module (.NET 10, ABP 10.x) for managing a test-case library, test
+A reusable [ABP Framework](https://abp.io) module (.NET 10 with ABP 10.x, and .NET 9 with ABP 9.3.x) for managing a test-case library, test
 plans and runs, requirement traceability, and quality-gated release sign-off. It has no dependency on a
 particular host application: users, tenants and auditing come from ABP abstractions only.
 
@@ -127,7 +127,8 @@ This is how the module was added to an application built from ABP's own template
 browser was run against it (plan.md, section 4.14).
 
 **On the server**
-1. The host needs ABP 10.6.1 or newer (a template with 10.6.0 packages fails with NU1605 until its packages are raised).
+1. The host needs ABP 10.6.1 or newer on .NET 10 (a template with 10.6.0 packages fails with NU1605 until its packages are raised), or ABP 9.3.2 or newer on
+   .NET 9: the six projects are built for both, and a host gets the build of its own target framework (see "Hosts on .NET 9" below).
 2. Reference the six `Acme.TestCaseManagement.*` projects (or packages) and add each module to the `[DependsOn]` of the matching layer
    of the host: Domain.Shared, Domain, Application.Contracts, Application, EntityFrameworkCore, HttpApi.
 3. Embed the model in the host's DbContext as in "2. Database" above (`ITestCaseManagementDbContext`, `[ReplaceDbContext]`, one `DbSet`
@@ -135,7 +136,9 @@ browser was run against it (plan.md, section 4.14).
    the module's permissions when the migrator seeds.
 4. For pipelines, after the template's `ForwardIdentityAuthenticationForBearer(...)` call `context.Services.AddTestCaseManagementApiKeyAuthentication();`.
    The template's default scheme then sends a request with `X-Api-Key` to the key scheme and everything else where it went.
-5. Attachments use ABP's BlobStoring; the template already includes the database provider, which works as it is. Choose another provider
+5. Attachments use ABP's BlobStoring; the template already includes the database provider, which works as it is. A host that has no provider (an application
+   that was not made from the template) must add one, for example `Volo.Abp.BlobStoring.FileSystem` with `typeof(AbpBlobStoringFileSystemModule)` in its `[DependsOn]` and the
+   configuration shown under "Attachments"; without it the first upload answers 500 ("No BLOB Storage provider was registered"). Choose another provider
    (file system, S3...) for large volumes.
 6. Add `vi` to the host's `AbpLocalizationOptions.Languages` if users should switch to Vietnamese; the module's resource has both languages.
 
@@ -149,6 +152,22 @@ browser was run against it (plan.md, section 4.14).
 There is no stylesheet to add: the pages load their own, scoped under `.tcm`. The sidebar gets a "Test Case Management" group with
 the pages the user may open, the permissions are managed in the host's own Roles screen, the language follows the host's switch, and
 messages and errors appear in the host's toaster. The pages keep their own light palette and do not follow the theme's dark mode.
+
+## Hosts on .NET 9
+
+The six `src/` projects target `net10.0` and `net9.0`; `Directory.Packages.props` picks ABP 10.6.1 for the first and ABP 9.3.2 (with
+EF Core and Microsoft.Extensions 9.0.5) for the second. The code is the same for both, except one line that reads the query filter of an
+entity (`GetDeclaredQueryFilters` exists in EF Core 10 only; `#if NET10_0_OR_GREATER`). The Domain and Application tests are built for both and pass on both
+(Domain 226, Application 461). The HTTP tests and the sample host stay on .NET 10: the host uses the OpenAPI 2 and ABP 10 APIs.
+
+A host whose own DbContext already has a `DbSet` named like one of the module's (the company application has `Projects` for
+Bitbucket projects) implements that member of `ITestCaseManagementDbContext` explicitly:
+
+```csharp
+DbSet<Acme.TestCaseManagement.Projects.Project> ITestCaseManagementDbContext.Projects => Set<Acme.TestCaseManagement.Projects.Project>();
+```
+
+The table names carry the prefix `Tcm`, so they do not meet the host's tables.
 
 ## HTTP API
 
@@ -409,7 +428,7 @@ symbol packages. Requires the .NET SDK 10 (see `global.json`).
   signatures and do not give non-repudiation.
 - A project has no roles of its own: it only decides who sees it (its members, and whoever manages projects); the permissions are those of the role in the whole application. Codes of test cases and requirements are unique in the whole library, and shared-step groups and gates are shared between projects.
 - The module contains no EF Core migrations. Its UI is Angular only, shared as a source folder (not an npm package), tried with an ABP host on
-  Angular 22.0 and the LeptonX Lite side menu; it keeps its own light palette instead of following the host's theme.
+  Angular 22.0 and the LeptonX Lite side menu, and with the company application on Angular 20.0 (the pages avoid the `@else if (x(); as y)` syntax, which Angular 20 rejects); it keeps its own light palette instead of following the host's theme.
 - Deleting a test case does not delete its attachments; a pipeline cannot attach files yet; files are held in memory while stored (25 MB limit).
 - Flaky detection and the dashboard read the attempts of the lookback window into memory and work on the dates of the server clock.
 - A review of the whole module (plan.md, section 4.16) left these on purpose or for later: idempotency keys are per tenant, so build the key from the

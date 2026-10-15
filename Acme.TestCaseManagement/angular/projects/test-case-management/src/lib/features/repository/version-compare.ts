@@ -30,7 +30,8 @@ const ENUMS: Record<string, object> = {
 
       @if (!from() || !to() || from() === to()) {
         <p class="muted" data-test="compare-same-version">{{ 'compare.pickTwo' | t }}</p>
-      } @else if (diff(); as d) {
+      } @else {
+        @if (diff(); as d) {
         @if (to()!.changeSummary) { <p class="muted" data-test="compare-summary">{{ 'compare.summary' | t: { text: to()!.changeSummary } }}</p> }
         @if (d.identical) {
           <p class="alert" data-test="compare-identical">{{ 'compare.identical' | t }}</p>
@@ -76,6 +77,7 @@ const ENUMS: Record<string, object> = {
               }
             </tbody>
           </table>
+        }
         }
       }
     }

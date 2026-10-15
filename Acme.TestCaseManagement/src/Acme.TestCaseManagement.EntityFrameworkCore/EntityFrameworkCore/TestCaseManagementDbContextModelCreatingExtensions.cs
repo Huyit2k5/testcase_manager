@@ -457,7 +457,12 @@ public static class TestCaseManagementDbContextModelCreatingExtensions
         var contains = System.Linq.Expressions.Expression.Call(visible, typeof(List<Guid>).GetMethod(nameof(List<Guid>.Contains), new[] { typeof(Guid) })!, projectOf.Body);
         var projectFilter = System.Linq.Expressions.Expression.Lambda<Func<T, bool>>(System.Linq.Expressions.Expression.OrElse(unrestricted, contains), parameter);
 
+#if NET10_0_OR_GREATER
         var existing = builder.Metadata.GetDeclaredQueryFilters().FirstOrDefault(filter => filter.Key == null)?.Expression;
+#else
+        // EF Core 9 has a single, unnamed filter per entity.
+        var existing = builder.Metadata.GetQueryFilter();
+#endif
         if (existing == null)
         {
             builder.HasQueryFilter(projectFilter);
