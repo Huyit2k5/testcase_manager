@@ -9,6 +9,7 @@ import { TestSuiteService } from '../proxy/services';
 import { TCM_MENU, tcmMenu } from '../menu';
 import { createTestCaseManagementRoutes } from '../routes';
 import { AuthService, Permissions, TcmUser } from './auth';
+import { grant } from './auth-testing';
 import { ToastService } from './core';
 import { TCM_API_URL, TCM_BASE_PATH, TCM_FEATURES, TCM_LANGUAGE, TCM_NOTIFIER, TcmNotifier } from './host';
 import { I18nService, TranslatedTitleStrategy } from './i18n/i18n';
@@ -116,12 +117,30 @@ describe('the module inside a host', () => {
     for (const item of TCM_MENU) {
       const route = children.find(r => r.path === item.path);
       expect(route, item.path).toBeDefined();
-      // A page of a part that is off has one more guard, after the host's own.
+      // After the host's own guard come the permission of the page and, for a part that is off, the feature switch.
       expect(route?.canActivate?.[0], item.path).toBe(guard);
-      expect(route?.canActivate?.length, item.path).toBe(item.feature ? 2 : 1);
+      expect(route?.canActivate?.length, item.path).toBe(item.feature ? 3 : 2);
     }
-    expect(children.find(r => r.path === 'runs/:id')?.canActivate).toEqual([guard]);
+    expect(children.find(r => r.path === 'runs/:id')?.canActivate?.length).toBe(2);
     expect(children.find(r => r.path === '')?.redirectTo).toBe('repository');
+  });
+
+  it('opens a page only for who may use it, else sends the user to the first page that is allowed, or out of the module', () => {
+    const run = (path: string, base: string, ...granted: string[]) => {
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({ providers: [provideRouter([]), grant(...granted), { provide: TCM_BASE_PATH, useValue: base }] });
+      const [shell] = createTestCaseManagementRoutes();
+      const guard = shell.children!.find(r => r.path === path)!.canActivate!.at(-1) as CanActivateFn;
+      const result = TestBed.runInInjectionContext(() => guard({} as never, {} as never)) as UrlTree | boolean;
+      return result === true || result === false ? result : TestBed.inject(Router).serializeUrl(result);
+    };
+    expect(run('repository', '/tcm', Permissions.TestCases.Default)).toBe(true);
+    expect(run('repository', '/tcm', Permissions.Requirements.Default, Permissions.TestRuns.Default)).toBe('/tcm/dashboard');
+    expect(run('quality', '/tcm', Permissions.TestCases.Default)).toBe('/tcm/repository');
+    expect(run('repository', '/tcm')).toBe('/');
+    expect(run('repository', '')).toBe(false);
+    // Only a child permission ("Update") without the page's own is not enough.
+    expect(run('repository', '/tcm', Permissions.TestCases.Update)).toBe('/');
   });
 
   it('keeps the automation part off until the host turns it on: no menu entry, no page, and the page sends the user to the repository', () => {
@@ -131,7 +150,7 @@ describe('the module inside a host', () => {
     expect(tcmMenu({ automation: true }).map(i => i.path)).toContain('automation');
 
     const [shell] = createTestCaseManagementRoutes();
-    const guard = shell.children!.find(r => r.path === 'automation')!.canActivate!.at(-1) as CanActivateFn;
+    const guard = shell.children!.find(r => r.path === 'automation')!.canActivate!.at(-2) as CanActivateFn;
     const result = TestBed.runInInjectionContext(() => guard({} as never, {} as never)) as UrlTree | boolean;
     expect(result instanceof UrlTree).toBe(true);
     expect(TestBed.inject(Router).serializeUrl(result as UrlTree)).toBe('/test-case-management/repository');
@@ -140,7 +159,7 @@ describe('the module inside a host', () => {
   it('opens the automation page when the host turns the part on', () => {
     TestBed.configureTestingModule({ providers: [provideRouter([]), { provide: TCM_FEATURES, useValue: { automation: true } }] });
     const [shell] = createTestCaseManagementRoutes();
-    const guard = shell.children!.find(r => r.path === 'automation')!.canActivate!.at(-1) as CanActivateFn;
+    const guard = shell.children!.find(r => r.path === 'automation')!.canActivate!.at(-2) as CanActivateFn;
     expect(TestBed.runInInjectionContext(() => guard({} as never, {} as never))).toBe(true);
   });
 
