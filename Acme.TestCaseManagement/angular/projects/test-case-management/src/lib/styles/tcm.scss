@@ -98,19 +98,17 @@
   .split > *, .grid-2 > *, .grid-3 > * { min-width: 0; }
   .card > h2:first-child { margin-top: 0; }
 
-  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(108px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(108px, 1fr)); grid-auto-rows: 1fr; gap: 10px; margin-bottom: 16px; }
   .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); padding: 8px 12px; box-shadow: var(--rnd-shadow-sm, none); }
   .stat b { display: block; font-size: 1.35rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.2; white-space: nowrap; }
   .stat span { color: var(--muted); font-size: .78rem; }
-  /* The tile carries a small icon in a tinted square, as the host's metric cards do; the tone (data-tone) sets its colour and its picture. */
-  .stat {
-    --tone: var(--primary); --tone-bg: var(--info-bg);
-    --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20V10M10 20V4M16 20v-7M22 20H2'/%3E%3C/svg%3E");
-    position: relative; padding-right: 40px;
-  }
-  .stat::before, .stat::after { content: ''; position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: var(--r-sm); }
-  .stat::after { background: var(--tone-bg); }
-  .stat::before { z-index: 1; background: var(--tone); -webkit-mask: var(--icon) center / 14px no-repeat; mask: var(--icon) center / 14px no-repeat; }
+  /* A tile whose figure says good, bad or take care (data-tone) carries a small icon in a tinted square, as the host's metric cards do; a plain figure has none. */
+  .stat { --tone: var(--primary); --tone-bg: var(--info-bg); }
+  .stat[data-tone] { position: relative; }
+  .stat[data-tone] b { padding-right: 28px; }
+  .stat[data-tone]::before, .stat[data-tone]::after { content: ''; position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: var(--r-sm); }
+  .stat[data-tone]::after { background: var(--tone-bg); }
+  .stat[data-tone]::before { z-index: 1; background: var(--tone); -webkit-mask: var(--icon) center / 14px no-repeat; mask: var(--icon) center / 14px no-repeat; }
   .stat[data-tone=ok] { --tone: var(--ok); --tone-bg: var(--ok-bg);
     --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 13l4 4L19 7'/%3E%3C/svg%3E"); }
   .stat[data-tone=bad] { --tone: var(--bad); --tone-bg: var(--bad-bg);
