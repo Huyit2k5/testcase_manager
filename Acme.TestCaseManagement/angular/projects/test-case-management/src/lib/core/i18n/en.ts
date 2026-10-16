@@ -784,6 +784,13 @@ export const en = {
   'mywork.allDone': 'Nothing left to run. Tick "Show finished ones too" to see what is done.',
   'mywork.loadFailed': 'Your work could not be loaded.',
   'mywork.truncated': 'Showing the first 500. Finish some, then reload.',
+  'run.selectedCount': '{count} selected',
+  'run.assignSelected': 'Assign',
+  'run.clearSelection': 'Clear selection',
+  'run.selectAll': 'Select all test cases shown',
+  'run.selectItem': 'Select {code}',
+  'run.assignedMany': '{count} test cases assigned to {name}.',
+  'run.unassignedMany': 'Assignment of {count} test cases cleared.',
 } as const;
 
 export type MessageKey = keyof typeof en;

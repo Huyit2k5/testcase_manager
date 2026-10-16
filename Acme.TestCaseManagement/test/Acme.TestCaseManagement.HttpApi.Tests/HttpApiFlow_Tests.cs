@@ -164,6 +164,10 @@ public class HttpApiFlow_Tests
         var assigned = await qaLead.PutAsync<TestRunDto>(
             $"{Root}/runs/{run.Id}/items/{itemC.Id}/assignee", new AssignTestRunItemDto { AssignedUserId = productOwnerId });
         assigned.Items.Single(item => item.Id == itemC.Id).AssignedUserId.ShouldBe(productOwnerId);
+        var many = await qaLead.PutAsync<TestRunDto>(
+            $"{Root}/runs/{run.Id}/assignee", new AssignTestRunItemsDto { ItemIds = { itemA.Id, itemC.Id }, AssignedUserId = productOwnerId });
+        many.Items.Where(item => item.AssignedUserId == productOwnerId).Select(item => item.Id).ShouldBe(new[] { itemA.Id, itemC.Id }, ignoreOrder: true);
+        await qaLead.PutAsync<TestRunDto>($"{Root}/runs/{run.Id}/assignee", new AssignTestRunItemsDto { ItemIds = { itemA.Id } });
         var myWork = await productOwner.GetAsync<MyWorkDto>($"{Root}/runs/my-work");
         (myWork.Total, myWork.Untested, myWork.NeedAttention).ShouldBe((1, 1, 0));
         var assignedToMe = myWork.Items.Single();

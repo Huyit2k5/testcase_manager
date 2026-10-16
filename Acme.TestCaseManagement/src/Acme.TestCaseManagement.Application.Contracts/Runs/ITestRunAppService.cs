@@ -22,6 +22,9 @@ public interface ITestRunAppService : IApplicationService
 
     Task<TestRunDto> AssignTesterAsync(Guid id, Guid itemId, AssignTestRunItemDto input);
 
+    /// <summary>Assigns the same person (or nobody) to many items of the run at once. Every item must be in the run, or nothing changes.</summary>
+    Task<TestRunDto> AssignTestersAsync(Guid id, AssignTestRunItemsDto input);
+
     /// <summary>Appends a new attempt for the item. Earlier attempts are never changed.</summary>
     Task<TestExecutionDto> ExecuteItemAsync(Guid id, Guid itemId, ExecuteTestItemDto input);
 

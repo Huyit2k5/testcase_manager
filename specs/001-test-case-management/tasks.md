@@ -446,3 +446,4 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 - [x] T190 The page `my-work` (route, menu entry with icon, `Menu:MyWork` in en and vi, texts in en and vi, `TestRunService.myWork`), and `?item=` on the run page that opens the execution form; seven Angular tests.
 - [x] T191 Tried on the company application with a browser (six assigned items, a failed result, the box for the finished ones, the action opens the form of the item).
 - [x] T192 The page of projects offers making, changing, archiving, restoring, deleting and the access of a project only to who holds `Projects.Manage` (found with a read-only user in the browser: the buttons were there and the API answered 403); an Angular test.
+- [x] T193 `PUT runs/{id}/assignee` (`AssignTestersAsync`, `AssignTestRunItemsDto`) and the ticks and the bar on the run page, en and vi texts; Application 2, the HTTP flow and the contract list, Angular 5.

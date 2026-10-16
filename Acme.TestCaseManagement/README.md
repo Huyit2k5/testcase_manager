@@ -193,7 +193,7 @@ All routes start with `api/test-case-management/`.
 | `test-cases/export`, `test-cases/import` | Excel or CSV export (with the list filters) and import of test cases |
 | `runs/{runId}/results/export`, `.../import` | Excel or CSV export of every attempt of a run, and import of results |
 | `plans` | test plans and plan status |
-| `runs` | `GET runs/my-work` (what is assigned to the caller in open runs, across runs and projects; `includeDone=true` adds the finished items), runs, run items, assignment, executions (single and batch, each with optional results by step in `stepResults`), completion, and `DELETE runs/{id}` for a run that has no result yet (a run with one is completed, not deleted) |
+| `runs` | `GET runs/my-work` (what is assigned to the caller in open runs, across runs and projects; `includeDone=true` adds the finished items), runs, run items, assignment (`PUT runs/{id}/items/{itemId}/assignee` for one, `PUT runs/{id}/assignee` with `itemIds` for many), executions (single and batch, each with optional results by step in `stepResults`), completion, and `DELETE runs/{id}` for a run that has no result yet (a run with one is completed, not deleted) |
 | `executions/{executionId}/defects` | link, list, update (severity, resolved) and remove defect links |
 | `requirements` | requirements and their test-case links; `for-test-case/{testCaseId}` the requirements of a test case; `{id}/review` and `{id}/test-cases/{testCaseId}/review` confirm the test cases to check after a change |
 | `rtm` | requirements traceability matrix |

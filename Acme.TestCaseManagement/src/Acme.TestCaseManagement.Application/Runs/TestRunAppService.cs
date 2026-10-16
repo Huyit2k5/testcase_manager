@@ -260,6 +260,23 @@ public class TestRunAppService : TestCaseManagementAppService, ITestRunAppServic
         return await BuildRunDtoAsync(run);
     }
 
+    [Authorize(TestCaseManagementPermissions.TestPlans.Manage)]
+    public virtual async Task<TestRunDto> AssignTestersAsync(Guid id, AssignTestRunItemsDto input)
+    {
+        var run = await _runRepository.GetAsync(id);
+
+        // Find them all first: one that is not in the run refuses the whole request and changes nothing.
+        var items = input.ItemIds.Distinct().Select(itemId => GetItemOrThrow(run, itemId)).ToList();
+        foreach (var item in items)
+        {
+            item.AssignTo(input.AssignedUserId);
+        }
+
+        await _runRepository.UpdateAsync(run, autoSave: true);
+
+        return await BuildRunDtoAsync(run);
+    }
+
     [Authorize(TestCaseManagementPermissions.TestRuns.Execute)]
     public virtual async Task<TestExecutionDto> ExecuteItemAsync(Guid id, Guid itemId, ExecuteTestItemDto input)
     {

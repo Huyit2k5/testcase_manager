@@ -61,6 +61,13 @@ public class TestRunController : TestCaseManagementController, ITestRunAppServic
     }
 
     /// <inheritdoc />
+    [HttpPut("{id:guid}/assignee")]
+    public virtual Task<TestRunDto> AssignTestersAsync(Guid id, AssignTestRunItemsDto input)
+    {
+        return _runAppService.AssignTestersAsync(id, input);
+    }
+
+    /// <inheritdoc />
     [HttpPost("{id:guid}/items/{itemId:guid}/executions")]
     public virtual Task<TestExecutionDto> ExecuteItemAsync(Guid id, Guid itemId, ExecuteTestItemDto input)
     {

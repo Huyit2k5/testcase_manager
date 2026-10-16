@@ -786,4 +786,11 @@ export const vi: Record<MessageKey, string> = {
   'mywork.allDone': 'Không còn gì để chạy. Chọn "Hiện cả việc đã xong" để xem những việc đã làm.',
   'mywork.loadFailed': 'Không tải được việc của bạn.',
   'mywork.truncated': 'Hiện 500 việc đầu. Làm xong bớt rồi tải lại.',
+  'run.selectedCount': 'Đã chọn {count}',
+  'run.assignSelected': 'Gán',
+  'run.clearSelection': 'Bỏ chọn',
+  'run.selectAll': 'Chọn mọi test case đang hiện',
+  'run.selectItem': 'Chọn {code}',
+  'run.assignedMany': 'Đã gán {count} test case cho {name}.',
+  'run.unassignedMany': 'Đã bỏ gán {count} test case.',
 };

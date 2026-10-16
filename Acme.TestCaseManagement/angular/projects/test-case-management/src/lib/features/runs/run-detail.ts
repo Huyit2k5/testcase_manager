@@ -80,6 +80,11 @@ export class RunDetailComponent {
   protected readonly resultOptions = enumOptions(TestResultStatus).filter(o => o.value !== TestResultStatus.Untested);
   protected readonly severityOptions = enumOptions(SeverityLevel);
 
+  /** The ids of the items ticked for a bulk assignment. */
+  protected readonly selected = signal<ReadonlySet<string>>(new Set());
+  /** Who the ticked items go to; '' is nobody (clears the assignment). */
+  protected bulkUser = '';
+
   /** The items that the tester filter lets through. */
   protected readonly visibleItems = computed(() => {
     const items = this.run()?.items ?? [];
@@ -87,6 +92,10 @@ export class RunDetailComponent {
     const me = this.auth.user()?.userId;
     return items.filter(i => filter === 'all' || (filter === 'me' ? !!me && i.assignedUserId === me : filter === 'none' ? !i.assignedUserId : i.assignedUserId === filter));
   });
+
+  /** The ticked items that are shown: one the filter hides is not assigned by surprise. */
+  protected readonly selectedItems = computed(() => this.visibleItems().filter(i => this.selected().has(i.id)));
+  protected readonly allSelected = computed(() => this.visibleItems().length > 0 && this.selectedItems().length === this.visibleItems().length);
 
   /** For each person with work in the run: how many of their items are done and how many there are. */
   protected readonly workload = computed(() => {
@@ -129,6 +138,33 @@ export class RunDetailComponent {
     });
   }
 
+  protected toggleItem(item: TestRunItem): void {
+    this.selected.update(set => { const next = new Set(set); if (!next.delete(item.id)) { next.add(item.id); } return next; });
+  }
+
+  protected toggleAllItems(): void {
+    this.selected.set(this.allSelected() ? new Set() : new Set(this.visibleItems().map(i => i.id)));
+  }
+
+  protected clearSelection(): void { this.selected.set(new Set()); }
+
+  protected assignSelected(): void {
+    const run = this.run();
+    const items = this.selectedItems();
+    if (!run || !items.length || this.busy()) { return; }
+    const userId = this.bulkUser;
+    this.busy.set(true);
+    this.service.assignTesters(run.id, items.map(i => i.id), userId || null).subscribe({
+      next: updated => {
+        this.busy.set(false);
+        if (this.run()?.id === updated.id) { this.run.set(updated); this.selected.set(new Set()); }
+        const key = userId ? 'run.assignedMany' : 'run.unassignedMany';
+        this.toast.success(this.i18n.t(key, { count: items.length, name: this.users.nameOf(userId) ?? '' }));
+      },
+      error: () => this.busy.set(false),
+    });
+  }
+
   protected label(type: object, value: number): string { return this.i18n.enumText(type, value); }
 
   protected isOpen(run: TestRun): boolean { return run.status !== RunStatus.Completed; }
@@ -139,6 +175,7 @@ export class RunDetailComponent {
       // Another run is being opened: do not show the old one meanwhile.
       this.run.set(null);
       this.loadFailed.set(false);
+      this.selected.set(new Set());
     }
     this.service.get(id).subscribe({
       next: run => {

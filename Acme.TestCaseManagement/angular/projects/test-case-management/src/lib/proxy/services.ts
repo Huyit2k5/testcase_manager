@@ -127,6 +127,10 @@ export class TestRunService {
   assignTester(runId: string, itemId: string, assignedUserId: string | null): Observable<TestRun> {
     return this.http.put<TestRun>(`${this.root}/runs/${runId}/items/${itemId}/assignee`, { assignedUserId });
   }
+  /** The same person (null: nobody) for many items at once; one that is not in the run refuses all. */
+  assignTesters(runId: string, itemIds: string[], assignedUserId: string | null): Observable<TestRun> {
+    return this.http.put<TestRun>(`${this.root}/runs/${runId}/assignee`, { itemIds, assignedUserId });
+  }
   /** Only a run that has no result yet; the server refuses one that has. */
   delete(id: string): Observable<void> { return this.http.delete<void>(`${this.root}/runs/${id}`); }
   complete(id: string): Observable<TestRun> { return this.http.post<TestRun>(`${this.root}/runs/${id}/complete`, null); }

@@ -15,6 +15,7 @@
 | Phiên bản | Ngày | Nội dung |
 | :--- | :--- | :--- |
 | 1.0 | 2026-10-12 | Bản đầu đủ nghiệp vụ và sơ đồ, đối chiếu với code |
+| 1.10 | 2026-10-16 | Gán nhiều test case của một run cho một người cùng lúc (UC-39, BR-RUN-17 và 18, API `PUT runs/{id}/assignee`) |
 | 1.9 | 2026-10-16 | Trang "Việc của tôi" xuyên các run (UC-38, BR-RUN-14 đến 16, API `GET runs/my-work`); nút Thực thi mở thẳng form chạy của mục trong run (`?item=`) |
 | 1.8 | 2026-10-13 | Cảnh báo khi yêu cầu đổi: liên kết yêu cầu–test case "cần đối soát" (UC-37, BR-REQ-01 đến 07, API `requirements/{id}/review`, `requirements/for-test-case/{testCaseId}`, cột `IsSuspect`, `SuspectSince`, `SuspectReason`); thêm hai loại dòng lịch sử test case; bỏ mục này khỏi phần chưa làm |
 | 1.7 | 2026-10-13 | Xu hướng chất lượng qua nhiều sprint (UC-35, BR-DASH-01 đến 03, API `dashboard/trend`) và khối lượng công việc theo tester (UC-36, BR-DASH-04 đến 07, API `dashboard/workload`); bỏ mục này khỏi phần chưa làm; sửa lộ trình |
@@ -708,6 +709,7 @@ flowchart LR
 | UC-32 | Xuất biên bản nghiệm thu ra PDF hoặc Excel | QA Lead, PO | PDF A4 để in và ký, hoặc Excel nhiều trang tính; nội dung là số liệu đã chốt lúc nghiệm thu |
 | UC-33 | Nhân bản test case | Tester | Tạo bản sao Nháp của test case, mã kế tiếp của dự án, chép nội dung, bước và tag |
 | UC-35 | Xem xu hướng chất lượng qua các sprint | QA Lead, PM, PO, Tester | Tỷ lệ đạt, tỷ lệ đạt ngay lần đầu, tiến độ và mật độ lỗi của các test plan gần nhất, so với sprint liền trước |
+| UC-39 | Gán nhiều test case cho một người | QA Lead | Trong run chưa hoàn tất, chọn nhiều test case (hoặc tất cả đang hiện) rồi gán cho một người, hoặc bỏ gán, bằng một thao tác |
 | UC-38 | Xem việc của tôi xuyên các run | Tester | Một danh sách các test case được giao cho mình trong mọi run chưa hoàn tất, ở mọi dự án mình được thấy; chưa chạy trước, rồi hỏng, bị chặn; mở thẳng form chạy của từng mục |
 | UC-37 | Đối soát test case khi yêu cầu đổi | BA, Tester, QA Lead | Thấy test case nào cần xem lại sau khi yêu cầu đổi (RTM, chi tiết test case), xác nhận từng test case hoặc cả yêu cầu |
 | UC-36 | Xem khối lượng công việc theo tester | QA Lead | Mỗi người: số test được giao và đã xong, số lần chạy, kết quả, tỷ lệ đạt, thời gian, số ngày làm; số test chưa giao cho ai |
@@ -752,6 +754,8 @@ flowchart LR
 | BR-RUN-14 | "Việc của tôi" gồm các mục giao cho người đang đăng nhập, trong run chưa hoàn tất; dự án mà người đó không được thấy thì không có mặt. Mặc định chỉ hiện mục chưa chạy, Failed, Blocked; chọn "hiện cả việc đã xong" thì thêm Passed và Skipped. Các con số (tổng, chưa chạy, hỏng hoặc bị chặn) luôn tính trên toàn bộ việc được giao | |
 | BR-RUN-15 | Xếp theo trạng thái (chưa chạy, Failed, Blocked, Skipped, Passed), trong cùng trạng thái thì run mới hơn trước rồi đến thứ tự trong run; tối đa 500 mục, vượt thì báo "bị cắt" | |
 | BR-RUN-16 | Chỉ xem: người có quyền xem run (`TestRuns`) thấy trang; nút Thực thi chỉ hiện cho người có `TestRuns.Execute`. Việc gán người chạy vẫn do người có `TestPlans.Manage` làm trong run | |
+| BR-RUN-17 | Gán nhiều mục cần quyền `TestPlans.Manage` như gán từng mục; từ 1 đến 500 mục, mã lặp tính một lần; người được gán rỗng thì bỏ gán | |
+| BR-RUN-18 | Một mục không thuộc run thì từ chối cả yêu cầu và không đổi gì (`TestRunItemNotFound`); trên giao diện chỉ những mục đang hiện (sau bộ lọc người chạy) mới được gán | `TestRunItemNotFound` |
 | BR-RUN-10 | Chỉ xóa được run chưa có kết quả nào (không có lần chạy, mọi item Untested); xóa run cũng xóa các item của nó | `TestRunHasResults` |
 | BR-RUN-03 | `AttemptNumber` = lớn nhất hiện có + 1; không sửa, không xóa attempt | |
 | BR-RUN-04 | Trạng thái hiện tại của item là kết quả attempt cuối | |
@@ -973,7 +977,7 @@ Các migration `AddStepResultsAndCodeCounter` (bảng `TcmTestStepResults` và c
 
 | Hạng mục | Tình trạng hiện tại |
 | :--- | :--- |
-| Trang "việc của tôi": gán nhiều mục cùng lúc, hạn chót, nhóm theo run | Chưa có; trang hiện là một danh sách phẳng |
+| Trang "việc của tôi": hạn chót, nhóm theo run | Chưa có; trang hiện là một danh sách phẳng |
 | Thông báo (trong ứng dụng, email, webhook ra ngoài), cấu hình thông báo | Chưa có |
 | Thông báo khi requirement đổi (gửi cho người phụ trách test case), phiên bản của requirement, tự gỡ dấu khi test case được sửa | Dấu chỉ hiện trên màn hình (RTM, chi tiết test case, lịch sử); chưa gửi cho ai; requirement chưa có phiên bản |
 | Thực thể Milestone riêng | `MilestoneId` là tham chiếu tự do dùng làm phạm vi cho gate và sign-off |

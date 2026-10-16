@@ -632,4 +632,41 @@ public class TestRunAppService_Tests : TestCaseManagementApplicationTestBase
             (await _runs.GetMyWorkAsync(new GetMyWorkInput { ProjectId = Guid.NewGuid() })).Items.ShouldBeEmpty();
         }
     }
+
+    [Fact]
+    public async Task AssignTesters_Should_Give_Many_Items_To_One_Person_And_Leave_The_Others()
+    {
+        var run = await CreateRunWithItemsAsync(4);
+        var ann = Guid.NewGuid();
+        var bob = Guid.NewGuid();
+        await _runs.AssignTesterAsync(run.Id, run.Items[3].Id, new AssignTestRunItemDto { AssignedUserId = bob });
+
+        var result = await _runs.AssignTestersAsync(run.Id, new AssignTestRunItemsDto
+        {
+            // A repeated id counts once.
+            ItemIds = { run.Items[0].Id, run.Items[1].Id, run.Items[1].Id, run.Items[3].Id },
+            AssignedUserId = ann,
+        });
+
+        result.Items.Select(i => i.AssignedUserId).ShouldBe(new Guid?[] { ann, ann, null, ann });
+
+        var cleared = await _runs.AssignTestersAsync(run.Id, new AssignTestRunItemsDto { ItemIds = { run.Items[0].Id, run.Items[3].Id } });
+        cleared.Items.Select(i => i.AssignedUserId).ShouldBe(new Guid?[] { null, ann, null, null });
+    }
+
+    [Fact]
+    public async Task AssignTesters_Should_Refuse_An_Item_That_Is_Not_In_The_Run_And_Change_Nothing()
+    {
+        var run = await CreateRunWithItemsAsync(2);
+        var ann = Guid.NewGuid();
+
+        (await Should.ThrowAsync<BusinessException>(() => _runs.AssignTestersAsync(run.Id, new AssignTestRunItemsDto
+            {
+                ItemIds = { run.Items[0].Id, Guid.NewGuid() },
+                AssignedUserId = ann,
+            })))
+            .Code.ShouldBe(TestCaseManagementErrorCodes.TestRunItemNotFound);
+
+        (await _runs.GetAsync(run.Id)).Items.ShouldAllBe(i => i.AssignedUserId == null);
+    }
 }
