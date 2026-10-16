@@ -233,3 +233,24 @@ describe('the page that manages projects', () => {
     expect(TestBed.inject(ProjectContext).projects().map(p => p.key)).toEqual(['HRM']);
   });
 });
+
+describe('the page that manages projects, for someone who may only read them', () => {
+  it('lists the projects but offers no way to make, change, archive, delete or open the access of one', () => {
+    localStorage.clear();
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([]), grant(Permissions.Projects.Default)] });
+    const http = TestBed.inject(HttpTestingController);
+    const fixture = TestBed.createComponent(ProjectsComponent);
+    fixture.detectChanges();
+    http.expectOne(r => r.url === `${ROOT}/projects`).flush([project(), project({ id: 'p2', key: 'HRM', name: 'HR', suiteCount: 0, testCaseCount: 0, planCount: 0, requirementCount: 0, runCount: 0 })]);
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelectorAll('[data-test=project-row]').length).toBe(2);
+    expect(element.querySelector('[data-test=new-project]')).toBeNull();
+    expect(element.querySelector('[data-test=project-access]')).toBeNull();
+    for (const icon of ['edit', 'archive', 'restore', 'trash']) {
+      expect(element.querySelector(`button[tcmIcon="${icon}"]`), icon).toBeNull();
+    }
+  });
+});

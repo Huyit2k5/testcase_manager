@@ -1,8 +1,8 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { map } from 'rxjs';
+import { ActivatedRoute, RouterLink, convertToParamMap } from '@angular/router';
+import { map, of } from 'rxjs';
 import { ModalComponent } from '../../core/modal';
 import { AuthService, Permissions } from '../../core/auth';
 import { ToastService } from '../../core/core';
@@ -46,7 +46,11 @@ export class RunDetailComponent {
 
   /** Bound from the route parameter :id. */
   /** The run in the address. Read from the route, not bound as an input, so that the host does not have to enable input binding. */
-  readonly id = toSignal(inject(ActivatedRoute).paramMap.pipe(map(params => params.get('id') ?? '')), { initialValue: '' });
+  private readonly route = inject(ActivatedRoute);
+  readonly id = toSignal(this.route.paramMap.pipe(map(params => params.get('id') ?? '')), { initialValue: '' });
+  /** The item that "My work" asks to open for execution (?item=). The run page opens its form once, when the run has loaded. */
+  private readonly requestedItem = toSignal((this.route.queryParamMap ?? of(convertToParamMap({}))).pipe(map(params => params.get('item'))), { initialValue: null });
+  private openedItem: string | null = null;
 
   protected readonly pct = pct;
   protected readonly run = signal<TestRun | null>(null);
@@ -76,6 +80,11 @@ export class RunDetailComponent {
   protected readonly resultOptions = enumOptions(TestResultStatus).filter(o => o.value !== TestResultStatus.Untested);
   protected readonly severityOptions = enumOptions(SeverityLevel);
 
+  /** The ids of the items ticked for a bulk assignment. */
+  protected readonly selected = signal<ReadonlySet<string>>(new Set());
+  /** Who the ticked items go to; '' is nobody (clears the assignment). */
+  protected bulkUser = '';
+
   /** The items that the tester filter lets through. */
   protected readonly visibleItems = computed(() => {
     const items = this.run()?.items ?? [];
@@ -83,6 +92,10 @@ export class RunDetailComponent {
     const me = this.auth.user()?.userId;
     return items.filter(i => filter === 'all' || (filter === 'me' ? !!me && i.assignedUserId === me : filter === 'none' ? !i.assignedUserId : i.assignedUserId === filter));
   });
+
+  /** The ticked items that are shown: one the filter hides is not assigned by surprise. */
+  protected readonly selectedItems = computed(() => this.visibleItems().filter(i => this.selected().has(i.id)));
+  protected readonly allSelected = computed(() => this.visibleItems().length > 0 && this.selectedItems().length === this.visibleItems().length);
 
   /** For each person with work in the run: how many of their items are done and how many there are. */
   protected readonly workload = computed(() => {
@@ -125,6 +138,33 @@ export class RunDetailComponent {
     });
   }
 
+  protected toggleItem(item: TestRunItem): void {
+    this.selected.update(set => { const next = new Set(set); if (!next.delete(item.id)) { next.add(item.id); } return next; });
+  }
+
+  protected toggleAllItems(): void {
+    this.selected.set(this.allSelected() ? new Set() : new Set(this.visibleItems().map(i => i.id)));
+  }
+
+  protected clearSelection(): void { this.selected.set(new Set()); }
+
+  protected assignSelected(): void {
+    const run = this.run();
+    const items = this.selectedItems();
+    if (!run || !items.length || this.busy()) { return; }
+    const userId = this.bulkUser;
+    this.busy.set(true);
+    this.service.assignTesters(run.id, items.map(i => i.id), userId || null).subscribe({
+      next: updated => {
+        this.busy.set(false);
+        if (this.run()?.id === updated.id) { this.run.set(updated); this.selected.set(new Set()); }
+        const key = userId ? 'run.assignedMany' : 'run.unassignedMany';
+        this.toast.success(this.i18n.t(key, { count: items.length, name: this.users.nameOf(userId) ?? '' }));
+      },
+      error: () => this.busy.set(false),
+    });
+  }
+
   protected label(type: object, value: number): string { return this.i18n.enumText(type, value); }
 
   protected isOpen(run: TestRun): boolean { return run.status !== RunStatus.Completed; }
@@ -135,12 +175,14 @@ export class RunDetailComponent {
       // Another run is being opened: do not show the old one meanwhile.
       this.run.set(null);
       this.loadFailed.set(false);
+      this.selected.set(new Set());
     }
     this.service.get(id).subscribe({
       next: run => {
         if (request !== this.loadRequest) { return; }
         this.loadFailed.set(false);
         this.run.set(run);
+        this.openRequestedItem(run);
       },
       error: () => {
         if (request !== this.loadRequest) { return; }
@@ -148,6 +190,14 @@ export class RunDetailComponent {
         if (this.run()?.id !== id) { this.loadFailed.set(true); }
       },
     });
+  }
+
+  private openRequestedItem(run: TestRun): void {
+    const wanted = this.requestedItem();
+    if (!wanted || wanted === this.openedItem) { return; }
+    this.openedItem = wanted;
+    const item = run.items.find(i => i.id === wanted);
+    if (item && this.isOpen(run) && this.auth.can(Permissions.TestRuns.Execute)) { this.startExecute(item); }
   }
 
   protected reload(): void {

@@ -1,0 +1,63 @@
+<div class="page">
+  <div class="page-head">
+    <div class="title-row">
+      <h1>{{ 'mywork.title' | t }}</h1>
+    </div>
+    <div class="row">
+      <label class="inline"><input type="checkbox" name="includeDone" data-test="include-done" [(ngModel)]="includeDone" (ngModelChange)="reload()" /> {{ 'mywork.includeDone' | t }}</label>
+      <button type="button" class="btn" (click)="reload()">{{ 'mywork.refresh' | t }}</button>
+    </div>
+  </div>
+
+  @if (work(); as w) {
+    <div class="stats" data-test="stats">
+      <div class="stat"><b>{{ w.total }}</b><span>{{ 'mywork.total' | t }}</span></div>
+      <div class="stat" data-tone="warn"><b>{{ w.untested }}</b><span>{{ 'mywork.untested' | t }}</span></div>
+      <div class="stat" data-tone="bad"><b>{{ w.needAttention }}</b><span>{{ 'mywork.needAttention' | t }}</span></div>
+    </div>
+
+    @if (failed()) { <div class="alert bad" role="alert">{{ 'mywork.loadFailed' | t }}</div> }
+
+    @if (w.items.length) {
+      <div class="card">
+        <table data-test="my-work-table">
+          <thead>
+            <tr>
+              <th>{{ 'common.status' | t }}</th><th>{{ 'run.colTestCase' | t }}</th><th>{{ 'mywork.colRun' | t }}</th>
+              <th>{{ 'common.environment' | t }}</th><th>{{ 'run.colAttempts' | t }}</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of w.items; track item.runItemId) {
+              <tr>
+                <td><span class="badge" [class]="badgeOf('result', item.currentStatus)">{{ label(item.currentStatus) }}</span></td>
+                <td>
+                  @if (item.testCaseCode) { <b>{{ item.testCaseCode }}</b> }
+                  {{ item.testCaseTitle }}
+                </td>
+                <td>
+                  <a [routerLink]="[base + '/runs', item.runId]">{{ item.runTitle }}</a>
+                  @if (showProject()) { <div class="muted">{{ projectName(item.projectId) }}</div> }
+                </td>
+                <td>{{ item.environment }}</td>
+                <td>{{ item.attemptCount }}</td>
+                <td class="right nowrap">
+                  @if (auth.can(perm.TestRuns.Execute)) {
+                    <a class="btn sm primary" data-test="run-item" [routerLink]="[base + '/runs', item.runId]" [queryParams]="{ item: item.runItemId }">{{ (item.attemptCount ? 'run.retest' : 'run.execute') | t }}</a>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        @if (w.truncated) { <p class="muted" data-test="truncated">{{ 'mywork.truncated' | t }}</p> }
+      </div>
+    } @else {
+      <div class="empty" data-test="my-work-empty">{{ (w.total ? 'mywork.allDone' : 'mywork.empty') | t }}</div>
+    }
+  } @else if (failed()) {
+    <div class="alert bad" role="alert">{{ 'mywork.loadFailed' | t }}</div>
+  } @else {
+    <div class="empty">{{ 'common.loading' | t }}</div>
+  }
+</div>

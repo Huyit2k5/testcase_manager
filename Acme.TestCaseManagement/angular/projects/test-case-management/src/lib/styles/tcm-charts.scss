@@ -1,0 +1,77 @@
+/* Part of the stylesheet of the module (see tcm.scss): split so that no file passes the size budget a host sets for the style of a component. */
+.tcm {
+  .chart { width: 100%; height: auto; display: block; }
+  /* The trend uses the whole width of the page: without a limit its height grows with it, and a single point sits in a field of white. */
+  .chart[data-test=trend-chart] { max-height: 260px; }
+  .chart text { fill: var(--muted); font-size: 10px; }
+  .chart .grid { stroke: var(--border); stroke-width: 1; }
+  .chart .today { stroke: var(--muted); stroke-dasharray: 3 3; stroke-width: 1; }
+  .chart .ideal { fill: none; stroke: var(--muted); stroke-width: 2; stroke-dasharray: 6 4; }
+  .chart .actual { fill: none; stroke: var(--primary); stroke-width: 2.5; }
+  .chart .dot { fill: var(--primary); stroke: var(--surface); stroke-width: 1.5; }
+  .chart .passed { fill: var(--ok); }
+  .chart .failed { fill: var(--bad); }
+  .chart .other { fill: var(--warn); }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; color: var(--muted); font-size: .8rem; margin: 6px 0 10px; }
+  .legend .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; background: var(--muted); }
+  .legend .swatch.actual { background: var(--primary); }
+  .legend .swatch.ideal { background: var(--muted); opacity: .55; }
+  .legend .swatch.passed { background: var(--ok); }
+  .legend .swatch.failed { background: var(--bad); }
+  .legend .swatch.other { background: var(--warn); }
+  .scorebar { display: inline-block; width: 70px; height: 8px; border-radius: 4px; background: var(--border); vertical-align: middle; overflow: hidden; }
+  .scorebar i { display: block; height: 100%; background: var(--muted); }
+  .scorebar i.bad { background: var(--bad); }
+  .scorebar i.warn { background: var(--warn); }
+  .stat em { font-style: normal; font-weight: 600; margin-left: 4px; }
+  .stat em.good { color: var(--ok); }
+  .stat em.low { color: var(--bad); }
+  p em { font-style: normal; font-weight: 600; }
+  p em.good { color: var(--ok); }
+  p em.low { color: var(--bad); }
+  label.inline { display: inline-flex; gap: 6px; align-items: center; font-size: .85rem; }
+  label.inline input { width: auto; }
+
+  .dropzone { border: 2px dashed var(--border); border-radius: 8px; padding: 14px; text-align: center; color: var(--muted); cursor: pointer; margin-bottom: 10px; }
+  .dropzone:hover, .dropzone:focus, .dropzone.over { border-color: var(--primary); color: var(--primary); outline: none; }
+  .files { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .files li { display: flex; align-items: center; gap: 12px; }
+  .files .info { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .thumb { width: 56px; height: 42px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); flex: none; }
+  .thumb.kind { display: grid; place-items: center; font-size: .7rem; font-weight: 700; color: var(--muted); }
+  .thumb-button { border: 0; background: none; padding: 0; cursor: zoom-in; flex: none; line-height: 0; }
+  .preview { max-height: 70vh; overflow: auto; text-align: center; }
+  .preview img { max-width: 100%; height: auto; border-radius: 6px; }
+  .preview pre { text-align: left; margin: 0; padding: 12px; background: var(--surface-2, #f1f5f9); border: 1px solid var(--border); border-radius: 8px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: .82rem; }
+  .confirm-body { display: flex; gap: 14px; align-items: flex-start; }
+  .confirm-body p { margin: 2px 0 0; line-height: 1.5; }
+  .confirm-icon { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: var(--info-bg); color: var(--info); }
+  .confirm-icon.danger { background: var(--bad-bg); color: var(--bad); }
+  .btn.danger-solid { background: var(--bad); border-color: var(--bad); color: #fff; }
+  .btn.danger-solid:hover:not(:disabled) { filter: brightness(1.08); background: var(--bad); }
+  button.link { background: none; border: 0; padding: 0; color: var(--primary); cursor: pointer; font: inherit; text-align: left; text-decoration: underline; }
+
+  .chips { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; background: var(--info-bg); color: var(--info); font-size: .8rem; font-weight: 600; }
+  .chip.small { font-size: .72rem; padding: 1px 7px; }
+  .chip button { background: none; border: 0; padding: 0; line-height: 1; cursor: pointer; color: inherit; font-size: 1rem; }
+  .tag-input { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; background: var(--surface); }
+  .tag-input.readonly { border-color: transparent; padding-left: 0; }
+  .tag-input input { flex: 1; min-width: 140px; border: 0; outline: none; padding: 2px 0; background: transparent; }
+
+  .diff-ins { background: var(--ok-bg); color: var(--ok); border-radius: 3px; padding: 0 2px; }
+  .diff-del { background: var(--bad-bg); color: var(--bad); text-decoration: line-through; border-radius: 3px; padding: 0 2px; }
+  .diff-row.added td:first-child, .diff-row.removed td:first-child, .diff-row.changed td:first-child, .diff-row.moved td:first-child { border-left: 3px solid var(--border); }
+  .diff-row.added td:first-child { border-left-color: var(--ok); }
+  .diff-row.removed td:first-child { border-left-color: var(--bad); }
+  .diff-row.changed td:first-child { border-left-color: var(--warn); }
+  .diff-row.moved td:first-child { border-left-color: var(--info); }
+  .timeline { list-style: none; margin: 0; padding: 0; }
+  .timeline li { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .timeline li:last-child { border-bottom: 0; }
+  .timeline-when { min-width: 130px; font-size: .82rem; }
+  .timeline-what { flex: 1; min-width: 200px; }
+
+  .member-list { list-style: none; margin: 0 0 10px; padding: 0; }
+  .member-list li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+}

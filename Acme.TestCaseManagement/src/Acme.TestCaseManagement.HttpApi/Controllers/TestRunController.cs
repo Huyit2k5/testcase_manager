@@ -26,6 +26,13 @@ public class TestRunController : TestCaseManagementController, ITestRunAppServic
     }
 
     /// <inheritdoc />
+    [HttpGet("my-work")]
+    public virtual Task<MyWorkDto> GetMyWorkAsync([FromQuery] GetMyWorkInput input)
+    {
+        return _runAppService.GetMyWorkAsync(input);
+    }
+
+    /// <inheritdoc />
     [HttpGet]
     public virtual Task<PagedResultDto<TestRunDto>> GetListAsync([FromQuery] GetTestRunListInput input)
     {
@@ -51,6 +58,13 @@ public class TestRunController : TestCaseManagementController, ITestRunAppServic
     public virtual Task<TestRunDto> AssignTesterAsync(Guid id, Guid itemId, AssignTestRunItemDto input)
     {
         return _runAppService.AssignTesterAsync(id, itemId, input);
+    }
+
+    /// <inheritdoc />
+    [HttpPut("{id:guid}/assignee")]
+    public virtual Task<TestRunDto> AssignTestersAsync(Guid id, AssignTestRunItemsDto input)
+    {
+        return _runAppService.AssignTestersAsync(id, input);
     }
 
     /// <inheritdoc />

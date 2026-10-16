@@ -75,9 +75,11 @@ public class OpenApiContract_Tests
 
         "TestRun_GetList GET /runs",
         "TestRun_Get GET /runs/{id}",
+        "TestRun_GetMyWork GET /runs/my-work",
         "TestRun_Create POST /runs",
         "TestRun_AddItems POST /runs/{id}/items",
         "TestRun_AssignTester PUT /runs/{id}/items/{itemId}/assignee",
+        "TestRun_AssignTesters PUT /runs/{id}/assignee",
         "TestRun_ExecuteItem POST /runs/{id}/items/{itemId}/executions",
         "TestRun_GetExecutions GET /runs/{id}/items/{itemId}/executions",
         "TestRun_BatchExecute POST /runs/{id}/executions/batch",

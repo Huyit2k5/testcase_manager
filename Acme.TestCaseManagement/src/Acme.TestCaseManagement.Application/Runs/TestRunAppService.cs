@@ -54,6 +54,101 @@ public class TestRunAppService : TestCaseManagementAppService, ITestRunAppServic
         return await BuildRunDtoAsync(await _runRepository.GetAsync(id));
     }
 
+    public virtual async Task<MyWorkDto> GetMyWorkAsync(GetMyWorkInput input)
+    {
+        var result = new MyWorkDto();
+        var me = CurrentUser.Id;
+        if (me == null)
+        {
+            return result;
+        }
+
+        // The runs query carries the project filters, so what the caller may not see is not found here either.
+        var items = await _itemRepository.GetQueryableAsync();
+        var runs = await _runRepository.GetQueryableAsync();
+        var mine = from i in items
+                   join r in runs on i.TestRunId equals r.Id
+                   where i.AssignedUserId == me && r.Status != RunStatus.Completed
+                   select new { Item = i, Run = r };
+
+        mine = mine.WhereIf(input.ProjectId.HasValue, x => x.Run.ProjectId == input.ProjectId);
+
+        var rows = await AsyncExecuter.ToListAsync(mine.Select(x => new
+        {
+            x.Item.Id,
+            x.Item.TestRunId,
+            x.Item.TestCaseVersionId,
+            x.Item.Sequence,
+            x.Item.CurrentStatus,
+            RunTitle = x.Run.Title,
+            x.Run.Environment,
+            x.Run.ProjectId,
+            x.Run.CreationTime,
+        }));
+
+        result.Total = rows.Count;
+        result.Untested = rows.Count(r => r.CurrentStatus == TestResultStatus.Untested);
+        result.NeedAttention = rows.Count(r => r.CurrentStatus is TestResultStatus.Failed or TestResultStatus.Blocked);
+
+        const int limit = 500;
+        var wanted = rows
+            .Where(r => input.IncludeDone || r.CurrentStatus is not (TestResultStatus.Passed or TestResultStatus.Skipped))
+            .OrderBy(r => StatusOrder(r.CurrentStatus))
+            .ThenByDescending(r => r.CreationTime)
+            .ThenBy(r => r.TestRunId)
+            .ThenBy(r => r.Sequence)
+            .ToList();
+        result.Truncated = wanted.Count > limit;
+        wanted = wanted.Take(limit).ToList();
+        if (wanted.Count == 0)
+        {
+            return result;
+        }
+
+        var itemIds = wanted.Select(r => r.Id).ToList();
+        var versionIds = wanted.Select(r => r.TestCaseVersionId).ToList();
+        var versions = (await _versionRepository.GetListAsync(v => versionIds.Contains(v.Id))).ToDictionary(v => v.Id);
+        var testCaseIds = versions.Values.Select(v => v.TestCaseId).Distinct().ToList();
+        var testCases = (await _testCaseRepository.GetListAsync(x => testCaseIds.Contains(x.Id))).ToDictionary(x => x.Id);
+        var attempts = (await _executionRepository.GetListAsync(x => itemIds.Contains(x.TestRunItemId)))
+            .GroupBy(e => e.TestRunItemId)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        foreach (var row in wanted)
+        {
+            var dto = new MyWorkItemDto
+            {
+                RunItemId = row.Id,
+                RunId = row.TestRunId,
+                RunTitle = row.RunTitle,
+                Environment = row.Environment,
+                ProjectId = row.ProjectId,
+                CurrentStatus = row.CurrentStatus,
+                AttemptCount = attempts.GetValueOrDefault(row.Id),
+            };
+            if (versions.TryGetValue(row.TestCaseVersionId, out var version))
+            {
+                dto.VersionNumber = version.VersionNumber;
+                dto.TestCaseId = version.TestCaseId;
+                dto.TestCaseTitle = version.Title;
+                dto.TestCaseCode = testCases.GetValueOrDefault(version.TestCaseId)?.Code;
+            }
+
+            result.Items.Add(dto);
+        }
+
+        return result;
+    }
+
+    private static int StatusOrder(TestResultStatus status) => status switch
+    {
+        TestResultStatus.Untested => 0,
+        TestResultStatus.Failed => 1,
+        TestResultStatus.Blocked => 2,
+        TestResultStatus.Skipped => 3,
+        _ => 4,
+    };
+
     public virtual async Task<PagedResultDto<TestRunDto>> GetListAsync(GetTestRunListInput input)
     {
         var query = (await _runRepository.GetQueryableAsync())
@@ -159,6 +254,23 @@ public class TestRunAppService : TestCaseManagementAppService, ITestRunAppServic
     {
         var run = await _runRepository.GetAsync(id);
         GetItemOrThrow(run, itemId).AssignTo(input.AssignedUserId);
+
+        await _runRepository.UpdateAsync(run, autoSave: true);
+
+        return await BuildRunDtoAsync(run);
+    }
+
+    [Authorize(TestCaseManagementPermissions.TestPlans.Manage)]
+    public virtual async Task<TestRunDto> AssignTestersAsync(Guid id, AssignTestRunItemsDto input)
+    {
+        var run = await _runRepository.GetAsync(id);
+
+        // Find them all first: one that is not in the run refuses the whole request and changes nothing.
+        var items = input.ItemIds.Distinct().Select(itemId => GetItemOrThrow(run, itemId)).ToList();
+        foreach (var item in items)
+        {
+            item.AssignTo(input.AssignedUserId);
+        }
 
         await _runRepository.UpdateAsync(run, autoSave: true);
 

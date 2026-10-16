@@ -142,4 +142,79 @@ describe('Assigning testers in a run', () => {
     expect(sig<TestRun>('run')().items[0].assignedUserId).toBeNull();
     expect(sig<boolean>('busy')()).toBe(false);
   });
+
+  describe('many items at once', () => {
+    const ticks = () => [...element().querySelectorAll<HTMLInputElement>('[data-test=select-item]')];
+    const tick = (index: number) => { ticks()[index].click(); fixture.detectChanges(); };
+    const bar = () => element().querySelector('[data-test=bulk-bar]');
+
+    it('shows the bar only when something is ticked, and assigns the ticked ones to the chosen person in one call', () => {
+      open([withPeople()], run([item('1', null), item('2', 'u2'), item('3', null)]));
+      expect(bar()).toBeNull();
+
+      tick(0);
+      tick(2);
+      expect(bar()?.textContent).toContain('2 selected');
+
+      const select = element().querySelector<HTMLSelectElement>('[data-test=bulk-user]')!;
+      select.value = 'u1';
+      select.dispatchEvent(new Event('change'));
+      (element().querySelector('[data-test=bulk-assign]') as HTMLButtonElement).click();
+
+      const request = http.expectOne(`${ROOT}/runs/A/assignee`);
+      expect(request.request.method).toBe('PUT');
+      expect(request.request.body).toEqual({ itemIds: ['1', '3'], assignedUserId: 'u1' });
+      request.flush(run([item('1', 'u1'), item('2', 'u2'), item('3', 'u1')]));
+      fixture.detectChanges();
+      expect(sig<TestRun>('run')().items.map(i => i.assignedUserId)).toEqual(['u1', 'u2', 'u1']);
+      expect(bar()).toBeNull();
+      expect(ticks().some(t => t.checked)).toBe(false);
+    });
+
+    it('clears the assignment of the ticked ones when nobody is chosen', () => {
+      open([withPeople()], run([item('1', 'u2'), item('2', 'u2')]));
+      tick(0);
+      (element().querySelector('[data-test=bulk-assign]') as HTMLButtonElement).click();
+      expect(http.expectOne(`${ROOT}/runs/A/assignee`).request.body).toEqual({ itemIds: ['1'], assignedUserId: null });
+    });
+
+    it('ticks and unticks everything that is shown, and leaves out what the filter hides', () => {
+      open([withPeople()], run([item('1', 'u1'), item('2', 'u2'), item('3', 'u1')]));
+      sig<string>('testerFilter').set('u1');
+      fixture.detectChanges();
+
+      (element().querySelector('[data-test=select-all-items]') as HTMLInputElement).click();
+      fixture.detectChanges();
+      expect(bar()?.textContent).toContain('2 selected');
+
+      // The one that is not shown is not assigned by surprise, even if it was ticked before.
+      sig<string>('testerFilter').set('u2');
+      fixture.detectChanges();
+      expect(bar()).toBeNull();
+
+      sig<string>('testerFilter').set('u1');
+      fixture.detectChanges();
+      (element().querySelector('[data-test=select-all-items]') as HTMLInputElement).click();
+      fixture.detectChanges();
+      expect(bar()).toBeNull();
+    });
+
+    it('offers no ticks to someone who may not manage plans, on a completed run, or without a directory', () => {
+      open([withPeople()], run([item('1', null)]), [Permissions.TestRuns.Execute]);
+      expect(element().querySelector('[data-test=select-item]')).toBeNull();
+      open([withPeople()], run([item('1', null)], 2));
+      expect(element().querySelector('[data-test=select-item]')).toBeNull();
+      open([], run([item('1', null)]));
+      expect(element().querySelector('[data-test=select-all-items]')).toBeNull();
+    });
+
+    it('keeps the ticks when the server refuses', () => {
+      open([withPeople()], run([item('1', null)]));
+      tick(0);
+      (element().querySelector('[data-test=bulk-assign]') as HTMLButtonElement).click();
+      http.expectOne(`${ROOT}/runs/A/assignee`).flush({}, { status: 403, statusText: 'Forbidden' });
+      fixture.detectChanges();
+      expect(bar()?.textContent).toContain('1 selected');
+    });
+  });
 });

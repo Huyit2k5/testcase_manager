@@ -540,4 +540,133 @@ public class TestRunAppService_Tests : TestCaseManagementApplicationTestBase
         return await WithUnitOfWorkAsync(async () =>
             (await GetRequiredService<IRepository<TestCase, Guid>>().GetAsync(testCaseId)).ConcurrencyStamp);
     }
+
+    [Fact]
+    public async Task MyWork_Lists_What_Is_Assigned_To_The_Caller_Across_Runs_And_Skips_Completed_Runs_And_Other_People()
+    {
+        var me = Guid.NewGuid();
+        var other = Guid.NewGuid();
+        var a = await CreateApprovedTestCaseAsync("MW-1");
+        var b = await CreateApprovedTestCaseAsync("MW-2");
+        var c = await CreateApprovedTestCaseAsync("MW-3");
+
+        var first = await _runs.CreateAsync(new CreateTestRunDto { Title = "First", Environment = "Staging", TestCaseIds = { a.Id, b.Id } });
+        var second = await _runs.CreateAsync(new CreateTestRunDto { Title = "Second", Environment = "UAT", TestCaseIds = { c.Id } });
+        var closed = await _runs.CreateAsync(new CreateTestRunDto { Title = "Closed", Environment = "Old", TestCaseIds = { a.Id } });
+
+        await _runs.AssignTesterAsync(first.Id, first.Items[0].Id, new AssignTestRunItemDto { AssignedUserId = me });
+        await _runs.AssignTesterAsync(first.Id, first.Items[1].Id, new AssignTestRunItemDto { AssignedUserId = other });
+        await _runs.AssignTesterAsync(second.Id, second.Items[0].Id, new AssignTestRunItemDto { AssignedUserId = me });
+        await _runs.AssignTesterAsync(closed.Id, closed.Items[0].Id, new AssignTestRunItemDto { AssignedUserId = me });
+        await _runs.CompleteAsync(closed.Id);
+
+        using (ChangeUser(me))
+        {
+            var work = await _runs.GetMyWorkAsync(new GetMyWorkInput());
+
+            work.Total.ShouldBe(2);
+            work.Untested.ShouldBe(2);
+            work.Items.Select(i => i.RunTitle).ShouldBe(new[] { "Second", "First" }, ignoreOrder: true);
+            var item = work.Items.Single(i => i.RunTitle == "First");
+            item.RunId.ShouldBe(first.Id);
+            item.RunItemId.ShouldBe(first.Items[0].Id);
+            item.TestCaseCode.ShouldBe("MW-1");
+            item.TestCaseTitle.ShouldBe("Title of MW-1");
+            item.Environment.ShouldBe("Staging");
+        }
+
+        using (ChangeUser(other))
+        {
+            (await _runs.GetMyWorkAsync(new GetMyWorkInput())).Items.Single().TestCaseCode.ShouldBe("MW-2");
+        }
+    }
+
+    [Fact]
+    public async Task MyWork_Puts_The_Untested_First_Hides_What_Is_Done_Unless_Asked_And_Counts_What_Needs_Attention()
+    {
+        var me = Guid.NewGuid();
+        var run = await CreateRunWithItemsAsync(4);
+        foreach (var item in run.Items)
+        {
+            await _runs.AssignTesterAsync(run.Id, item.Id, new AssignTestRunItemDto { AssignedUserId = me });
+        }
+
+        await _runs.ExecuteItemAsync(run.Id, run.Items[0].Id, new ExecuteTestItemDto { Status = TestResultStatus.Passed });
+        await _runs.ExecuteItemAsync(run.Id, run.Items[1].Id, new ExecuteTestItemDto { Status = TestResultStatus.Failed });
+        await _runs.ExecuteItemAsync(run.Id, run.Items[2].Id, new ExecuteTestItemDto { Status = TestResultStatus.Blocked });
+
+        using (ChangeUser(me))
+        {
+            var work = await _runs.GetMyWorkAsync(new GetMyWorkInput());
+
+            work.Total.ShouldBe(4);
+            work.Untested.ShouldBe(1);
+            work.NeedAttention.ShouldBe(2);
+            work.Items.Select(i => i.CurrentStatus).ShouldBe(new[]
+            {
+                TestResultStatus.Untested, TestResultStatus.Failed, TestResultStatus.Blocked,
+            });
+            work.Items.Single(i => i.CurrentStatus == TestResultStatus.Failed).AttemptCount.ShouldBe(1);
+
+            var all = await _runs.GetMyWorkAsync(new GetMyWorkInput { IncludeDone = true });
+            all.Items.Count.ShouldBe(4);
+            all.Items.Last().CurrentStatus.ShouldBe(TestResultStatus.Passed);
+            all.Total.ShouldBe(4);
+        }
+    }
+
+    [Fact]
+    public async Task MyWork_Is_Empty_Without_A_Signed_In_User_And_Can_Be_Narrowed_To_A_Project()
+    {
+        var me = Guid.NewGuid();
+        var run = await CreateRunWithItemsAsync(1);
+        await _runs.AssignTesterAsync(run.Id, run.Items[0].Id, new AssignTestRunItemDto { AssignedUserId = me });
+
+        var anonymous = await _runs.GetMyWorkAsync(new GetMyWorkInput());
+        anonymous.Items.ShouldBeEmpty();
+        anonymous.Total.ShouldBe(0);
+
+        using (ChangeUser(me))
+        {
+            (await _runs.GetMyWorkAsync(new GetMyWorkInput { ProjectId = run.ProjectId })).Items.Count.ShouldBe(1);
+            (await _runs.GetMyWorkAsync(new GetMyWorkInput { ProjectId = Guid.NewGuid() })).Items.ShouldBeEmpty();
+        }
+    }
+
+    [Fact]
+    public async Task AssignTesters_Should_Give_Many_Items_To_One_Person_And_Leave_The_Others()
+    {
+        var run = await CreateRunWithItemsAsync(4);
+        var ann = Guid.NewGuid();
+        var bob = Guid.NewGuid();
+        await _runs.AssignTesterAsync(run.Id, run.Items[3].Id, new AssignTestRunItemDto { AssignedUserId = bob });
+
+        var result = await _runs.AssignTestersAsync(run.Id, new AssignTestRunItemsDto
+        {
+            // A repeated id counts once.
+            ItemIds = { run.Items[0].Id, run.Items[1].Id, run.Items[1].Id, run.Items[3].Id },
+            AssignedUserId = ann,
+        });
+
+        result.Items.Select(i => i.AssignedUserId).ShouldBe(new Guid?[] { ann, ann, null, ann });
+
+        var cleared = await _runs.AssignTestersAsync(run.Id, new AssignTestRunItemsDto { ItemIds = { run.Items[0].Id, run.Items[3].Id } });
+        cleared.Items.Select(i => i.AssignedUserId).ShouldBe(new Guid?[] { null, ann, null, null });
+    }
+
+    [Fact]
+    public async Task AssignTesters_Should_Refuse_An_Item_That_Is_Not_In_The_Run_And_Change_Nothing()
+    {
+        var run = await CreateRunWithItemsAsync(2);
+        var ann = Guid.NewGuid();
+
+        (await Should.ThrowAsync<BusinessException>(() => _runs.AssignTestersAsync(run.Id, new AssignTestRunItemsDto
+            {
+                ItemIds = { run.Items[0].Id, Guid.NewGuid() },
+                AssignedUserId = ann,
+            })))
+            .Code.ShouldBe(TestCaseManagementErrorCodes.TestRunItemNotFound);
+
+        (await _runs.GetAsync(run.Id)).Items.ShouldAllBe(i => i.AssignedUserId == null);
+    }
 }

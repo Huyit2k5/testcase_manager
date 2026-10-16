@@ -115,13 +115,14 @@ export function provideTestCaseManagementMenu(): EnvironmentProviders {
         ...tcmMenu(inject(TCM_FEATURES)).map(item => ({
           path: `${TCM_ABP_BASE_PATH}/${item.path}`,
           name: item.abpName,
+          iconClass: item.icon,
           parentName: ROOT_MENU,
           order: item.order,
           layout: eLayoutType.application,
           requiredPolicy: item.policy,
         })),
         // The projects are managed by few: their page is in the sidebar for them. The page of a run has no entry; the sidebar and the breadcrumb still need to know where it is, so it has a hidden one.
-        { path: `${TCM_ABP_BASE_PATH}/projects`, name: PROJECTS_MENU, parentName: ROOT_MENU, order: 90, layout: eLayoutType.application, requiredPolicy: 'TestCaseManagement.Projects.Manage' },
+        { path: `${TCM_ABP_BASE_PATH}/projects`, name: PROJECTS_MENU, iconClass: 'fas fa-briefcase', parentName: ROOT_MENU, order: 90, layout: eLayoutType.application, requiredPolicy: 'TestCaseManagement.Projects.Manage' },
         { path: `${TCM_ABP_BASE_PATH}/runs/-`, name: RUN_MENU, parentName: ROOT_MENU, order: 91, invisible: true, layout: eLayoutType.application, requiredPolicy: 'TestCaseManagement.TestPlans' },
       ]);
 

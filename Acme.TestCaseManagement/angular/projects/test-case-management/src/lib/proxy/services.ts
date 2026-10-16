@@ -7,7 +7,7 @@ import { DownloadedFile, fileNameOf } from './transfer';
 import {
   StepSuggestionResult, StepSuggestionStatus, SuggestStepsInput, AddDefect, ApiKey, Attachment, SaveSharedStepGroup, SharedStepGroup, SharedStepGroupSummary, SharedStepUsage, TagSummary, UpdateSharedStepUsersResult, ApiKeyCreated, ApplyFlakyFlagsResult, CreateRun, Dashboard, FlakyTestList, DefectLink, EvaluateInput, ExecuteItem, PagedResult, QualityGate, QualityGateEvaluation,
   Requirement, RtmMatrix, RtmRequest, SavePlan, SaveQualityGate, SaveRequirement, RequirementLink, RequirementReviewResult, SaveTestCase, SignOffReport, SprintTrend, Workload, StartSignOff,
-  ApproveTestCasesResult, DuplicateTestCase, TestCase, TestCaseDefect, TestCaseHistory, TestCaseListRequest, TestCaseVersion, TestExecution, TestPlan, TestRun, TestRunListRequest,
+  ApproveTestCasesResult, DuplicateTestCase, MyWork, TestCase, TestCaseDefect, TestCaseHistory, TestCaseListRequest, TestCaseVersion, TestExecution, TestPlan, TestRun, TestRunListRequest,
   TestSuite, TestSuiteTree,
 } from './dtos';
 import { PlanStatus, SeverityLevel, SignOffStatus, TestCaseStatus } from './enums';
@@ -115,6 +115,10 @@ export class TestRunService {
     return this.http.get<PagedResult<TestRun>>(`${this.root}/runs`, { params: query({ maxResultCount: 100, projectId: this.project.currentId(), ...request }) });
   }
   get(id: string): Observable<TestRun> { return this.http.get<TestRun>(`${this.root}/runs/${id}`); }
+  /** What is assigned to the caller in the runs that are not completed, in every project the caller may see. */
+  myWork(includeDone = false): Observable<MyWork> {
+    return this.http.get<MyWork>(`${this.root}/runs/my-work`, { params: query({ includeDone: includeDone || null }) });
+  }
   create(input: CreateRun): Observable<TestRun> { return this.http.post<TestRun>(`${this.root}/runs`, inProject(input, this.project.currentId())); }
   addItems(id: string, testCaseIds: string[], assignedUserId: string | null = null): Observable<TestRun> {
     return this.http.post<TestRun>(`${this.root}/runs/${id}/items`, { testCaseIds, assignedUserId });
@@ -122,6 +126,10 @@ export class TestRunService {
   /** Null clears the assignment. */
   assignTester(runId: string, itemId: string, assignedUserId: string | null): Observable<TestRun> {
     return this.http.put<TestRun>(`${this.root}/runs/${runId}/items/${itemId}/assignee`, { assignedUserId });
+  }
+  /** The same person (null: nobody) for many items at once; one that is not in the run refuses all. */
+  assignTesters(runId: string, itemIds: string[], assignedUserId: string | null): Observable<TestRun> {
+    return this.http.put<TestRun>(`${this.root}/runs/${runId}/assignee`, { itemIds, assignedUserId });
   }
   /** Only a run that has no result yet; the server refuses one that has. */
   delete(id: string): Observable<void> { return this.http.delete<void>(`${this.root}/runs/${id}`); }

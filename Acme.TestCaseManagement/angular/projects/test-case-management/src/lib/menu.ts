@@ -12,6 +12,8 @@ export interface TcmMenuItem {
   permission?: string;
   /** The permission an ABP application needs to show the entry in its sidebar (stricter than `permission`: every page has one). */
   policy: string;
+  /** The Font Awesome classes of the icon an ABP application shows before the entry. */
+  icon: string;
   /** The order in the menu. */
   order: number;
   /** The page belongs to a part of the module that is off unless the host turns it on (TCM_FEATURES). */
@@ -20,13 +22,14 @@ export interface TcmMenuItem {
 
 /** The pages of the module, in menu order. The standalone app builds its tabs from this, an ABP application its sidebar. */
 export const TCM_MENU: readonly TcmMenuItem[] = [
-  { path: 'dashboard', label: 'nav.dashboard', abpName: 'TestCaseManagement::Menu:Dashboard', permission: Permissions.TestRuns.Default, policy: Permissions.TestRuns.Default, order: 1 },
-  { path: 'repository', label: 'nav.repository', abpName: 'TestCaseManagement::Menu:Repository', permission: Permissions.TestCases.Default, policy: Permissions.TestCases.Default, order: 2 },
-  { path: 'shared-steps', label: 'nav.sharedSteps', abpName: 'TestCaseManagement::Menu:SharedSteps', permission: Permissions.SharedSteps.Default, policy: Permissions.SharedSteps.Default, order: 3 },
-  { path: 'runs', label: 'nav.runs', abpName: 'TestCaseManagement::Menu:Runs', permission: Permissions.TestPlans.Default, policy: Permissions.TestPlans.Default, order: 4 },
-  { path: 'traceability', label: 'nav.traceability', abpName: 'TestCaseManagement::Menu:Traceability', permission: Permissions.Requirements.Default, policy: Permissions.Requirements.Default, order: 5 },
-  { path: 'quality', label: 'nav.quality', abpName: 'TestCaseManagement::Menu:Quality', permission: Permissions.QualityGates.Default, policy: Permissions.QualityGates.Default, order: 6 },
-  { path: 'automation', label: 'nav.automation', abpName: 'TestCaseManagement::Menu:Automation', permission: Permissions.ApiKeys.Default, policy: Permissions.ApiKeys.Default, order: 7, feature: 'automation' },
+  { path: 'dashboard', label: 'nav.dashboard', abpName: 'TestCaseManagement::Menu:Dashboard', permission: Permissions.TestRuns.Default, policy: Permissions.TestRuns.Default, icon: 'fas fa-tachometer-alt', order: 1 },
+  { path: 'my-work', label: 'nav.myWork', abpName: 'TestCaseManagement::Menu:MyWork', permission: Permissions.TestRuns.Default, policy: Permissions.TestRuns.Default, icon: 'fas fa-user-check', order: 2 },
+  { path: 'repository', label: 'nav.repository', abpName: 'TestCaseManagement::Menu:Repository', permission: Permissions.TestCases.Default, policy: Permissions.TestCases.Default, icon: 'fas fa-folder-open', order: 3 },
+  { path: 'shared-steps', label: 'nav.sharedSteps', abpName: 'TestCaseManagement::Menu:SharedSteps', permission: Permissions.SharedSteps.Default, policy: Permissions.SharedSteps.Default, icon: 'fas fa-link', order: 4 },
+  { path: 'runs', label: 'nav.runs', abpName: 'TestCaseManagement::Menu:Runs', permission: Permissions.TestPlans.Default, policy: Permissions.TestPlans.Default, icon: 'fas fa-tasks', order: 5 },
+  { path: 'traceability', label: 'nav.traceability', abpName: 'TestCaseManagement::Menu:Traceability', permission: Permissions.Requirements.Default, policy: Permissions.Requirements.Default, icon: 'fas fa-route', order: 6 },
+  { path: 'quality', label: 'nav.quality', abpName: 'TestCaseManagement::Menu:Quality', permission: Permissions.QualityGates.Default, policy: Permissions.QualityGates.Default, icon: 'fas fa-clipboard-check', order: 7 },
+  { path: 'automation', label: 'nav.automation', abpName: 'TestCaseManagement::Menu:Automation', permission: Permissions.ApiKeys.Default, policy: Permissions.ApiKeys.Default, icon: 'fas fa-robot', order: 8, feature: 'automation' },
 ];
 
 /** The pages a host shows: those of TCM_MENU whose part of the module is on. */
