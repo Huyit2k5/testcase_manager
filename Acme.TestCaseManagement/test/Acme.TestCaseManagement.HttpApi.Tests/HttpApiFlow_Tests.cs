@@ -164,6 +164,11 @@ public class HttpApiFlow_Tests
         var assigned = await qaLead.PutAsync<TestRunDto>(
             $"{Root}/runs/{run.Id}/items/{itemC.Id}/assignee", new AssignTestRunItemDto { AssignedUserId = productOwnerId });
         assigned.Items.Single(item => item.Id == itemC.Id).AssignedUserId.ShouldBe(productOwnerId);
+        var myWork = await productOwner.GetAsync<MyWorkDto>($"{Root}/runs/my-work");
+        (myWork.Total, myWork.Untested, myWork.NeedAttention).ShouldBe((1, 1, 0));
+        var assignedToMe = myWork.Items.Single();
+        (assignedToMe.RunItemId, assignedToMe.RunId, assignedToMe.TestCaseId).ShouldBe((itemC.Id, run.Id, caseC.Id));
+        (await qaLead.GetAsync<MyWorkDto>($"{Root}/runs/my-work")).Items.ShouldBeEmpty();
 
         var passedAttempt = await qaLead.PostAsync<TestExecutionDto>(
             $"{Root}/runs/{run.Id}/items/{itemA.Id}/executions", new ExecuteTestItemDto { Status = TestResultStatus.Passed, DurationSeconds = 30 });

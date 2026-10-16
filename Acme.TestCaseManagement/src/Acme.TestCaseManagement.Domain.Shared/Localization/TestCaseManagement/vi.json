@@ -3,6 +3,7 @@
   "texts": {
     "Menu:TestCaseManagement": "Quản lý Test Case",
     "Menu:Dashboard": "Bảng điều khiển",
+    "Menu:MyWork": "Việc của tôi",
     "Menu:Repository": "Kho test case",
     "Menu:SharedSteps": "Bước dùng chung",
     "Menu:Runs": "Test plan và run",

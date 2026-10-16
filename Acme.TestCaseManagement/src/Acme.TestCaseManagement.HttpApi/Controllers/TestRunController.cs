@@ -26,6 +26,13 @@ public class TestRunController : TestCaseManagementController, ITestRunAppServic
     }
 
     /// <inheritdoc />
+    [HttpGet("my-work")]
+    public virtual Task<MyWorkDto> GetMyWorkAsync([FromQuery] GetMyWorkInput input)
+    {
+        return _runAppService.GetMyWorkAsync(input);
+    }
+
+    /// <inheritdoc />
     [HttpGet]
     public virtual Task<PagedResultDto<TestRunDto>> GetListAsync([FromQuery] GetTestRunListInput input)
     {

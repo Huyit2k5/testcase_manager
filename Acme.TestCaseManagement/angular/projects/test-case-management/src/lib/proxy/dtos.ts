@@ -120,6 +120,13 @@ export interface TestRunSummary {
   totalItems: number; executedItems: number; passed: number; failed: number; blocked: number; skipped: number;
   untested: number; completionPercentage: number; firstTimePassRate: number | null;
 }
+/** A test case assigned to the caller in a run that is not completed. */
+export interface MyWorkItem {
+  runItemId: string; runId: string; runTitle: string; environment: string; projectId: string;
+  testCaseId: string; testCaseCode: string | null; testCaseTitle: string; versionNumber: number;
+  currentStatus: TestResultStatus; attemptCount: number;
+}
+export interface MyWork { items: MyWorkItem[]; total: number; untested: number; needAttention: number; truncated: boolean }
 export interface TestRun {
   projectId: string; id: string; testPlanId: string | null; title: string; environment: string; assignedToUserId: string | null;
   status: RunStatus; items: TestRunItem[]; summary: TestRunSummary;

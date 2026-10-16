@@ -439,3 +439,9 @@ description: "Task list for Acme.TestCaseManagement implementation following Spe
 - [x] T186 The check of an import refuses a code of another project like the import does; the import works on the test cases of its own project; tests (check and import, three cases, and the same project still updates).
 - [x] T187 `ConcurrencyStamp` in `TestCaseDto` and `CreateUpdateTestCaseDto`; the update is refused with 409 when the test case changed since it was read; tests (Application 5, HTTP 2); the form sends the stamp, shows a banner and keeps what was typed on 409; the detail dialog hands over the test case after the tags are saved; `error.conflict` in describeError (Angular 6 tests).
 - [x] T188 Whole-system check: Domain 226, Application 474, HttpApi 87 on .NET 10 with SQLite and on .NET 9 with MySQL 8.0; Angular 281; the 57 tests of the company application; the application run with a browser (two people editing, tags then edit, plain edit, create, all screens in English and Vietnamese: no error) and with probes of the API (a person outside a restricted project, the sign-off, the codes, the tags).
+
+## Phase 37: My work across runs
+
+- [x] T189 `GET runs/my-work` (`GetMyWorkAsync`, `GetMyWorkInput`, `MyWorkDto`, `MyWorkItemDto`) over the items assigned to the caller in runs that are not completed, under the project filters; three tests.
+- [x] T190 The page `my-work` (route, menu entry with icon, `Menu:MyWork` in en and vi, texts in en and vi, `TestRunService.myWork`), and `?item=` on the run page that opens the execution form; seven Angular tests.
+- [x] T191 Tried on the company application with a browser (six assigned items, a failed result, the box for the finished ones, the action opens the form of the item).

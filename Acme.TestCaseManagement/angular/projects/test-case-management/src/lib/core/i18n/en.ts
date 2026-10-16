@@ -771,6 +771,19 @@ export const en = {
   'runs.groupEmpty': 'No run in this plan yet.',
   'runs.groupTruncated': 'Showing {shown} of {total} runs. Use the list view to filter them.',
   'runs.toggleGroup': 'Show or hide the runs of {name}',
+  'nav.myWork': 'My work',
+  'title.myWork': 'My work',
+  'mywork.title': 'My work',
+  'mywork.includeDone': 'Show finished ones too',
+  'mywork.refresh': 'Reload',
+  'mywork.total': 'Assigned to me',
+  'mywork.untested': 'Not run',
+  'mywork.needAttention': 'Failed or blocked',
+  'mywork.colRun': 'Run',
+  'mywork.empty': 'Nothing is assigned to you in an open run.',
+  'mywork.allDone': 'Nothing left to run. Tick "Show finished ones too" to see what is done.',
+  'mywork.loadFailed': 'Your work could not be loaded.',
+  'mywork.truncated': 'Showing the first 500. Finish some, then reload.',
 } as const;
 
 export type MessageKey = keyof typeof en;

@@ -8,6 +8,9 @@ public interface ITestRunAppService : IApplicationService
 {
     Task<TestRunDto> GetAsync(Guid id);
 
+    /// <summary>The test cases assigned to the caller in the runs that are not completed, across runs and projects.</summary>
+    Task<MyWorkDto> GetMyWorkAsync(GetMyWorkInput input);
+
     /// <summary>Supported sort columns: title, environment, status, creationTime (append " desc" to reverse).</summary>
     Task<PagedResultDto<TestRunDto>> GetListAsync(GetTestRunListInput input);
 

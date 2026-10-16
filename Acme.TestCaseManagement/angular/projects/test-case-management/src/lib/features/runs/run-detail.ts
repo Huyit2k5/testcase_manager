@@ -1,8 +1,8 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { map } from 'rxjs';
+import { ActivatedRoute, RouterLink, convertToParamMap } from '@angular/router';
+import { map, of } from 'rxjs';
 import { ModalComponent } from '../../core/modal';
 import { AuthService, Permissions } from '../../core/auth';
 import { ToastService } from '../../core/core';
@@ -46,7 +46,11 @@ export class RunDetailComponent {
 
   /** Bound from the route parameter :id. */
   /** The run in the address. Read from the route, not bound as an input, so that the host does not have to enable input binding. */
-  readonly id = toSignal(inject(ActivatedRoute).paramMap.pipe(map(params => params.get('id') ?? '')), { initialValue: '' });
+  private readonly route = inject(ActivatedRoute);
+  readonly id = toSignal(this.route.paramMap.pipe(map(params => params.get('id') ?? '')), { initialValue: '' });
+  /** The item that "My work" asks to open for execution (?item=). The run page opens its form once, when the run has loaded. */
+  private readonly requestedItem = toSignal((this.route.queryParamMap ?? of(convertToParamMap({}))).pipe(map(params => params.get('item'))), { initialValue: null });
+  private openedItem: string | null = null;
 
   protected readonly pct = pct;
   protected readonly run = signal<TestRun | null>(null);
@@ -141,6 +145,7 @@ export class RunDetailComponent {
         if (request !== this.loadRequest) { return; }
         this.loadFailed.set(false);
         this.run.set(run);
+        this.openRequestedItem(run);
       },
       error: () => {
         if (request !== this.loadRequest) { return; }
@@ -148,6 +153,14 @@ export class RunDetailComponent {
         if (this.run()?.id !== id) { this.loadFailed.set(true); }
       },
     });
+  }
+
+  private openRequestedItem(run: TestRun): void {
+    const wanted = this.requestedItem();
+    if (!wanted || wanted === this.openedItem) { return; }
+    this.openedItem = wanted;
+    const item = run.items.find(i => i.id === wanted);
+    if (item && this.isOpen(run) && this.auth.can(Permissions.TestRuns.Execute)) { this.startExecute(item); }
   }
 
   protected reload(): void {

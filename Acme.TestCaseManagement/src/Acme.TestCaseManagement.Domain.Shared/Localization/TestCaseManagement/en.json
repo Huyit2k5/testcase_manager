@@ -3,6 +3,7 @@
   "texts": {
     "Menu:TestCaseManagement": "Test Case Management",
     "Menu:Dashboard": "Dashboard",
+    "Menu:MyWork": "My work",
     "Menu:Repository": "Test repository",
     "Menu:SharedSteps": "Shared steps",
     "Menu:Runs": "Plans and runs",
